@@ -135,7 +135,16 @@ def nose_push(nx: float, nz: float) -> float:
 # 2026-09-12: the roster's one circular ear spec (0.170 x 0.165) hung pads
 # from eye level to jaw; an ear is taller than it is deep, and every other
 # kid's spec says so (0.10-0.175 across, 0.15-0.205 tall). Drawn to that.
-EAR_SPEC = EarSpec(center=(0.020, 3.260), radii=(0.1300, 0.1700))
+# ★ 2026-10-30: SIZED OFF THE PROFILE EAR, not off the roster's range. An
+# independent critic read the delivered ear as "an oversized round disc ...
+# larger than the concept's ears" and the 8x crop of the sheet's profile
+# (moose-turnaround.png x 705-765, y 290-350) agrees: the ear runs rows
+# 300.6-348.7 (0.30ft tall at 0.006154 ft/px) and columns 713-748 (0.21ft
+# front to back). RADII are half-extents, so (0.13, 0.17) drew a 0.26 x
+# 0.34 ear — a quarter wider and 13% taller than drawn. The analyser's ear
+# line (the head's widest row, 74.5% of head height) sits at z 3.254; an
+# ear is widest about 45% down its own height, so its centre is 0.015 below.
+EAR_SPEC = EarSpec(center=(0.020, 3.235), radii=(0.1050, 0.1500))
 
 # Island solved for his span: brow anchor 24 lands z 3.474 (52.2% of the
 # 3.99→3.00 head against the traced 52.0), eye anchor 50 lands z 3.330 (66.7
@@ -362,13 +371,29 @@ HOOD_LEVELS = [
 # Flush to the skull (+0.015 — the first band protruded 0.055 past the head
 # curve and read as a square-cornered slab) and its top tucks UNDER the cap
 # edge at 3.52 so no skin strip shows between cap and hair from behind.
+# ★ 2026-10-30: THE FRONT CLAMP IS PER RING, because the sideburn has a
+# SHAPE. One clamp (-0.16, or -0.10 off the skull) stood every ring's forward
+# half at the same y, so below the cap the band was a vertical wall from the
+# temple to the jaw: a critic's "hard dark rectangular sideburn with a ragged
+# bottom edge and a stray dark vertical tick on the cheek in front of the
+# ear" (moose-runtime-hero.png, 4x). The sheet's profile (x 659-840) draws
+# the buzz's front edge slanting BACK as it descends — from the brow line
+# under the cap to the ear's front edge at the ear's top (z ~3.38, y ~-0.08),
+# and behind the ear below that — so the fifth column is the most-forward y
+# each ring may reach. The ear itself (EAR_SPEC) spans y -0.085..0.125.
+# ★ 2026-10-30: THE TOP RING TUCKS UNDER THE CAP. The cap's lowest ring is
+# at z 3.55 (CAP_LEVELS, half 0.452, 0.08 proud of the skull) and the hair
+# began at 3.52, so a 0.03ft band of bare scalp showed all round under the
+# rim and the cap read as hovering (critic, moose-runtime-hero.png and the
+# profile at 8x; rubric 3.8). One ring at 3.57 inside the cap's rim closes it.
 BUZZ_LEVELS = [
-    (3.520, 0.385, 0.385, 0.005),
-    (3.420, 0.427, 0.427, 0.010),
-    (3.300, 0.431, 0.431, 0.015),
-    (3.180, 0.385, 0.385, 0.030),
-    (3.080, 0.295, 0.300, 0.060),
-    (3.020, 0.240, 0.245, 0.085),
+    (3.570, 0.350, 0.350, 0.003, -0.160),  # inside the cap's rim (skull 0.333 here)
+    (3.520, 0.385, 0.385, 0.005, -0.160),  # under the cap edge
+    (3.420, 0.427, 0.427, 0.010, -0.140),  # the sideburn's top, at the temple
+    (3.300, 0.431, 0.431, 0.015, -0.020),  # the sideburn point, at the ear's top-front
+    (3.180, 0.385, 0.385, 0.030, 0.090),   # behind the ear's dish — its lobe pad hides the edge
+    (3.080, 0.295, 0.300, 0.060, 0.080),   # the nape band
+    (3.020, 0.240, 0.245, 0.085, 0.100),
 ]
 
 
@@ -376,16 +401,32 @@ def build_buzz(builder: MeshBuilder, detail: int) -> None:
     segments = 16 if detail >= 2 else 8
     ascending = list(reversed(BUZZ_LEVELS))
     rows = []
-    for z, half_x, half_y, y_centre in ascending:
+    for z, half_x, half_y, y_centre, front_y in ascending:
         ring = []
         for column in range(segments):
             theta = 2 * pi * column / segments
             x = half_x * cos(theta)
             y = y_centre + half_y * sin(theta)
             if y < y_centre:
-                # The whole front is face — bury it against the skull.
+                # The forward half stops at this ring's own hairline, and the
+                # clamped vertices SIT ON the skull (+0.012), pulled in OR
+                # pushed out. A clamped vertex otherwise keeps the ring's own
+                # x, so the flat wall it makes stood inside the skull at the
+                # cheek and the runtime outline hull showed through the skin
+                # as "a faint dotted dark line across the cheek" (critic,
+                # moose-runtime-hero.png 4x). Round 2 only pulled vertices IN
+                # and the buried ones kept showing; the critic named it.
+                # Round 3 at +0.012 cleared the cheek, and the ear's helix
+                # root (sculptlib.ear, mounted off the same skull) then stood
+                # proud of the hair as a 7px skin diamond at the ear's top in
+                # every runtime still; +0.030 covers the root. The two rings
+                # behind the ear are clamped behind its dish (front_y -0.02 /
+                # +0.09) so the edge's hull no longer crosses the shallow
+                # concha as a dotted line.
+                y = max(y, front_y)
                 sx = skull_surface_x(y, z)
-                y = max(y, -0.10 if sx <= 0.0 else -0.16)
+                if sx > 0.0:
+                    x = (sx + 0.030) if x >= 0 else -(sx + 0.030)
             ring.append(builder.vertex((x, y, z), HAIR, "Head"))
         rows.append(ring)
     for lower, upper in zip(rows, rows[1:]):
@@ -418,6 +459,12 @@ def build_hood(builder: MeshBuilder, detail: int) -> None:
         for column in range(segments):
             nxt = (column + 1) % segments
             builder.face((lower[column], lower[nxt], upper[nxt], upper[column]), 1)
+
+
+# The drawstring's vertex colour: SHIRT_DARK with NO outline hull (alpha 0;
+# see the cords below). At 0.3 a critic still read "broken navy dashes along
+# both edges ... two scratches": any hull on a 3px cord is two strokes.
+CORD = (SHIRT_DARK[0], SHIRT_DARK[1], SHIRT_DARK[2], 0.0)
 
 
 def build_hoodie_details(builder: MeshBuilder, detail: int) -> None:
@@ -455,6 +502,22 @@ def build_hoodie_details(builder: MeshBuilder, detail: int) -> None:
     # The sheet hangs the cords from the drawn hood edge (row 399, z 2.675);
     # the model's hood front edge IS the collar rim (z 2.995), so they start
     # buried there and keep the traced tip height.
+    # ★ 2026-10-30: THE HALF-BURIED CORD WAS A STREAK, AND THE STREAK WAS THE
+    # OUTLINE. The runtime draws an inverted hull round every mesh, and a tube
+    # half inside the chest shows the hull only along its two exposed edges —
+    # two thin ink lines from collar to belly, which a critic read as "scratch
+    # marks rather than cords" (moose-runtime-face-grin.png, 4x). The sheet's
+    # cords are round, proud and lit (moose-turnaround.png front, rows 400-
+    # 470). The cure is the vertex ALPHA, 0.0: the outline shader scales the
+    # hull width by colour.a (asset contract mask.G; the arm's crease rows use
+    # the same channel at 0.5), so the cord draws no hull at all — 0.3 still
+    # read as dashed strokes along both edges (round 2). The board renders no hull, so this is a
+    # runtime-still repair and the board is byte-for-byte the same cords.
+    # ⚠️ Standing the cords one radius proud was tried in the same round and
+    # REVERTED: a full cylinder on a convex chest leaves a see-through sliver
+    # between cord and cloth in the orthographic profile (silhouette.lint:
+    # 10 enclosed pixels at moose-profile 229,276, z ~2.66). Half-buried,
+    # as traced, there is nothing to see through.
     for side in (1, -1):
         builder.tube(
             [(side * 0.100, -0.125, 2.950),   # buried in the collar roll
@@ -462,7 +525,7 @@ def build_hoodie_details(builder: MeshBuilder, detail: int) -> None:
              (side * 0.132, -0.300, 2.640),   # lying on the chest (torso depth re-traced 2026-09-12: +0.03 here,
              (side * 0.140, -0.398, 2.345),   # the crimp above the tip           +0.055 below, so the cords
              (side * 0.141, -0.405, 2.295)],  # the aglet bulb, on the surface    stay half-buried, not buried)
-            [0.016, 0.018, 0.018, 0.014, 0.019], 1, SHIRT_DARK,
+            [0.016, 0.018, 0.018, 0.014, 0.019], 1, CORD,
             ["Spine2", "Spine2", "Spine2", "Spine1", "Spine1"], 5, flip=side < 0)
 
 

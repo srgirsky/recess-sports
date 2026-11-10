@@ -352,8 +352,37 @@ AFRO_LEVELS = [
     (3.260, 0.828, 0.516, 0.245),
     (3.020, 0.740, 0.424, 0.322),
     (2.940, 0.690, 0.380, 0.255),
-    (2.720, 0.440, 0.250, 0.380),
-    (2.480, 0.230, 0.150, 0.460),
+    # ★ 2026-10-30: THE LOBES HANG BESIDE THE CHEEKS. Three critics carried
+    # "the afro is a shallow cap from the front": the delivered hair ended at
+    # the eye line and the ears stood fully exposed under it, where the sheet
+    # hangs the afro beside the face to the mouth line with the ears half in
+    # it. The width was never wrong — the HANG was: this ring pulled to 0.440
+    # at 2.72, so the loft from 0.690 at 2.94 narrowed through the cheeks.
+    # The front sheet's own silhouette (nothing but hair is this wide between
+    # the collar at 2.50 and the ears) reads, per side at 0.005848 ft/px:
+    # z 2.85 0.637 · 2.80 0.608 · 2.75 0.547 · 2.70 0.520 · 2.65 0.480 ·
+    # 2.60 0.371 · 2.55 0.320 · 2.50 0.257. The ring moves to 0.530 at 2.70
+    # and the loft to the 2.48 nape ring then lands 0.39 at 2.60 and 0.33 at
+    # 2.55 — inside 0.02 of every row. Rear extent (y_centre + half_y) stays
+    # 0.63 so the nape still meets the collar (the 2026-09-12 fix). Rings
+    # moved, none added: zero triangles.
+    # ★ AND THE NAPE ROUNDS IN — the 2026-09-12 note above ("rear extent 0.59
+    # / 0.64 / 0.61 / 0.63 at z 2.6-2.9") does not survive a re-trace. An
+    # independent critic read the profile as "a near-vertical face from the
+    # crown to a flat horizontal cut at the collar" and measured the sheet's
+    # back tucking in by ~36% of head height against the delivery's 11%.
+    # Walking the profile figure's rearmost dark run (grizz-turnaround.png
+    # x 693-927, centre column 810, 0.006006 ft/px): the rear edge holds
+    # x ~695 (0.69ft behind centre) from z 3.3 down to 3.0, then rounds in —
+    # 704 at 2.90 (0.64), 716 at 2.80 (0.56), 737 at 2.70 (0.44), 758 at
+    # 2.60 (0.31), 782 at 2.55 (0.17) — and below 2.55 the run is the brown
+    # shirt. So the 0.6 rear extents on these two rings were the sheet's
+    # SHOULDER, not its hair. Rear extent (y_centre + half_y) now 0.44 at
+    # 2.70 and 0.24 at 2.48; the front stays behind the ear line (y >= 0.08).
+    # measured: front z=2.70 halfWidth=0.5200
+    # measured: front z=2.60 halfWidth=0.3710
+    (2.700, 0.530, 0.180, 0.260),
+    (2.480, 0.230, 0.080, 0.160),
 ]
 
 # The fringe arc: where the afro's lower edge crosses the face, measured as the
@@ -589,7 +618,12 @@ GRIZZ_ARM = ArmSpec(
     cap_x=0.170,
     root_ring=0.0,
     elbow=0.0,
-    underarm_shade=0.0,
+    # ★ 2026-10-30: his sleeve, skin and shirt are one brown — the sheet's own
+    # materials refuse to separate them — so from the side the hanging arm
+    # merged into the body through PITCH and the catcher squat ("weakest read:
+    # Grizz", reference doc 2026-10-02). Tank's and Moose's 0.35 is the value
+    # that halved their trail-sleeve merge; vertex colour only.
+    underarm_shade=0.35,
     ring_squash=0.95,
     hand=HandSpec(
         tip_x=1.600,
