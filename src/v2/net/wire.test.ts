@@ -227,7 +227,12 @@ describe('★ a whole game survives the wire', () => {
     expect(b.firstMismatch).toBeNull();
     expect(b.guestEvents).toEqual(b.hostEvents);
     expect(b.guestResult).toEqual(clone(b.hostResult));
-  });
+    // A whole game through the codec: ~2s alone, but it is the only whole
+    // game played INSIDE a test body here (the first seed runs at collect,
+    // which has no clock), and beside 139 other files on a CI runner it has
+    // crossed vitest's 5s default three times. The limit is a budget for a
+    // loaded machine, not a claim about speed.
+  }, 30_000);
 });
 
 describe('RemoteGame', () => {
