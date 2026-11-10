@@ -9,6 +9,7 @@
 import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT, COLORS } from './config';
 import { setGameChoice } from './data/gameChoice';
+import { chooseRatio, installHiDpi } from './hidpi';
 import { BootScene } from './scenes/BootScene';
 import { SchoolyardScene } from './scenes/SchoolyardScene';
 import { GameSetupScene } from './scenes/GameSetupScene';
@@ -41,6 +42,12 @@ const game = new Phaser.Game({
   // PauseScene last: scene-list order is render order for concurrently active
   // scenes, so the launched pause overlay draws on top of the paused Game.
   scene: [BootScene, SchoolyardScene, GameSetupScene, LobbyScene, LineupScene, GameScene, ResultScene, SettingsScene, SeasonScene, AwardsScene, LeadersScene, AlbumScene, PauseScene],
+});
+
+// Fill a dense screen's real pixels (src/hidpi.ts). The renderer exists by
+// `ready`, and no scene has created a Text yet.
+game.events.once(Phaser.Core.Events.READY, () => {
+  installHiDpi(game, chooseRatio(window.devicePixelRatio, location.search));
 });
 
 // Expose for in-browser debugging during development only.
