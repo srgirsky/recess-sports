@@ -383,15 +383,15 @@ const INIT_SHRINK = `new MutationObserver((_, obs) => {
  * miss every tappable sticker the product actually grows into. */
 const INIT_CLUBHOUSE = `(() => {
   localStorage.setItem('recess_games_played', '7');
-  localStorage.setItem('recess_pickcounts', JSON.stringify({ nostrike: 5, big_lou: 3, turbo: 2 }));
+  localStorage.setItem('recess_pickcounts', JSON.stringify({ cast: 'world1', counts: { nostrike: 5, big_lou: 3, turbo: 2 } }));
   localStorage.setItem('recess_album', JSON.stringify({
-    v: 1,
+    v: 2,
     drafted: { nostrike: 4, big_lou: 2, turbo: 1, wheelchair_ace: 1 },
     wonWith: { nostrike: 2, turbo: 1 },
     trophies: { nostrike: 1, wheelchair_ace: 2 }
   }));
   localStorage.setItem('recess_season', JSON.stringify({
-    v: 1,
+    v: 2,
     gameIndex: 2,
     results: ['W', 'L'],
     playerTeam: ['nostrike', 'calls_shot', 'wheelchair_ace', 'big_lou', 'tank', 'mimi_mash', 'turbo', 'sprout', 'zippy'],

@@ -75,11 +75,14 @@ procedural stand-ins, `▪` are shared delivery and `★` are that kid's overrid
 The stats panel must say `model model` for authored-model evidence; append
 `&proxy=1` only for the deliberate proxy comparison.
 
-The shared library is still generated from timing-correct stand-ins. Junebug's
-eight-clip pass plus Theo, Zoom and Big Lou's nine-clip passes now resolve from
-their partial performance files and appear with `★`. Zoom's seated `run` and
-`field_ready` author propulsion and readiness through hands, shoulders and
-torso while the simulation owns the sport chair.
+The shared library is still generated from timing-correct stand-ins. The
+`nostrike` eight-clip pass plus the `calls_shot`, `wheelchair_ace` and `big_lou`
+nine-clip passes now resolve from their partial performance files and appear
+with `★`. The seated `run` and `field_ready` (`wheelchair_ace`, Dev) author
+propulsion and readiness through hands, shoulders and torso while the
+simulation owns the sport chair. Slot ids outlive the kids who hold them: the
+cast was re-cast in place in 2026-11 (`docs/world1/`), so a take or source file
+named for Theo or Zoom belongs to the slot now held by Mars or Dev.
 
 Deliveries replace motion **clip by clip**, so a character's priority takes are
 reviewable without waiting for all 43. Each produced mesh also blends the
@@ -182,12 +185,12 @@ passes can move to visual review:
 ```bash
 npm run export:skeleton    # emit assets/v2/skeleton_recess_v1.glb from skeleton.ts
 npm run export:animations  # emit the shared 43-clip runtime library
-npm run export:signature-performance -- nostrike # emit Junebug's eight-clip partial performance
-npm run export:signature-performance -- calls_shot # emit Theo's nine clips
-npm run export:signature-performance -- wheelchair_ace # emit Zoom's nine clips
-npm run export:signature-performance -- big_lou # emit Big Lou's nine clips
-npm run export:signature-performance -- tank # emit Tank's eight clips
-npm run export:signature-performance -- mimi_mash # emit Mimi Mash's eight clips
+npm run export:signature-performance -- nostrike # emit the nostrike slot's eight-clip partial performance (Junebug)
+npm run export:signature-performance -- calls_shot # emit the calls_shot slot's nine clips (Mars; authored for Theo)
+npm run export:signature-performance -- wheelchair_ace # emit the wheelchair_ace slot's nine clips (Dev; authored for Zoom)
+npm run export:signature-performance -- big_lou # emit the big_lou slot's nine clips (Guri; authored for Big Lou)
+npm run export:signature-performance -- tank # emit the tank slot's eight clips (Sonny; authored for Tank)
+npm run export:signature-performance -- mimi_mash # emit the mimi_mash slot's eight clips (Yaz; authored for Mimi Mash)
 npm run export:audio       # emit stable v2 impact/crowd audio masters
 npm run export:voices      # macOS maintainer tool: pre-render commentator + roster lines
 npm run measure:audio      # ffmpeg: loudness + true peak per clip -> src/v2/ui/audioLoudness.json playback gains (re-run after any audio export)
@@ -202,7 +205,7 @@ npm run validate:models path/to/anims_recess_v1.glb   # or one file
 VERBOSE=1 npm run validate:models                     # also print measurements
 ```
 
-Theo's reference-hand source already contains the one-time
+The `calls_shot` slot's reference-hand source (Theo's pilot) already contains the one-time
 `scripts/v2/blender/theo-hands.py` migration. Normal exports still use
 `npm run export:authored-character -- calls_shot`. To reproduce that migration
 without replacing the current source, extract its pre-migration revision to a

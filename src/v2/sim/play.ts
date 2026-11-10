@@ -935,6 +935,15 @@ function runnerSecTo(r: RunnerState): number {
  *
  * v1's `bestBeatableBase`, with its clamp: a retreating runner's `to` can be
  * below 1, and base 0 is not a throwable target.
+ *
+ * ★ NOR IS THE BAG HE IS STANDING ON. A throw to where the carrier already is
+ * has a ~0 s flight, so it always "beats" the runner, and it is the one throw
+ * that LOSES the out: for the instant the ball is in the air he holds nothing,
+ * an unforced runner cannot be tagged, and `receiverAt` hands the ball straight
+ * back for another release. The loop repeated every `RELEASE_SEC` until the
+ * runner stepped on safe — 40 of 660 swept plays on the original roster, and the
+ * longest play in the World 1 cast's sweep (`sim.playClock`). Within reach of
+ * the bag he holds, and `carrierTouchesBags` takes the force or the tag.
  */
 function bestBeatableBase(s: PlayState, from: Vec2, arm: number): 1 | 2 | 3 | 4 | null {
   let best: 1 | 2 | 3 | 4 | null = null;
@@ -943,6 +952,7 @@ function bestBeatableBase(s: PlayState, from: Vec2, arm: number): 1 | 2 | 3 | 4 
     if (r.done !== null || isSettled(r)) continue;
     if (r.to < 1 || r.to > 4) continue;
     const base = r.to as 1 | 2 | 3 | 4;
+    if (dist(from, basePos(base)) <= reachFt()) continue;
     const flight = throwFlightSec(from, basePos(base), arm);
     if (flight === null) continue;
     if (releaseLeft + flight + PLAY.THROW_MARGIN_SEC >= runnerSecTo(r)) continue;

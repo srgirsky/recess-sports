@@ -4,6 +4,7 @@ import {
   PERFORMANCE_COUNT,
   actingRateFor,
   faceForClip,
+  hasDirection,
   heroClipFor,
   performanceFor,
   performancePhase,
@@ -11,104 +12,139 @@ import {
 } from './performance';
 
 describe('character performance direction', () => {
-  it('authors one profile for every roster slot without defining ids twice', () => {
+  it('directs every roster slot, and no slot the roster does not have', () => {
+    // The table is keyed by slot id. A positional table once handed every kid
+    // a neighbour's acting when ROSTER was reordered, and only the pins below
+    // noticed; this gate notices on its own.
     expect(PERFORMANCE_COUNT).toBe(ROSTER.length);
-    expect(ROSTER.map((c) => performanceFor(c.id))).toHaveLength(30);
+    for (const c of ROSTER) expect(hasDirection(c.id), `${c.id} has no direction`).toBe(true);
+    expect(hasDirection('custom_player')).toBe(false);
   });
 
-  it('gives the signature trio different hero silhouettes and emotional reads', () => {
-    const junebug = performanceFor('nostrike');
-    const theo = performanceFor('calls_shot');
-    const zoom = performanceFor('wheelchair_ace');
+  it('gives the Seven seven hero silhouettes and emotional reads that do not all repeat', () => {
+    // The cast sheet's ensemble table: underdog, swagger, intensity, heart,
+    // chaos, prodigy, purist. The silhouette promise is the sheet's; the acting
+    // must not collapse them back into one kid.
+    const [junebug, mars, jay, sonny, dev, zaya, ezra] =
+      ['nostrike', 'calls_shot', 'smokey', 'tank', 'wheelchair_ace', 'rocket', 'bend_it'].map(performanceFor);
 
-    expect([heroClipFor(junebug), heroClipFor(theo), heroClipFor(zoom)]).toEqual([
-      'bat_stance',
-      'pose_card',
-      'field_ready',
+    expect([junebug, mars, jay, sonny, dev, zaya, ezra].map(heroClipFor)).toEqual([
+      'bat_stance', 'pose_card', 'field_ready', 'field_ready', 'field_ready', 'field_ready', 'pose_card',
     ]);
-    expect([faceForClip(junebug, 'cheer', 'determined'), faceForClip(theo, 'cheer', 'grin'), faceForClip(zoom, 'cheer', 'cool')])
-      .toEqual(['determined', 'tongue', 'wink']);
-    expect([reactionClipFor(junebug, true), reactionClipFor(theo, true), reactionClipFor(zoom, true)])
-      .toEqual(['cheer_fierce', 'cheer_goofy', 'cheer_cool']);
-    expect([reactionClipFor(junebug, false), reactionClipFor(theo, false), reactionClipFor(zoom, false)])
-      .toEqual(['upset_fierce', 'upset_goofy', 'upset_cool']);
-  });
-
-  it('starts Batch 1 with Big Lou\'s swagger-goofy character read', () => {
-    const lou = performanceFor('big_lou');
-    expect(heroClipFor(lou)).toBe('pose_card');
-    expect(reactionClipFor(lou, true)).toBe('cheer_goofy');
-    expect(reactionClipFor(lou, false)).toBe('upset_goofy');
-    expect(faceForClip(lou, 'pose_card', 'goofy')).toBe('tongue');
-  });
-
-  it('gives Tank a planted hero pose and fierce reactions without changing his calm tempo', () => {
-    const tank = performanceFor('tank');
-    expect(heroClipFor(tank)).toBe('bat_stance');
-    expect(reactionClipFor(tank, true)).toBe('cheer_fierce');
-    expect(reactionClipFor(tank, false)).toBe('upset_fierce');
-    expect(actingRateFor(tank, 'idle')).toBeLessThan(1);
-    expect(faceForClip(tank, 'bat_stance', 'determined')).toBe('sleepy');
-  });
-
-  it('gives Mimi a batter hero, fierce reactions and quick ignition', () => {
-    const mimi = performanceFor('mimi_mash');
-    expect(heroClipFor(mimi)).toBe('bat_stance');
-    expect(reactionClipFor(mimi, true)).toBe('cheer_fierce');
-    expect(reactionClipFor(mimi, false)).toBe('upset_fierce');
-    expect(actingRateFor(mimi, 'idle')).toBeGreaterThan(1);
-  });
-
-  it('directs Batch 2 — Turbo, Sprout and Zippy — as three different kids at one quick tempo', () => {
-    const turbo = performanceFor('turbo');
-    const sprout = performanceFor('sprout');
-    const zippy = performanceFor('zippy');
-    expect([heroClipFor(turbo), heroClipFor(sprout), heroClipFor(zippy)]).toEqual([
-      'bat_stance',
-      'nervous',
-      'field_ready',
+    expect([junebug, mars, jay, sonny, dev, zaya, ezra].map((k) => reactionClipFor(k, true))).toEqual([
+      'cheer_fierce', 'cheer_goofy', 'cheer_fierce', 'cheer_tender', 'cheer', 'cheer_cool', 'cheer_cool',
     ]);
-    expect([reactionClipFor(turbo, true), reactionClipFor(sprout, true), reactionClipFor(zippy, true)])
-      .toEqual(['cheer_goofy', 'cheer', 'cheer']);
-    expect([reactionClipFor(turbo, false), reactionClipFor(sprout, false), reactionClipFor(zippy, false)])
-      .toEqual(['upset_goofy', 'upset', 'upset']);
-    for (const kid of [turbo, sprout, zippy]) expect(actingRateFor(kid, 'idle')).toBeGreaterThan(1);
-  });
-
-  it('directs Batches 3 and 4 — four gloves, a swagger and a bashful — each on its own read', () => {
-    const [ace, penny, dex, lefty, smokey, bendit] = ['ace_kid', 'penny', 'dex', 'lefty', 'smokey', 'bend_it'].map(performanceFor);
-    expect([ace, penny, dex, lefty].map(heroClipFor)).toEqual(['field_ready', 'field_ready', 'field_ready', 'field_ready']);
-    expect(heroClipFor(smokey)).toBe('pose_card');
-    expect(heroClipFor(bendit)).toBe('nervous');
-    expect([ace, penny, dex, lefty, smokey, bendit].map((k) => reactionClipFor(k, true)))
-      .toEqual(['cheer_cool', 'cheer_tender', 'cheer_cool', 'cheer_fierce', 'cheer_fierce', 'cheer_goofy']);
-    expect(actingRateFor(dex, 'idle')).toBeLessThan(1);
-    expect(actingRateFor(smokey, 'idle')).toBeGreaterThan(1);
-  });
-
-  it('directs Batches 5 and 6 — three bashfuls, two swaggers and a glove', () => {
-    const [noodle, bubbles, sniffles, prof, diva, grizz] = ['noodle', 'bubbles', 'sniffles', 'the_prof', 'diva', 'grizz'].map(performanceFor);
-    expect([noodle, sniffles, grizz].map(heroClipFor)).toEqual(['nervous', 'nervous', 'nervous']);
-    expect([bubbles, diva].map(heroClipFor)).toEqual(['pose_card', 'pose_card']);
-    expect(heroClipFor(prof)).toBe('field_ready');
-    expect([noodle, bubbles, sniffles, prof, diva, grizz].map((k) => reactionClipFor(k, true)))
-      .toEqual(['cheer_tender', 'cheer', 'cheer_tender', 'cheer_cool', 'cheer_fierce', 'cheer_cool']);
-    expect(actingRateFor(grizz, 'idle')).toBeLessThan(1);
-    expect(actingRateFor(bubbles, 'idle')).toBeGreaterThan(1);
-  });
-
-  it('directs Batches 7 and 8 — the last nine — each on its own read', () => {
-    const kids = ['flash', 'cricket', 'moose', 'peaches', 'gizmo', 'clover', 'rocket', 'chip', 'boomer'].map(performanceFor);
-    expect(kids.map(heroClipFor)).toEqual([
-      'bat_stance', 'nervous', 'field_ready', 'bat_stance', 'pose_card', 'pose_card', 'field_ready', 'field_ready', 'pose_card',
+    expect([junebug, mars, jay, sonny, dev, zaya, ezra].map((k) => reactionClipFor(k, false))).toEqual([
+      'upset_fierce', 'upset_goofy', 'upset_fierce', 'upset_tender', 'upset', 'upset_cool', 'upset_cool',
     ]);
-    expect(kids.map((k) => reactionClipFor(k, true))).toEqual([
-      'cheer_fierce', 'cheer_goofy', 'cheer_tender', 'cheer', 'cheer_cool', 'cheer', 'cheer_fierce', 'cheer', 'cheer_goofy',
-    ]);
+    // The original signature trio stays three different kids.
+    expect(new Set([junebug, mars, dev].map(heroClipFor)).size).toBe(3);
+    expect(new Set([junebug, mars, dev].map((k) => k.spirit)).size).toBe(3);
+    expect([faceForClip(junebug, 'cheer', 'determined'), faceForClip(mars, 'cheer', 'grin'), faceForClip(dev, 'cheer', 'grin')])
+      .toEqual(['determined', 'tongue', 'cheer']);
+  });
+
+  it('makes Mars\'s called shot a swagger pose with a goofy, quick read — wrong and unembarrassed', () => {
+    const mars = performanceFor('calls_shot');
+    expect(heroClipFor(mars)).toBe('pose_card');
+    expect(reactionClipFor(mars, true)).toBe('cheer_goofy');
+    expect(reactionClipFor(mars, false)).toBe('upset_goofy');
+    expect(faceForClip(mars, 'pose_card', 'grin')).toBe('tongue');
+    expect(actingRateFor(mars, 'idle')).toBeGreaterThan(1);
+  });
+
+  it('gives Sonny a catcher\'s ready pose, tender reactions and a calm tempo — never fierce', () => {
+    // The biggest kid with the softest voice: he apologizes to the runner he
+    // tagged. Tank's sleepy rest face left with Tank; Sonny rests on his own
+    // authored expression.
+    const sonny = performanceFor('tank');
+    expect(heroClipFor(sonny)).toBe('field_ready');
+    expect(reactionClipFor(sonny, true)).toBe('cheer_tender');
+    expect(reactionClipFor(sonny, false)).toBe('upset_tender');
+    expect(actingRateFor(sonny, 'idle')).toBeLessThan(1);
+    expect(actingRateFor(sonny, 'upset_tender')).toBeLessThan(0.9);
+    expect(sonny.restFace).toBeUndefined();
+    expect(faceForClip(sonny, 'field_ready', 'happy')).toBe('neutral');
+    expect(faceForClip(sonny, 'cheer_tender', 'happy')).toBe('surprised');
+  });
+
+  it('keeps Zaya silent and cool: a ready crouch, a wink, quick ignition', () => {
+    const zaya = performanceFor('rocket');
+    expect(heroClipFor(zaya)).toBe('field_ready');
+    expect(reactionClipFor(zaya, true)).toBe('cheer_cool');
+    expect(faceForClip(zaya, 'cheer_cool', 'determined')).toBe('wink');
+    expect(faceForClip(zaya, 'idle_fidget', 'determined')).toBe('sleepy');
+    expect(actingRateFor(zaya, 'idle')).toBeGreaterThan(1);
+  });
+
+  it('directs the three speedsters as three different kids', () => {
+    const [zaya, ollie, fatou] = ['rocket', 'turbo', 'zippy'].map(performanceFor);
+    expect([zaya, ollie, fatou].map(heroClipFor)).toEqual(['field_ready', 'pose_card', 'bat_stance']);
+    expect([zaya, ollie, fatou].map((k) => reactionClipFor(k, true))).toEqual(['cheer_cool', 'cheer_cool', 'cheer']);
+    for (const kid of [zaya, ollie, fatou]) expect(actingRateFor(kid, 'idle')).toBeGreaterThan(1);
+  });
+
+  it('directs the four sluggers — Mars, Guri, Yaz and Toby — without two of them sharing a read', () => {
+    const [mars, guri, yaz, toby] = ['calls_shot', 'big_lou', 'mimi_mash', 'chip'].map(performanceFor);
+    expect([mars, guri, yaz, toby].map(heroClipFor)).toEqual(['pose_card', 'pose_card', 'bat_stance', 'bat_stance']);
+    expect([mars, guri, yaz, toby].map((k) => reactionClipFor(k, true)))
+      .toEqual(['cheer_goofy', 'cheer_goofy', 'cheer_goofy', 'cheer']);
+    expect(heroClipFor(guri)).toBe('pose_card');
+    expect(faceForClip(guri, 'pose_card', 'goofy')).toBe('tongue');
+    expect(actingRateFor(guri, 'idle')).toBeLessThan(1);
+    expect(actingRateFor(mars, 'idle')).toBeGreaterThan(1);
+    expect(new Set([mars, guri, yaz, toby].map((k) => `${k.hero}/${k.spirit}/${k.tempo}`)).size).toBe(4);
+  });
+
+  it('directs the arms — fireballers, junkballers, knucklers and cannons — as gloves with their own spirits', () => {
+    const [jay, roz, kwame] = ['smokey', 'diva', 'boomer'].map(performanceFor);
+    expect([jay, roz, kwame].map(heroClipFor)).toEqual(['field_ready', 'field_ready', 'nervous']);
+    expect([jay, roz, kwame].map((k) => reactionClipFor(k, true))).toEqual(['cheer_fierce', 'cheer_cool', 'cheer_tender']);
+
+    const [ezra, lu, bao] = ['bend_it', 'lefty', 'the_prof'].map(performanceFor);
+    expect([ezra, lu, bao].map(heroClipFor)).toEqual(['pose_card', 'field_ready', 'field_ready']);
+    expect([ezra, lu, bao].map((k) => reactionClipFor(k, true))).toEqual(['cheer_cool', 'cheer_fierce', 'cheer_goofy']);
+    expect(actingRateFor(ezra, 'idle')).toBeLessThan(1);
+
+    const [dev, musa] = ['wheelchair_ace', 'gizmo'].map(performanceFor);
+    expect([dev, musa].map(heroClipFor)).toEqual(['field_ready', 'nervous']);
+    expect([dev, musa].map((k) => reactionClipFor(k, true))).toEqual(['cheer', 'cheer']);
+
+    const [rudy, amir, roya] = ['flash', 'ace_kid', 'moose'].map(performanceFor);
+    expect([rudy, amir, roya].map(heroClipFor)).toEqual(['field_ready', 'pose_card', 'pose_card']);
+    expect([rudy, amir, roya].map((k) => reactionClipFor(k, true))).toEqual(['cheer_fierce', 'cheer_cool', 'cheer']);
+  });
+
+  it('directs the walls as gloves at a calm tempo, one tender and one fierce', () => {
+    const [sonny, greta] = ['tank', 'grizz'].map(performanceFor);
+    expect([sonny, greta].map(heroClipFor)).toEqual(['field_ready', 'field_ready']);
+    expect([sonny, greta].map((k) => reactionClipFor(k, true))).toEqual(['cheer_tender', 'cheer_fierce']);
+    for (const kid of [sonny, greta]) expect(actingRateFor(kid, 'idle')).toBeLessThan(1);
+  });
+
+  it('directs the bats — table-setters, pests and clutch — each on its own read', () => {
+    const [junebug, hattie, anton] = ['nostrike', 'peaches', 'sniffles'].map(performanceFor);
+    expect([junebug, hattie, anton].map(heroClipFor)).toEqual(['bat_stance', 'bat_stance', 'bat_stance']);
+    expect([junebug, hattie, anton].map((k) => reactionClipFor(k, true))).toEqual(['cheer_fierce', 'cheer_tender', 'cheer']);
+
+    const [winnie, rafi, josie, sam] = ['cricket', 'sprout', 'clover', 'noodle'].map(performanceFor);
+    expect([winnie, rafi, josie, sam].map(heroClipFor)).toEqual(['bat_stance', 'bat_stance', 'nervous', 'nervous']);
+    expect([winnie, rafi, josie, sam].map((k) => reactionClipFor(k, true)))
+      .toEqual(['cheer_cool', 'cheer_goofy', 'cheer_goofy', 'cheer_cool']);
+    expect(faceForClip(josie, 'nervous', 'goofy')).toBe('tongue');
+    expect(faceForClip(sam, 'nervous', 'cool')).toBe('worried');
+    expect(actingRateFor(winnie, 'idle')).toBeLessThan(1);
+    expect(actingRateFor(rafi, 'idle')).toBeGreaterThan(1);
+
+    const [nora, marcus, yui] = ['penny', 'dex', 'bubbles'].map(performanceFor);
+    expect([nora, marcus, yui].map(heroClipFor)).toEqual(['field_ready', 'bat_stance', 'nervous']);
+    expect([nora, marcus, yui].map((k) => reactionClipFor(k, true))).toEqual(['cheer_cool', 'cheer_cool', 'cheer']);
+    expect(actingRateFor(nora, 'idle')).toBeLessThan(1);
+    expect(actingRateFor(yui, 'idle')).toBeGreaterThan(1);
   });
 
   it('does not let acting tempo retime a marker or locomotion calculation', () => {
-    const fast = performanceFor('boomer');
+    const fast = performanceFor('rocket');
     expect(actingRateFor(fast, 'cheer')).toBeGreaterThan(1);
     // The director only consults this default when the caller did not provide
     // a physics-owned rate; marker/locomotion calls always do.

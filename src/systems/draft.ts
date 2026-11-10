@@ -58,7 +58,7 @@ export function applyPick(state: DraftState, id: string): DraftState {
  * that only kicks in while the AI still needs an arm — so it grabs ~one good
  * pitcher instead of hoarding them.
  */
-function draftValue(char: Character, aiNeedsPitcher: boolean): number {
+export function draftValue(char: Character, aiNeedsPitcher: boolean): number {
   const bat = char.stats.contact + char.stats.power + char.stats.speed;
   const glove = char.stats.fielding * 0.6; // defense matters (drops/wild throws)
   const arm = aiNeedsPitcher ? char.stats.pitching * 1.4 : char.stats.pitching * 0.2;

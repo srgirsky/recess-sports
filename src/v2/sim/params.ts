@@ -814,11 +814,15 @@ export const PLAY = {
    * scaled with RUNNER_SPEED". Ours is a real bound: the longest legitimate
    * sequence is a ball to the deepest fence (~212ft), a chase, a relay in, and
    * a runner going first to home (180ft from a standing start, ~11s at the
-   * slowest stat). Twenty seconds clears that with room, and — the part v1
-   * never had — `play.test.ts` asserts NO LEGITIMATE PLAY EVER REACHES IT.
-   * A cap that fires is a soft-lock that was caught, not a rule.
+   * slowest stat) — and, the World 1 sweep showed, a SLOW runner ahead of a
+   * FAST one, so the defence takes its outs in sequence: the tag at the plate
+   * waits for the slow kid, then the ball goes back to third for the fast one.
+   * That is 18s with nothing wrong in it. Twenty-five clears it with the
+   * quarter of headroom the test demands, and — the part v1 never had —
+   * `play.test.ts` asserts NO LEGITIMATE PLAY EVER REACHES IT. A cap that fires
+   * is a soft-lock that was caught, not a rule. `sim.playClock`.
    */
-  MAX_PLAY_SEC: 20,
+  MAX_PLAY_SEC: 25,
   /**
    * The infinite-relay guard. v1's `LIVE.RELAY.MAX_LEGS`: outfielder -> cutoff
    * -> pitcher, then stop.

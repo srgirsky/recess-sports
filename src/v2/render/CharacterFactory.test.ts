@@ -65,6 +65,35 @@ describe('resolution order', () => {
     warn.mockRestore();
   });
 
+  it('draws the proxy, silently, for a re-cast slot whose delivered sculpt is the previous kid', async () => {
+    // 2026-11: the cast was re-cast under the old ids. Where the sculpt on disk
+    // depicts who held the slot before (a boy's body under a girl's name), the
+    // record says so and the model is a cosmetic downgrade in the wrong
+    // direction — so it is a proxy on purpose, with no warning, until a sculpt
+    // against the new sheet lands. A slot whose body carries still loads.
+    const recast = ROSTER.find((c) => c.recast && !c.recast.modelCarries)!;
+    expect(hasDeliveredModel(recast.id)).toBe(true);
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { view, source } = await createCharacter(recast);
+    expect(source).toBe('proxy-recast');
+    expect(view.isProxy).toBe(true);
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it('still loads a re-cast slot\'s delivered FILE for a gate that asks (deliveredFile)', async () => {
+    // `audit:batting` sweeps every delivered model's grip; the file is what it
+    // audits, whoever the cast now says is inside it. Under vitest the load
+    // itself fails (no fetch), which is the proof here: the factory reached
+    // the loader instead of stopping at the re-cast rule.
+    const recast = ROSTER.find((c) => c.recast && !c.recast.modelCarries)!;
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { source } = await createCharacter(recast, { deliveredFile: true });
+    expect(source).toBe('proxy-failed');
+    expect(warn).toHaveBeenCalledTimes(1);
+    warn.mockRestore();
+  });
+
   it('falls back and warns ONCE when a delivered model cannot be loaded', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
 

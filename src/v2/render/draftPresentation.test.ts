@@ -36,11 +36,13 @@ describe('draft presentation policy', () => {
   });
 
   it('lets each candidate own the held hero silhouette', () => {
+    // World 1 cast, by slot id: Junebug plants at the plate, Mars strikes the
+    // called-shot pose, Dev and Sonny hold a glove, Guri postures, Yaz is a bat.
     expect(draftHeroPose(DRAFT_WALK_SEC, 'pick', true, 'nostrike').clip).toBe('bat_stance');
     expect(draftHeroPose(DRAFT_WALK_SEC, 'pick', true, 'calls_shot').clip).toBe('pose_card');
     expect(draftHeroPose(DRAFT_WALK_SEC, 'pick', true, 'wheelchair_ace').clip).toBe('field_ready');
     expect(draftHeroPose(DRAFT_WALK_SEC, 'pick', true, 'big_lou').clip).toBe('pose_card');
-    expect(draftHeroPose(DRAFT_WALK_SEC, 'pick', true, 'tank').clip).toBe('bat_stance');
+    expect(draftHeroPose(DRAFT_WALK_SEC, 'pick', true, 'tank').clip).toBe('field_ready');
     expect(draftHeroPose(DRAFT_WALK_SEC, 'pick', true, 'mimi_mash').clip).toBe('bat_stance');
   });
 
@@ -59,10 +61,10 @@ describe('draft presentation policy', () => {
   it('uses the picked kid\'s directed reaction instead of a shared cheer', () => {
     expect(draftHeroPose(0, 'mine', false, 'nostrike').clip).toBe('cheer_fierce');
     expect(draftHeroPose(0, 'mine', false, 'calls_shot').clip).toBe('cheer_goofy');
-    expect(draftHeroPose(0, 'cpu', false, 'wheelchair_ace').clip).toBe('cheer_cool');
+    expect(draftHeroPose(0, 'cpu', false, 'wheelchair_ace').clip).toBe('cheer');
     expect(draftHeroPose(0, 'mine', false, 'big_lou').clip).toBe('cheer_goofy');
-    expect(draftHeroPose(0, 'mine', false, 'tank').clip).toBe('cheer_fierce');
-    expect(draftHeroPose(0, 'mine', false, 'mimi_mash').clip).toBe('cheer_fierce');
+    expect(draftHeroPose(0, 'mine', false, 'tank').clip).toBe('cheer_tender');
+    expect(draftHeroPose(0, 'mine', false, 'rocket').clip).toBe('cheer_cool');
   });
 
   it('puts the selected kid first and never duplicates the waiting cast', () => {
