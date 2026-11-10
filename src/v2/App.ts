@@ -360,10 +360,9 @@ export class App {
     }
     const away = ids.slice(0, 9);
     const home = ids.slice(9, 18);
-    if (this.customPlayer && mode !== 'watch') {
-      if (mode === 'pitching') home[0] = this.customPlayer.id;
-      else away[0] = this.customPlayer.id;
-    }
+    // The person is AWAY in every mode that seats them (`humanSideOf`), so
+    // their own kid goes on that team — never the one they pitch against.
+    if (this.customPlayer && mode !== 'watch') away[0] = this.customPlayer.id;
     this.rosters = { away, home };
     await this.playBall();
   }

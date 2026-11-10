@@ -155,7 +155,7 @@ import { Matchup } from '../ui/Matchup';
 import { MatchupTally } from '../ui/matchupModel';
 import { PlayCallouts } from '../ui/PlayCallouts';
 import { scoreboardModel, type ScoreboardTeams } from '../ui/scoreboardModel';
-import { controlHint, controlsAt, type PlayerControlMode } from './controlMode';
+import { controlHint, controlsAt, humanSideOf, type PlayerControlMode } from './controlMode';
 import { NET_GRACE_SEC, type Cue, type OnlineSeat } from '../net/OnlineSeat';
 import { otherSide, roleOf } from '../net/inputWire';
 import { configureCharacterPortraits } from '../render/characterPortrait';
@@ -783,7 +783,11 @@ export class GameView {
       if (at) this.spot = at;
       return;
     }
-    if (!this.liveControl) return;
+    // ★ STEERING IS A FIELDING VERB. A person running the bases taps too (a
+    // base, to send a runner), and that press must not become a destination:
+    // the sim drops it (`game.ts` `liveVerbs`), so setting it here would only
+    // count an input nothing can read.
+    if (this.liveControl !== 'field') return;
     const at = this.toField(e);
     if (at) {
       this.inputs.pointer = at;
@@ -806,7 +810,7 @@ export class GameView {
       if (at) this.spot = at;
       return;
     }
-    if (!this.liveControl) return;
+    if (this.liveControl !== 'field') return;
     if (e.buttons === 0) return;
     const at = this.toField(e);
     if (at) {
@@ -1674,8 +1678,7 @@ export class GameView {
         // human side either: the sim runs it like a headless game's meters.
         // Online is two people too, on two devices: `net/inputWire.ts` is the
         // side guard the sim then is not.
-        humanSide:
-          net || this.controlMode === 'watch' || this.controlMode === 'versus' ? undefined : this.humanSide,
+        humanSide: net ? undefined : humanSideOf(this.controlMode),
         // T-BALL..ALL-STAR. Inert without a person, like the juice port above.
         skill: this.skill,
       },
@@ -1855,7 +1858,7 @@ export class GameView {
 
   /** Who the human is playing as, for the Result screen's verdict. */
   get humanSide(): 'away' | 'home' {
-    return this.controlMode === 'pitching' || this.controlMode === 'home' ? 'home' : 'away';
+    return humanSideOf(this.controlMode) ?? 'away';
   }
 
   /** Register the end-of-game callback. */

@@ -960,7 +960,8 @@ function* playAtBatLive(
       },
       rng.fork(`play${pitches}`),
       frame,
-      out
+      out,
+      args.assist
     );
     const outcome = out.outcome!;
     const scored = out.scored;
@@ -1204,11 +1205,37 @@ function syncFrame(frame: LiveFrame, half: HalfState, phase: LiveFrame['phase'])
   frame.pickoffsLeft = 0;
 }
 
+/**
+ * The live verbs the person holds in this half, and no others.
+ *
+ * ★ `stepPlay` CANNOT TELL WHOSE POINTER IT IS, so the side rule is applied
+ * here, where the half is known — the same place STEAL, THROW! and PICK OFF
+ * are guarded. Steering, the dive and the throw are FIELDING verbs; the send
+ * and the hold are RUNNING verbs. Unguarded, a person batting who tapped a
+ * base to send a runner also handed `moveFielders` a pointer, and the CPU's
+ * chaser left the ball to go and stand on that base: with a pointer on second
+ * through the top-half plays, one seeded game went from 0-2 to 27-5. A view
+ * may decline to send a verb, but the sim is what drops it — the view only
+ * proposes.
+ *
+ * Nobody named (a headless run, a watched game, pass and play) means nobody to
+ * guard against, so the inputs pass through untouched — the SAME object, which
+ * is what keeps every fingerprint where it was.
+ */
+function liveVerbs(inputs: PlayInputs, assist: { bats: boolean; pitches: boolean } | null): PlayInputs {
+  if (assist === null) return inputs;
+  return assist.pitches
+    ? { pointer: inputs.pointer, dive: inputs.dive, throwTo: inputs.throwTo }
+    : { sendRunner: inputs.sendRunner, holdRunner: inputs.holdRunner };
+}
+
 function* runPlayLive(
   spec: Parameters<typeof beginPlay>[0],
   rng: Rng,
   frame: LiveFrame,
-  out: { outcome: PlayOutcome | null; scored: string[] }
+  out: { outcome: PlayOutcome | null; scored: string[] },
+  /** The person's role this half, or null when no side is a person's. */
+  assist: { bats: boolean; pitches: boolean } | null
 ): Generator<LiveFrame, void, PlayInputs> {
   const s = beginPlay(spec, rng);
   const dt = 1 / 60;
@@ -1226,7 +1253,7 @@ function* runPlayLive(
     // `simulateGame` drains with a bare `.next()`, which yields `undefined` and
     // falls back to `{}` — so the headless path is unchanged BY CONSTRUCTION,
     // and PR 13's golden fingerprints are what prove it.
-    inputs = (yield frame) ?? {};
+    inputs = liveVerbs((yield frame) ?? {}, assist);
   }
   out.outcome = finishPlay(s);
   frame.play = null;

@@ -264,11 +264,11 @@ failure mode, and a lint fails an underscored input parameter.
   base, home excluded. `sim.runnerSends`.
 - **The human needs a SIDE, or the tap verbs collide** — the same tap on a base
   means THROW THERE when fielding and SEND HIM THERE when batting.
-- **STEAL, THROW! and PICK OFF are side-guarded.** `steal` on the windup sends
-  the lead runner (traffic kept, judgement skipped); `throwDown` on a
-  stolen-base pitch makes the tap's lateness past arrival the catcher's read;
-  `pickoff` on the windup throws over. A wrong-side input is dropped and
-  leaves the game byte-identical (`game.test.ts`).
+- **Every verb is side-guarded IN THE SIM.** `steal` sends the lead runner
+  (traffic kept); `throwDown` on a steal makes the tap's lateness the
+  catcher's read; `pickoff` throws over; on a live ball
+  `pointer`/`dive`/`throwTo` field and `sendRunner`/`holdRunner` run. A
+  wrong-side input is dropped, the game byte-identical (`game.test.ts`).
 - **No fielding assist**, measured rather than assumed: a perpendicular
   mis-steer catches nothing and finishes far adrift, while perfect aim fields
   as well as the CPU. ⚠️ The number to worry about is the

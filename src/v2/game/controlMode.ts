@@ -32,6 +32,24 @@ export function controlsAt(
   };
 }
 
+/**
+ * The side the sim is told the person plays (`GameSpec.humanSide`), or
+ * undefined when no single side is theirs: a watched game, and pass and play.
+ *
+ * ★ IT MUST AGREE WITH `controlsAt`, HALF BY HALF, because the sim guards every
+ * verb by it — a verb sent in a half the sim believes belongs to the other
+ * role is dropped. Away bats the top and fields the bottom, which is exactly
+ * where every solo mode hands out its verbs, so the person is AWAY in all
+ * three; only the online guest (`home`) is HOME. Pitching practice used to answer 'home': the sim then took the half
+ * the person pitches for the half they bat, and dropped PICK OFF and THROW!
+ * as wrong-side. `controlMode.test.ts` asserts the agreement for every mode.
+ */
+export function humanSideOf(mode: PlayerControlMode): 'away' | 'home' | undefined {
+  if (mode === 'watch' || mode === 'versus') return undefined;
+  // The online guest sits in the home dugout (`controlsAt`'s `home` branch).
+  return mode === 'home' ? 'home' : 'away';
+}
+
 /** A short instruction for the verb that actually belongs to this player.
  * Watch mode and resolved plays must never ask for an input they ignore. */
 export function controlHint(
