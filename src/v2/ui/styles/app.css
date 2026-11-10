@@ -2665,6 +2665,11 @@ body.screen-open #hud > *:not(.btn--mute):not(.btn--log) {
     0 0 0 0.18rem var(--outline),
     var(--shadow);
 }
+/* BATTING ORDER borrows the chip's shape but is an action, not a choice: it is
+   never "picked", so it must not sit at the unpicked chip's faded opacity. */
+.timechip.btn--order {
+  opacity: 1;
+}
 .timechip__icon {
   font-size: 1.1rem;
   line-height: 1.2;
