@@ -46,7 +46,6 @@ import { FOUL_ANGLE_DEG, type FieldGeometry, type VenueId, fenceDistAt, pointAt 
 import { hash01 } from '../../art/fieldTexture';
 import { makeToonMaterial } from './materials/toon';
 import { addSurfaceDetail } from './materials/surfaceDetail';
-import { REAL } from './look';
 
 // --- The plan: pure, deterministic, testable --------------------------------
 
@@ -596,7 +595,7 @@ export function buildScenery(geo: FieldGeometry, venue: VenueId, opts: SceneryOp
   const mat = makeToonMaterial({ color: 0xffffff, rimStrength: 0.12 });
   mat.vertexColors = true;
   // Siding, shingles, leaf clumps and a darker foot (materials/surfaceDetail.ts).
-  if (REAL) addSurfaceDetail(mat);
+  addSurfaceDetail(mat);
   const mesh = new Mesh(merged, mat);
   mesh.name = 'neighborhood';
   mesh.castShadow = false;
@@ -606,7 +605,7 @@ export function buildScenery(geo: FieldGeometry, venue: VenueId, opts: SceneryOp
   // The dome's ceiling light must never have outdoor clouds drifting through it.
   // The real look takes the smooth, self-shaded cloud everywhere: a toon-lit
   // cloud has a hard terminator and reads as a painted rock.
-  const softClouds = detailed || REAL;
+  const softClouds = true;
   const clouds = cfg.theme === 'dome' ? null : buildClouds(opts.night === true, softClouds);
   if (clouds) root.add(clouds);
 
@@ -737,19 +736,45 @@ function addHouse(parts: BufferGeometry[], cfg: VenueScenery, x: number, z: numb
   }
 }
 
-// A tree: trunk + 3 foliage balls. Low-poly spheres; the toon ramp does the rest.
+/**
+ * One foliage mass. A crown is not a ball: a perfect
+ * 8-sided sphere has a polygonal outline that reads as a toy from any range,
+ * and the outline is the one thing a fragment shader cannot repair. So the
+ * sphere gets enough segments to round its silhouette and is pushed in and out
+ * along its own radius by a few broad lobes, which is what a canopy's boughs
+ * do. The displacement is a function of DIRECTION only, so the duplicated seam
+ * vertices stay coincident, and the sphere's own normals are kept so the
+ * shading stays one smooth volume (the leaf texture is `surfaceDetail`'s job).
+ */
+function crown(r: number, seed: number, segW: number, segH: number): BufferGeometry {
+  const geom = new SphereGeometry(r, Math.max(segW, 10), Math.max(segH, 7));
+  const pos = geom.getAttribute('position');
+  const a = seed * 6.283, b = seed * 17.0;
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i) / r, y = pos.getY(i) / r, z = pos.getZ(i) / r;
+    const lobes =
+      Math.sin(x * 3.1 + a) * Math.sin(z * 2.7 + b) * 0.6 +
+      Math.sin(y * 4.3 + a * 1.7) * Math.sin((x - z) * 2.3 + b * 0.6) * 0.4;
+    // Flatter underneath, where a canopy is cut off by its own shade.
+    const k = (1 + lobes * 0.16) * (y < 0 ? 1 + y * 0.18 : 1);
+    pos.setXYZ(i, x * r * k, y * r * k, z * r * k);
+  }
+  return geom;
+}
+
+// A tree: trunk + 3 foliage masses. The toon ramp does the rest.
 function addTree(parts: BufferGeometry[], cfg: VenueScenery, x: number, z: number, rotY: number, seed: number, detailed = false): void {
   const trunkH = (detailed ? 16 : 8) + seed * 5;
   const r = detailed ? 7 + seed * 2 : 5 + seed * 3.5;
   parts.push(place(paint(new CylinderGeometry(0.7, 1.1, trunkH, 6), 0x8a5f3c), x, trunkH / 2, z));
   const g1 = pick(cfg.foliagePalette, seed);
   const g2 = pick(cfg.foliagePalette, hash01(Math.floor(seed * 89), 5));
-  parts.push(place(paint(new SphereGeometry(r, 8, 6), g1), x, trunkH + r * 0.55, z));
+  parts.push(place(paint(crown(r, seed, 8, 6), g1), x, trunkH + r * 0.55, z));
   parts.push(
-    place(paint(new SphereGeometry(r * 0.7, 8, 6), g2), x + Math.cos(rotY) * r * 0.7, trunkH + r * 0.35, z + Math.sin(rotY) * r * 0.7)
+    place(paint(crown(r * 0.7, seed + 0.31, 8, 6), g2), x + Math.cos(rotY) * r * 0.7, trunkH + r * 0.35, z + Math.sin(rotY) * r * 0.7)
   );
   parts.push(
-    place(paint(new SphereGeometry(r * 0.6, 8, 6), g1), x - Math.cos(rotY) * r * 0.6, trunkH + r * 0.75, z - Math.sin(rotY) * r * 0.55)
+    place(paint(crown(r * 0.6, seed + 0.67, 8, 6), g1), x - Math.cos(rotY) * r * 0.6, trunkH + r * 0.75, z - Math.sin(rotY) * r * 0.55)
   );
 }
 
@@ -759,13 +784,13 @@ function addBush(parts: BufferGeometry[], cfg: VenueScenery, x: number, z: numbe
     // A hedge has shoulders, not the vertical silhouette of a cypress. Its
     // upper leaves peek over the wall while its whole footprint stays outside.
     for (const side of [-1, 0, 1]) {
-      const geometry = new SphereGeometry(r * (side === 0 ? 0.95 : 0.72), 8, 6);
+      const geometry = crown(r * (side === 0 ? 0.95 : 0.72), (seed + side * 0.21 + 1) % 1, 8, 6);
       geometry.scale(1, side === 0 ? 1.9 : 1.3, 1);
       parts.push(place(paint(geometry, pick(cfg.foliagePalette, (seed + side * 0.13 + 1) % 1)), x + side * r * 0.62, r * (side === 0 ? 1.8 : 1.05), z));
     }
     return;
   }
-  const geometry = new SphereGeometry(r, 7, 5);
+  const geometry = crown(r, seed, 7, 5);
   parts.push(place(paint(geometry, pick(cfg.foliagePalette, seed)), x, r * 0.7, z));
 }
 

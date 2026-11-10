@@ -33,7 +33,7 @@ import { REAL } from '../look';
  * edge, so it is thinned rather than removed. Applied in the registry, so the
  * tier widths and every caller stay as they were.
  */
-const LOOK_WIDTH = REAL ? 0.36 : 1;
+const LOOK_WIDTH = REAL ? 0.36 : 0.72;
 
 /** The character-art contour colour. Shared with the CSS `--outline` token. */
 export const OUTLINE_COLOR = 0x26333f;

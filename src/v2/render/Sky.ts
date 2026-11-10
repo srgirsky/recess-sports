@@ -8,7 +8,6 @@
 // ---------------------------------------------------------------------------
 
 import { BackSide, Color, Mesh, ShaderMaterial, SphereGeometry } from 'three';
-import { REAL } from './look';
 
 const VERT = /* glsl */ `
 varying vec3 vWorld;
@@ -77,7 +76,7 @@ export function buildSky(topHex = SKY_TOP, bottomHex = SKY_HORIZON, radius = SKY
       uTop: { value: new Color(topHex) },
       uBottom: { value: new Color(bottomHex) },
       uRadius: { value: radius },
-      uHaze: { value: REAL ? 1 : 0 },
+      uHaze: { value: 1 },
     },
     side: BackSide,
     depthWrite: false,

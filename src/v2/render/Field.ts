@@ -51,7 +51,6 @@ import {
 import { CanvasTexGraphics, makeFieldCanvas, toTexture } from './canvasTex';
 import { chalkLine, chalkRect, hash01, lightenInt, shadeInt, speckleEllipse } from '../../art/fieldTexture';
 import { GROUND_STEPS, makeToonMaterial } from './materials/toon';
-import { REAL } from './look';
 import type { OutlineRegistry } from './materials/outline';
 import { attachOutline } from './materials/outline';
 import { CAMERA_FAR_FT } from './cameraCues';
@@ -472,12 +471,12 @@ function buildTurf(look: VenueLook): { mesh: Mesh; setNight: (night: boolean) =>
     float grainFade = 1.0 - smoothstep( 70.0, 220.0, dist );
     vec3 turf = mix( uDark, uLight, 0.42 + broad * 0.58 );
     turf *= 1.0 + ( mottle - 0.5 ) * mix(0.18, 0.30, uDetail);
-    turf *= 1.0 + ( grain  - 0.5 ) * ${REAL ? '0.26' : '0.16'} * grainFade;
-    ${REAL ? `{
+    turf *= 1.0 + ( grain  - 0.5 ) * 0.26 * grainFade;
+    {
       float blades = vnoise( wxz * vec2( 11.0, 7.0 ) ) * 0.6 + vnoise( wxz * 23.0 ) * 0.4;
       float bladeFade = 1.0 - smoothstep( 18.0, 75.0, dist );
       turf *= 1.0 + ( blades - 0.5 ) * 0.34 * bladeFade;
-    }` : ''}
+    }
     turf *= 1.0 + sheen * mix(0.22, 0.065, uDetail);
     float tufts = smoothstep(0.58, 0.80, vnoise(wxz * vec2(1.7, 0.8)));
     turf *= 1.0 - tufts * 0.09 * grainFade * uDetail;
@@ -504,7 +503,7 @@ function buildTurf(look: VenueLook): { mesh: Mesh; setNight: (night: boolean) =>
   }`
       );
   };
-  mat.customProgramCacheKey = () => `turf-${mode}-${detailed}-${REAL}`;
+  mat.customProgramCacheKey = () => `turf-${mode}-${detailed}`;
 
   const mesh = new Mesh(geom, mat);
   mesh.name = 'turf';
@@ -605,7 +604,7 @@ function buildInfieldOverlay(look: VenueLook, anisotropy: number): Mesh {
   mat.depthWrite = false;
   mat.polygonOffset = true;
   mat.polygonOffsetFactor = -2;
-  if (REAL) addDirtGrain(mat);
+  addDirtGrain(mat);
 
   const mesh = new Mesh(geom, mat);
   mesh.name = 'infieldOverlay';
