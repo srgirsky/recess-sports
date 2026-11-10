@@ -51,6 +51,7 @@ import {
 import { CanvasTexGraphics, makeFieldCanvas, toTexture } from './canvasTex';
 import { chalkLine, chalkRect, hash01, lightenInt, shadeInt, speckleEllipse } from '../../art/fieldTexture';
 import { GROUND_STEPS, makeToonMaterial } from './materials/toon';
+import { REAL } from './look';
 import type { OutlineRegistry } from './materials/outline';
 import { attachOutline } from './materials/outline';
 import { CAMERA_FAR_FT } from './cameraCues';
@@ -471,7 +472,12 @@ function buildTurf(look: VenueLook): { mesh: Mesh; setNight: (night: boolean) =>
     float grainFade = 1.0 - smoothstep( 70.0, 220.0, dist );
     vec3 turf = mix( uDark, uLight, 0.42 + broad * 0.58 );
     turf *= 1.0 + ( mottle - 0.5 ) * mix(0.18, 0.30, uDetail);
-    turf *= 1.0 + ( grain  - 0.5 ) * 0.16 * grainFade;
+    turf *= 1.0 + ( grain  - 0.5 ) * ${REAL ? '0.26' : '0.16'} * grainFade;
+    ${REAL ? `{
+      float blades = vnoise( wxz * vec2( 11.0, 7.0 ) ) * 0.6 + vnoise( wxz * 23.0 ) * 0.4;
+      float bladeFade = 1.0 - smoothstep( 18.0, 75.0, dist );
+      turf *= 1.0 + ( blades - 0.5 ) * 0.34 * bladeFade;
+    }` : ''}
     turf *= 1.0 + sheen * mix(0.22, 0.065, uDetail);
     float tufts = smoothstep(0.58, 0.80, vnoise(wxz * vec2(1.7, 0.8)));
     turf *= 1.0 - tufts * 0.09 * grainFade * uDetail;
@@ -498,7 +504,7 @@ function buildTurf(look: VenueLook): { mesh: Mesh; setNight: (night: boolean) =>
   }`
       );
   };
-  mat.customProgramCacheKey = () => `turf-${mode}-${detailed}`;
+  mat.customProgramCacheKey = () => `turf-${mode}-${detailed}-${REAL}`;
 
   const mesh = new Mesh(geom, mat);
   mesh.name = 'turf';
@@ -506,6 +512,75 @@ function buildTurf(look: VenueLook): { mesh: Mesh; setNight: (night: boolean) =>
 }
 
 // --- The infield overlay ----------------------------------------------------
+
+/**
+ * Grain for the infield, in the `real` look.
+ *
+ * ★ THE PAINTED TEXTURE RUNS OUT OF PIXELS AT THE PLATE. The overlay is one
+ * 2048 canvas over the whole infield — about ten texels a foot — and the plate
+ * camera sits four feet off the dirt, so the foreground of every pitch was a
+ * flat orange-brown fill: the largest area of the most-seen frame carried no
+ * surface at all. More canvas cannot fix it (16x the memory for one doubling).
+ * The grain is therefore PROCEDURAL and in world space, layered under the
+ * paint: damp-and-dry patches a few feet across, raked clods a few inches
+ * across, and grit, each faded out with distance before it can alias. The
+ * normal is nudged with the same field, so the low sun rakes across it.
+ *
+ * It multiplies the painted colour, so chalk, cutouts and the grass edge keep
+ * their drawn shapes; alpha is untouched.
+ */
+function addDirtGrain(mat: ReturnType<typeof makeToonMaterial>): void {
+  mat.onBeforeCompile = (shader) => {
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vDirtPos;')
+      .replace(
+        '#include <worldpos_vertex>',
+        '#include <worldpos_vertex>\nvDirtPos = ( modelMatrix * vec4( transformed, 1.0 ) ).xyz;'
+      );
+    shader.fragmentShader = shader.fragmentShader
+      .replace(
+        '#include <common>',
+        `#include <common>
+  varying vec3 vDirtPos;
+  float dh21( vec2 p ) { return fract( sin( dot( p, vec2( 127.1, 311.7 ) ) ) * 43758.5453 ); }
+  float dnoise( vec2 p ) {
+    vec2 i = floor( p ), f = fract( p );
+    vec2 u = f * f * ( 3.0 - 2.0 * f );
+    return mix( mix( dh21( i ), dh21( i + vec2( 1.0, 0.0 ) ), u.x ),
+                mix( dh21( i + vec2( 0.0, 1.0 ) ), dh21( i + vec2( 1.0, 1.0 ) ), u.x ), u.y );
+  }
+  float dirtField( vec2 p, float dist ) {
+    float patches = dnoise( p * 0.22 ) * 0.6 + dnoise( p * 0.71 ) * 0.4;
+    float clods = dnoise( p * 3.1 ) * 0.55 + dnoise( p * 7.3 ) * 0.45;
+    float grit = dnoise( p * 31.0 );
+    float mid = 1.0 - smoothstep( 40.0, 150.0, dist );
+    float near = 1.0 - smoothstep( 8.0, 34.0, dist );
+    return ( patches - 0.5 ) * 0.20 + ( clods - 0.5 ) * 0.22 * mid + ( grit - 0.5 ) * 0.20 * near;
+  }`
+      )
+      .replace(
+        '#include <color_fragment>',
+        `#include <color_fragment>
+  {
+    float dDist = length( cameraPosition - vDirtPos );
+    diffuseColor.rgb *= 1.0 + dirtField( vDirtPos.xz, dDist );
+  }`
+      )
+      .replace(
+        '#include <normal_fragment_begin>',
+        `#include <normal_fragment_begin>
+  {
+    float dDist = length( cameraPosition - vDirtPos );
+    vec2 q = vDirtPos.xz;
+    float c = dirtField( q, dDist );
+    float gx = dirtField( q + vec2( 0.06, 0.0 ), dDist ) - c;
+    float gz = dirtField( q + vec2( 0.0, 0.06 ), dDist ) - c;
+    normal = normalize( normal + ( viewMatrix * vec4( gx, 0.0, gz, 0.0 ) ).xyz * 2.2 );
+  }`
+      );
+  };
+  mat.customProgramCacheKey = () => 'infield-dirt-grain';
+}
 
 function buildInfieldOverlay(look: VenueLook, anisotropy: number): Mesh {
   const span = OVERLAY_HALF * 2;
@@ -530,6 +605,7 @@ function buildInfieldOverlay(look: VenueLook, anisotropy: number): Mesh {
   mat.depthWrite = false;
   mat.polygonOffset = true;
   mat.polygonOffsetFactor = -2;
+  if (REAL) addDirtGrain(mat);
 
   const mesh = new Mesh(geom, mat);
   mesh.name = 'infieldOverlay';

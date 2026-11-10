@@ -3656,6 +3656,43 @@ answer is a league rule rather than a knob: at T-BALL and ROOKIE the CPU does
 not run on a child, as a 7U league does not. And a steal is still off camera
 from the plate rig; the steal cam is the next change.
 
+## November 9 — the look turns from toy to real
+
+The maintainer, looking at both games: "everything looks bad still", and then
+the sentence that decided it — "I just want it to look as real as possible more
+than anything." Until then v2's look was the toy-brand one on purpose: every
+surface quantised to four flat lighting bands, zero specular, a heavy ink
+contour round each kid. That is what read as a cartoon before a single model
+was judged.
+
+`src/v2/render/look.ts` now owns the choice and `real` is the default. Same
+models, lights and palette; what changed is how light falls on them — a smooth
+wrapped falloff instead of bands, one broad soft highlight from the key light,
+the contour thinned to a hairline, a wider shadow penumbra, grass with blade
+detail near the camera, and procedural grain in the infield dirt (the painted
+overlay has about ten texels a foot, so the foreground of every pitch was a
+flat fill). `?look=toon` keeps the old look one flag away, the way `?tonemap=`
+keeps the old curve.
+
+What this did not change, and what still caps realism: the models themselves
+(low-poly chibi kids, the sculpt campaign's subject), the flat-shaded houses
+and trees beyond the fence, and the painted sky. v1 is untouched; its own
+sharpness problem is that it renders a fixed 960x640 and lets the browser
+stretch it, which is measured but not yet fixed.
+
+**November 10, the scenery follows.** The neighbourhood is one merged mesh with
+a colour per vertex and no UVs, so a house wall was one flat colour edge to
+edge — the last thing in frame still saying "toy". `materials/surfaceDetail.ts`
+adds procedural detail keyed on what a fragment already knows (world position,
+world normal, its own colour): lapped siding on upright faces, staggered
+shingle courses on pitched ones, leaf clumps on saturated green, a darker foot
+where anything meets the ground. Foliage is told from a green-painted house by
+SATURATION, not by green excess — the first cut mottled the house. Every line
+pattern fades by its own screen-space derivative, as the park's plank wall
+does. The sky gains a haze band that is exactly the horizon colour at the
+horizon (the fog rule holds), and every venue takes the smooth self-shaded
+cloud. All of it sits behind `REAL`; `?look=toon` is unchanged.
+
 ## October 2 — switching between the two games
 
 Both games were reachable from each other, but awkwardly:
