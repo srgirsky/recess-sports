@@ -31,7 +31,7 @@
         "cast": null,
         "generator": "macOS say (scripts/v2/export-voices.mjs)",
         "runtime": "public/v2/audio/voices/kids/ace_kid.mp3",
-        "runtimeSha256": "f0ec05600ac926b7732d89193391f36538de120571aff27c9c6f2053a9ceb5b2",
+        "runtimeSha256": "3994816d590b96593e82069068dc3472513733aeedd47f0903a2c2632c9d1072",
         "performer": null,
         "finalDelivery": false
       },
@@ -65,7 +65,7 @@
         "cast": null,
         "generator": "macOS say (scripts/v2/export-voices.mjs)",
         "runtime": "public/v2/audio/voices/kids/bend_it.mp3",
-        "runtimeSha256": "d73df3637e15e4c5767f7d2bfffda9b18a8250aa00c8e1640719f0d6b6405be4",
+        "runtimeSha256": "1250276b573af362d60004591781cc185aab047d73eb79de367a879b10cd791e",
         "performer": null,
         "finalDelivery": false
       },
@@ -104,7 +104,7 @@
         },
         "generator": "kokoro-js@1.2.1",
         "runtime": "public/v2/audio/voices/kids/big_lou.mp3",
-        "runtimeSha256": "a7501309106ad782880259368eacbad135f410632473d02b74535448a1bf941d",
+        "runtimeSha256": "ef4c5a747813f21ce2d16502cfbcac7cf6bd3b73bbdbc2ea3353a6f541e29d8c",
         "performer": null,
         "finalDelivery": false
       },
@@ -138,7 +138,7 @@
         "cast": null,
         "generator": "macOS say (scripts/v2/export-voices.mjs)",
         "runtime": "public/v2/audio/voices/kids/boomer.mp3",
-        "runtimeSha256": "3fc9828baae3b05f891c22f2ca179b01e3f0c43eb78bdb605c30d0707a15f73d",
+        "runtimeSha256": "beed6cff59d0ff490f693af5131146c356a690df6a74012227d439ae8bf2552d",
         "performer": null,
         "finalDelivery": false
       },
@@ -172,7 +172,7 @@
         "cast": null,
         "generator": "macOS say (scripts/v2/export-voices.mjs)",
         "runtime": "public/v2/audio/voices/kids/bubbles.mp3",
-        "runtimeSha256": "7e650193b6b756bc7fdf1fe80590b75162714c22e17e48884e9c3f943d6a6b22",
+        "runtimeSha256": "b3bcf64390335e4fbfe01548156c002e2dd694465e63da666d47ca9fd93708ee",
         "performer": null,
         "finalDelivery": false
       },
@@ -204,14 +204,14 @@
       "voice": {
         "kind": "ai-voice-cast",
         "cast": {
-          "voice": "am_puck",
+          "voice": "af_sky",
           "speed": 1.06,
           "model": "onnx-community/Kokoro-82M-v1.0-ONNX",
           "license": "Apache-2.0"
         },
         "generator": "kokoro-js@1.2.1",
         "runtime": "public/v2/audio/voices/kids/calls_shot.mp3",
-        "runtimeSha256": "f1eec07cc30b93d89470972b4fb1397491f3a1d48a044c4500d09c8c345c4503",
+        "runtimeSha256": "2f847dc7ad271a24e3312ee69120b491ea14f656a4c14bddfbcae83cad36663b",
         "performer": null,
         "finalDelivery": false
       },
@@ -245,7 +245,7 @@
         "cast": null,
         "generator": "macOS say (scripts/v2/export-voices.mjs)",
         "runtime": "public/v2/audio/voices/kids/chip.mp3",
-        "runtimeSha256": "aa22d93fc11c9f7c9eb5191081f63750f40aed5a9646d14c659975e9bc4d5990",
+        "runtimeSha256": "f0638d02f36300ba93472f652d149421e778255e07434408a37a6b92b8c843cd",
         "performer": null,
         "finalDelivery": false
       },
@@ -279,7 +279,7 @@
         "cast": null,
         "generator": "macOS say (scripts/v2/export-voices.mjs)",
         "runtime": "public/v2/audio/voices/kids/clover.mp3",
-        "runtimeSha256": "346bde9062cf914797962355730009baca0f882460e35cc5a3908a7f63547362",
+        "runtimeSha256": "20e91c0d781b4bf551ba886ae4b133dfdaedb8559a9b0e771dd4965784dac696",
         "performer": null,
         "finalDelivery": false
       },
@@ -313,7 +313,7 @@
         "cast": null,
         "generator": "macOS say (scripts/v2/export-voices.mjs)",
         "runtime": "public/v2/audio/voices/kids/cricket.mp3",
-        "runtimeSha256": "d781aec02adf6e2ec8b2ffcef4325079a17ff8e64c84938f4ac735cf9e0785a3",
+        "runtimeSha256": "1cbff75aa560ed9fe6d81689bf6de1b473d342c77496908e78a0cc96fdecf4f1",
         "performer": null,
         "finalDelivery": false
       },
@@ -347,7 +347,7 @@
         "cast": null,
         "generator": "macOS say (scripts/v2/export-voices.mjs)",
         "runtime": "public/v2/audio/voices/kids/dex.mp3",
-        "runtimeSha256": "a8c0c7b7efa0e4c590079d00661c04209168e8648d6b0076b7c20d41dea0e6a3",
+        "runtimeSha256": "3250e3078bb7aba519073d1983215bb3badb5e8e71ed9b484022f15ebca7d165",
         "performer": null,
         "finalDelivery": false
       },
@@ -381,7 +381,7 @@
         "cast": null,
         "generator": "macOS say (scripts/v2/export-voices.mjs)",
         "runtime": "public/v2/audio/voices/kids/diva.mp3",
-        "runtimeSha256": "c25812877400649d5b331b6a890852d9d5ef068b309bd0bf61fdbe4debfed104",
+        "runtimeSha256": "cc789d5137a68d7529265bc7d555ba0cf9e7a10e0ab4adad55713c153478493f",
         "performer": null,
         "finalDelivery": false
       },
@@ -415,7 +415,7 @@
         "cast": null,
         "generator": "macOS say (scripts/v2/export-voices.mjs)",
         "runtime": "public/v2/audio/voices/kids/flash.mp3",
-        "runtimeSha256": "83ac309dc3b4af816267b059fc3a96f1293675a108866d460bc9284b2d19a7cb",
+        "runtimeSha256": "3185b2b04339dd6d2d422e0222bf06417a2402e9d6663dd44793676d548bed81",
         "performer": null,
         "finalDelivery": false
       },
@@ -449,7 +449,7 @@
         "cast": null,
         "generator": "macOS say (scripts/v2/export-voices.mjs)",
         "runtime": "public/v2/audio/voices/kids/gizmo.mp3",
-        "runtimeSha256": "c6392e40e37405aa01534e37f0de949da7fe394b35ddc4b0996e5a9499d84639",
+        "runtimeSha256": "de7a174728f6e37235ead56c83947d52644b61d5c16cf488828eaf0e0dc4d055",
         "performer": null,
         "finalDelivery": false
       },
@@ -483,7 +483,7 @@
         "cast": null,
         "generator": "macOS say (scripts/v2/export-voices.mjs)",
         "runtime": "public/v2/audio/voices/kids/grizz.mp3",
-        "runtimeSha256": "d5ddba1e7f18ac1a1c0065cceb17351d448f5f9ec90552d8a47dc9d639c580d5",
+        "runtimeSha256": "81b480f5be941dd74a9a9cbb870386a8f7fdb0cef005db89b63526c570d2c466",
         "performer": null,
         "finalDelivery": false
       },
@@ -517,7 +517,7 @@
         "cast": null,
         "generator": "macOS say (scripts/v2/export-voices.mjs)",
         "runtime": "public/v2/audio/voices/kids/lefty.mp3",
-        "runtimeSha256": "611ba735296fdf25d876caa0350cf859208a27e8b4d4b9838abca534acfb6ea2",
+        "runtimeSha256": "30722d82ede21414c1c0e0f9a6bc72a1b12f82c9509ad5fcad6c106928ebbe43",
         "performer": null,
         "finalDelivery": false
       },
@@ -556,7 +556,7 @@
         },
         "generator": "kokoro-js@1.2.1",
         "runtime": "public/v2/audio/voices/kids/mimi_mash.mp3",
-        "runtimeSha256": "76e15d4ee9b702061c1a9dd8a4fe3fb2d4c6d5dc850d08ed16a6ab3caadcccd1",
+        "runtimeSha256": "a9d276fd21a0e787465e5a9c79c7e7e8693b9941d1125b0570250dab0404b74d",
         "performer": null,
         "finalDelivery": false
       },
@@ -590,7 +590,7 @@
         "cast": null,
         "generator": "macOS say (scripts/v2/export-voices.mjs)",
         "runtime": "public/v2/audio/voices/kids/moose.mp3",
-        "runtimeSha256": "a5b70ec510cdf0b6817714cf88ecd7faf09384881c32455b41ce34958b2ea4b5",
+        "runtimeSha256": "c3bbd999350ccb363bbb400d898fee1f73f84fcdd4b202917659e157203c3e01",
         "performer": null,
         "finalDelivery": false
       },
@@ -624,7 +624,7 @@
         "cast": null,
         "generator": "macOS say (scripts/v2/export-voices.mjs)",
         "runtime": "public/v2/audio/voices/kids/noodle.mp3",
-        "runtimeSha256": "ce8574f3201f411447b33fd36d37ba381fe40bfdc801b529bdcd746b158f6297",
+        "runtimeSha256": "7cb925282625022a6cdb55ae0d901454c1232f1e082c38c9c6827a920990836c",
         "performer": null,
         "finalDelivery": false
       },
@@ -663,7 +663,7 @@
         },
         "generator": "kokoro-js@1.2.1",
         "runtime": "public/v2/audio/voices/kids/nostrike.mp3",
-        "runtimeSha256": "052202a9e93183617912232277933397e490cb7cddb33847d6920b2b6eb0f9e6",
+        "runtimeSha256": "d69d714378bfe9af7e843ddcceff92d231e6126cfaf762801343091a9072f10a",
         "performer": null,
         "finalDelivery": false
       },
@@ -697,7 +697,7 @@
         "cast": null,
         "generator": "macOS say (scripts/v2/export-voices.mjs)",
         "runtime": "public/v2/audio/voices/kids/peaches.mp3",
-        "runtimeSha256": "0391dba0cee9088da7cc7a20071fd8715a4b545f3592d0108cfb46e963155692",
+        "runtimeSha256": "781d4de8bd4a04c015faef13873b4a62e950b8b85ce8c3dfc3f12c3a8e5663c2",
         "performer": null,
         "finalDelivery": false
       },
@@ -731,7 +731,7 @@
         "cast": null,
         "generator": "macOS say (scripts/v2/export-voices.mjs)",
         "runtime": "public/v2/audio/voices/kids/penny.mp3",
-        "runtimeSha256": "590bbe912f89b678cb7f81f7927a5384bf382ab671f17358fb9e5ecc361427cf",
+        "runtimeSha256": "b73a11346d624020c968d0fc12d8c67f4c3c5cad747fa357a349b6005202dbb2",
         "performer": null,
         "finalDelivery": false
       },
@@ -765,7 +765,7 @@
         "cast": null,
         "generator": "macOS say (scripts/v2/export-voices.mjs)",
         "runtime": "public/v2/audio/voices/kids/rocket.mp3",
-        "runtimeSha256": "cd58e22246942c1377d8a8f8b182e979bace9e04d81b28ad4596e99038261b6c",
+        "runtimeSha256": "2b44cd7a4b96c20c6672fb5bc7df5e583edd453bebad3e7f18e71acdbde197ab",
         "performer": null,
         "finalDelivery": false
       },
@@ -799,7 +799,7 @@
         "cast": null,
         "generator": "macOS say (scripts/v2/export-voices.mjs)",
         "runtime": "public/v2/audio/voices/kids/smokey.mp3",
-        "runtimeSha256": "dec7f9dbacbf025c74d8518f53b546204d47cb50a692e53be4bbf392df601043",
+        "runtimeSha256": "1ee1d44681d709846b0424ca4e8ac4f1c096981d2bbfbd6aea645486c09cb4ce",
         "performer": null,
         "finalDelivery": false
       },
@@ -833,7 +833,7 @@
         "cast": null,
         "generator": "macOS say (scripts/v2/export-voices.mjs)",
         "runtime": "public/v2/audio/voices/kids/sniffles.mp3",
-        "runtimeSha256": "31b1dbd12679c8f9f5e23b3b0edbdcecb2602aed55196afa31cb370b45edb213",
+        "runtimeSha256": "aa4d61cf47061bd3b24b78678642ca50ce33ae2e5cfde9335f105fd191c55d85",
         "performer": null,
         "finalDelivery": false
       },
@@ -867,7 +867,7 @@
         "cast": null,
         "generator": "macOS say (scripts/v2/export-voices.mjs)",
         "runtime": "public/v2/audio/voices/kids/sprout.mp3",
-        "runtimeSha256": "1115705e98c33399af8402bf7b4fbbd4ca74d56147bbd327ee66521d72546452",
+        "runtimeSha256": "8fd60670d8d324ab5f0b30170b6673b3617e95ecc4774a1f8d5a1ea6934696e2",
         "performer": null,
         "finalDelivery": false
       },
@@ -906,7 +906,7 @@
         },
         "generator": "kokoro-js@1.2.1",
         "runtime": "public/v2/audio/voices/kids/tank.mp3",
-        "runtimeSha256": "15b7a32d6aacc172aacdc5cb8f2feba11bca0ce77fb9bda6a9e1ab91644cebf3",
+        "runtimeSha256": "9ad417d0797121c02e6012cb4bdb248608fc18cae08b49c4bf91af4ec095ea10",
         "performer": null,
         "finalDelivery": false
       },
@@ -940,7 +940,7 @@
         "cast": null,
         "generator": "macOS say (scripts/v2/export-voices.mjs)",
         "runtime": "public/v2/audio/voices/kids/the_prof.mp3",
-        "runtimeSha256": "e36ce1f7b2ea7d720abb640369fb61dbfce3a8ef449326be1295e7cb9dcd8d1f",
+        "runtimeSha256": "9df2015fcab04c47f3a011a304162bbb4068113bd8d6ded16e50d1674361e209",
         "performer": null,
         "finalDelivery": false
       },
@@ -974,7 +974,7 @@
         "cast": null,
         "generator": "macOS say (scripts/v2/export-voices.mjs)",
         "runtime": "public/v2/audio/voices/kids/turbo.mp3",
-        "runtimeSha256": "cad03642dea2358d0eea371c08a39ef86b49c902fe92b819e982f4dd0bda1bc9",
+        "runtimeSha256": "34f4d20667c561e771cd1923994540f489e4df66df9f102ee32b1d364754a5dd",
         "performer": null,
         "finalDelivery": false
       },
@@ -1013,7 +1013,7 @@
         },
         "generator": "kokoro-js@1.2.1",
         "runtime": "public/v2/audio/voices/kids/wheelchair_ace.mp3",
-        "runtimeSha256": "150935b4220b8ce5252246da56693f69f1b2ad5accb42e2a8fcd016ae08d569a",
+        "runtimeSha256": "d5f8b51c0638f83c434134a375936bf1a11c9782de7513c68dc4ec8a6997a83d",
         "performer": null,
         "finalDelivery": false
       },
@@ -1047,7 +1047,7 @@
         "cast": null,
         "generator": "macOS say (scripts/v2/export-voices.mjs)",
         "runtime": "public/v2/audio/voices/kids/zippy.mp3",
-        "runtimeSha256": "4f4bb4fbac6e40ea481bf492e390f1da3a4ff1413c6ce312aa6d73278de8a5ec",
+        "runtimeSha256": "2683970b834372f6aa2407d4bfb39354485f63d2f32b5994de0ec02558931f12",
         "performer": null,
         "finalDelivery": false
       },

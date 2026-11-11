@@ -316,27 +316,49 @@ describe('★ the assertions that need no band', () => {
   }, SLICE_MS);
 
   it('★ hits the ball harder with more power', () => {
-    const byPower = [...ROSTER].sort((a, b) => b.stats.power - a.stats.power);
-    const one = (ids: string[], tag: string) => {
+    // ★ CONTROLLED FOR THE ROSTER, as the brief requires of every ordering
+    // test and as the fielding twin below already is. Until 2026-11-03 this
+    // compared the nine highest-power kids with the nine lowest, and the World
+    // 1 re-cast showed what that confounds: the bottom nine BY POWER are the
+    // table-setters and pests — contact 10/10/9/8/8/7/7/5/4, speed 6-10, two
+    // of them never_strikes_out — and over thirty games they out-score the
+    // sluggers' nine 11.9 to 7.0 runs a game while hitting the ball 13 mph
+    // softer (K% 8 vs 21, BABIP .675 vs .587). That is the cast as designed,
+    // not a sim fault, and selecting BY the stat cannot see it. Same nine kids,
+    // same seeds, one variable: power injected through `lookup` at the
+    // roster's realised extremes (`sim.batSpeed.rosterNote`).
+    //
+    // Twelve games, not six: power 2 -> 10 moves exit velocity 43 -> 61 mph
+    // every time, but runs only by about two a game, and at six games one
+    // seed set of four read it backwards (4.83 -> 4.67). At twelve all four
+    // agree (4.3 -> 6.3, 5.5 -> 7.0, 4.3 -> 5.9, 4.3 -> 7.3).
+    const ids = ROSTER.slice(0, 9).map((c) => c.id);
+    const withPower = (power: number) => (id: string) => {
+      const c = getCharacter(id);
+      return { ...c, stats: { ...c.stats, power } };
+    };
+    const one = (power: number) => {
       const t = newTotals();
-      for (let i = 0; i < 6; i++) {
+      for (let i = 0; i < 12; i++) {
         const g = simulateGame(
           {
             away: { name: 'A', ids },
             home: { name: 'B', ids },
-            lookup: getCharacter,
+            lookup: withPower(power),
             onEvent: (e) => observe(t, e),
           },
-          makeRng(`pr8:${tag}:${i}`)
+          makeRng(`pr8:power:${i}`)
         );
         observeGame(t, g);
       }
       return rates(t);
     };
-    const strong = one(byPower.slice(0, 9).map((c) => c.id), 'strong');
-    const weak = one(byPower.slice(-9).map((c) => c.id), 'weak');
-    expect(strong.exitVelocityMeanMph).toBeGreaterThan(weak.exitVelocityMeanMph);
-    expect(strong.runsPerGame).toBeGreaterThan(weak.runsPerGame);
+    const weak = one(2);
+    const strong = one(10);
+    expect(strong.exitVelocityMeanMph, `power 10 ${strong.exitVelocityMeanMph.toFixed(1)} vs power 2 ${weak.exitVelocityMeanMph.toFixed(1)} mph`)
+      .toBeGreaterThan(weak.exitVelocityMeanMph);
+    expect(strong.runsPerGame, `power 10 ${strong.runsPerGame.toFixed(2)} vs power 2 ${weak.runsPerGame.toFixed(2)} runs a game`)
+      .toBeGreaterThan(weak.runsPerGame);
   }, SLICE_MS);
 });
 

@@ -12,21 +12,45 @@ import { ROSTER } from '../data/characters';
 const COUNTS_KEY = 'recess_pickcounts';
 const GAMES_KEY = 'recess_games_played';
 
-type Counts = Record<string, number>;
+/**
+ * ★ THE TALLY IS KEYED BY SLOT ID, AND THE SLOTS WERE RE-CAST (2026-11). A vote
+ * for the kid who held `big_lou` before is not a vote for the kid who holds it
+ * now, so the counts carry the name of the cast they were cast for. A stored
+ * tally for another cast — or the bare `{id: n}` object every tally was before
+ * this — is discarded on first read, games-played with it, so the two numbers
+ * that make a pick RATE always describe the same games. The keys themselves do
+ * not change: they are shared with v2 on purpose and the root brief names them.
+ */
+const CAST = 'world1';
 
-function safeParse(raw: string | null): Counts {
-  if (!raw) return {};
+type Counts = Record<string, number>;
+interface Tally {
+  cast: string;
+  counts: Counts;
+}
+
+function parseTally(raw: string | null): Tally | null {
+  if (!raw) return null;
   try {
     const parsed = JSON.parse(raw);
-    return parsed && typeof parsed === 'object' ? (parsed as Counts) : {};
+    if (!parsed || typeof parsed !== 'object') return null;
+    if (typeof parsed.cast !== 'string' || !parsed.counts || typeof parsed.counts !== 'object') return null;
+    return parsed as Tally;
   } catch {
-    return {};
+    return null;
   }
 }
 
 function readCounts(): Counts {
   try {
-    return safeParse(localStorage.getItem(COUNTS_KEY));
+    const tally = parseTally(localStorage.getItem(COUNTS_KEY));
+    if (tally?.cast === CAST) return tally.counts;
+    if (localStorage.getItem(COUNTS_KEY) !== null) {
+      // Another cast's votes (or the pre-cast shape). Start the machine over.
+      localStorage.removeItem(COUNTS_KEY);
+      localStorage.removeItem(GAMES_KEY);
+    }
+    return {};
   } catch {
     // Private mode / storage disabled — degrade gracefully.
     return {};
@@ -35,7 +59,7 @@ function readCounts(): Counts {
 
 function writeCounts(counts: Counts): void {
   try {
-    localStorage.setItem(COUNTS_KEY, JSON.stringify(counts));
+    localStorage.setItem(COUNTS_KEY, JSON.stringify({ cast: CAST, counts } satisfies Tally));
   } catch {
     /* ignore — the game still works, we just can't persist votes */
   }

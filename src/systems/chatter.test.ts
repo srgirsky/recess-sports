@@ -41,10 +41,12 @@ describe('chatter', () => {
   });
 
   it('kids without signature lines fall back to the generic pool', () => {
-    const dex = getCharacter('dex');
-    expect(dex.chatterLines).toBeUndefined();
+    // Zaya does not speak during a game; she has no signature lines on
+    // purpose, so she is the kid the generic pool has to cover.
+    const zaya = getCharacter('rocket');
+    expect(zaya.chatterLines).toBeUndefined();
     const c = new Chatter(() => 0);
-    expect(c.pick('batterUp', 0, dex)).toBeTruthy();
+    expect(c.pick('batterUp', 0, zaya)).toBeTruthy();
   });
 
   it('never repeats the same line back-to-back', () => {

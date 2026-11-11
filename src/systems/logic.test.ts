@@ -12,6 +12,7 @@ import {
   applyPick,
   chooseAiPick,
   chooseBestPick,
+  draftValue,
   isDraftComplete,
 } from './draft';
 import { bandFromError, resolveContact, resolveContactAimed, timingForSwing, type SwingBand } from './atbat';
@@ -506,13 +507,13 @@ describe('draft', () => {
   });
 
   it('AI grabs a strong kid left on the board (drafting tension)', () => {
-    // Player passes on the best overall hitter; AI should take it next turn.
-    const byBat = [...ROSTER].sort(
-      (a, b) =>
-        b.stats.contact + b.stats.power + b.stats.speed -
-        (a.stats.contact + a.stats.power + a.stats.speed)
-    );
-    const stud = byBat[0];
+    // Player passes on the kid the AI values most; AI should take it next
+    // turn. Ranked by the AI's own greed (it still needs an arm on pick one)
+    // rather than by bat alone: in the World 1 cast the best bat and the most
+    // valuable kid are different people, and the test is about the AI not
+    // leaving value on the board, not about who the best hitter is.
+    const byValue = [...ROSTER].sort((a, b) => draftValue(b, true) - draftValue(a, true));
+    const stud = byValue[0];
     let state = createDraft(ROSTER.map((c) => c.id));
     // Player picks a deliberately weak kid instead of the stud.
     const weak = [...ROSTER].sort(

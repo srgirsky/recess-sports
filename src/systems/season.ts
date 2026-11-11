@@ -32,7 +32,8 @@ export interface SeasonState {
 }
 
 const KEY = 'recess_season';
-const VERSION = 1;
+/** 2 since the 2026-11 re-cast: a week's per-kid stats belong to the kids who played it. */
+const VERSION = 2;
 
 export const WEEKDAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI'];
 
