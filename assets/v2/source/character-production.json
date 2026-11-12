@@ -92,18 +92,18 @@
       ]
     },
     "grizz": {
-      "source": "grizz-pilot.blend",
-      "sourceSha256": "c602cbfaff9429b89f7440a77c56936b4ee3afa7feb8b2d19d362f780090eb1d",
-      "concept": "grizz-turnaround.png",
-      "conceptSha256": "8290768d2853e29e3c09afe3e7cf73bedf97f2dc74d1b9053506b6c66dbc2e0c",
+      "source": "greta-pilot.blend",
+      "sourceSha256": "935caeeeeb8250375f153e3d5f74a54eece132be31b6d29b9abacbea807e121b",
+      "concept": "greta-turnaround.png",
+      "conceptSha256": "bcfad5e150877e3d1d04ded5fb01a0777893ff62733cf8bc1338ba14c67ae55e",
       "output": "kid_grizz.glb",
-      "outputSha256": "3a062430a4908753c422b6a5f70dc0fb426dbfd235dd58be15a032179b83622f",
+      "outputSha256": "06387b5750b2517d145e38ed8719e94c7542d92229e9c6394a18f0f9695f6048",
       "definingTraits": [
-        "towering round afro",
-        "heavy sleepy brow",
-        "chunky grounded mass",
-        "rust tee on navy shorts",
-        "tall slouched cream socks"
+        "blonde side-swept bob",
+        "built like a door",
+        "acorn-brown tee",
+        "navy piped shorts",
+        "chunky cream sneakers"
       ]
     },
     "sprout": {

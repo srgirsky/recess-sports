@@ -164,16 +164,25 @@ const TURNAROUND = {
   // ★ Never infer "the drawing has no X" from "the sculpt builds no X". That
   // inference is the whole of this defect.
   grizz: {
-    slug: 'grizz',
-    // Bounded traces on grizz-turnaround.png (crown row 128, neck row 387):
-    // brow band rows 279-292, eye band rows 309-320, lip line rows 351-352.
-    // The spec REFUSES his mouth (ambiguous-parts: nose shadow vs frown line
-    // within 7 luminance counts) — these are the bounded probes the refusal
-    // asks for, recorded in sculpt-grizz-source.py's FACE_ISLAND note.
-    brow: 60.8,
-    eye: 72.0,
-    mouth: 86.5,
-    span: { crownZ: 3.99, neckZ: 2.48 },
+    // Greta took this slot in the World 1 re-cast; the entry is hers.
+    slug: 'greta',
+    // Bounded traces on greta-turnaround.png (crown row 180, neck pinch row
+    // 352): brow arcs centred row 251, eyes rows 267-295 centred row 281, the
+    // closed smile at row 321. The spec's own brow (19.8%) is her fringe's
+    // shadow, and it REFUSES her mouth (merged-region) — these are the
+    // bounded probes, recorded in sculpt-greta-source.py's skull note.
+    // ⚠️ No `earLine`, and NOT because she has no ears — both stand clear of
+    // the bob and she builds an EarSpec. The widest-row detector cannot find
+    // them: the bob is wider than the ears at every row they occupy (0.557
+    // half against the ears' 0.494), so the spec's 65.7% is the HAIR's
+    // equator. Her ears are a bounded trace instead — rows 277-324, centre
+    // row 300.5, 70.1% — recorded beside EAR_SPEC. Not gateable is a fact
+    // about the detector, never about the drawing (the Grizz/Penny/Bubbles
+    // lesson, which is this slot's own history).
+    brow: 41.4,
+    eye: 58.8,
+    mouth: 81.9,
+    span: { crownZ: 3.995, neckZ: 2.975 },
     tolerance: 2.5,
   },
   // ★ BENDY BAO'S EYES ARE BEHIND GLASSES, and the spec REFUSES his eye band

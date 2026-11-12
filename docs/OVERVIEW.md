@@ -74,6 +74,27 @@ test against a thirty-second budget that main's last green run had spent
 twenty-two seconds of, is thirty tests and a fold — the drain sweep's shape —
 so a slow runner cannot fail a sim that did not change.
 
+**The first re-cast sculpt: Greta, November 11.** The four slots that flipped
+boy to girl had no drawing of the new kid, so nothing could be sculpted; the
+four sheets were generated in the roster's turnaround format and approved by
+the maintainer the same day. Greta (`grizz`) went first because her sheet fit
+the shared skeleton and Mars's did not — Mars had been drawn with older-kid
+proportions, shoulders at 2.88ft on a figure whose shoulder joint is at 2.47,
+and was sent back to be redrawn. Greta was built from her own sheet rather
+than carried on Grizz's body, and scored by six independent critics across
+six builds: 3/3/2/2/3/3, then 3/3/2/3/3/3, 3/3/3/2/3/3, 3/3/3/3/3/3 and
+3/4/3/3/4/3 twice, with all nine `measure:fidelity` metrics inside tolerance
+at every recorded round but one mid-fix build.
+She ships at `needs-polish` like most of the roster, with her findings in the
+ledger, and the slot stops drawing the stand-in. Three things the rounds
+turned up are not hers alone: the analyser and the atlas generator read a
+slot's sheet through the registry's slug, so a re-cast must edit the registry
+first or it measures the previous kid's drawing; the dark notch at each toe
+is the shared shoe builder's end cap, visible on every light shoe; and the
+slot's animation take and direction card are still the previous kid's, which
+is why she idles in Grizz's slump. The procedure is in the sculpt skill's
+re-cast section.
+
 ### Design pillars (ages 4–8)
 
 - **Minimal reading.** Icons, color, and voice over text. A 6-year-old who can't read should be able to play.

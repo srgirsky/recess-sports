@@ -290,7 +290,7 @@ async function main() {
     }
   }
   const vite = await startVite();
-  const browser = await chromium.launch({ args: process.env.CI ? ['--no-sandbox'] : [] });
+  const browser = await chromium.launch({ args: ['--mute-audio', ...(process.env.CI ? ['--no-sandbox'] : [])] });
   try {
     const page = await browser.newPage({ viewport: VIEWPORT });
     await page.addInitScript(() => { window.requestAnimationFrame=()=>0; window.cancelAnimationFrame=()=>{}; });

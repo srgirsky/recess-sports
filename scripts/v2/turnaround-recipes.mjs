@@ -72,22 +72,29 @@ export const RECIPES = {
     bands: {},
   },
 
-  // ★ GRIZZ IS THE SHEET THE COLOUR RULER CANNOT READ, and this recipe's job is
-  // to make the spec SAY so rather than guess. Sampled inside the figure mask:
-  // his tee is #844a23 and his cheek #905834 — 15 tone units apart, inside the
-  // clusterer's own merge distance, so they are ONE cluster on the sheet. His
-  // shorts are #1d1e21 and his afro's modal cluster #131313 — one cluster too.
-  // All four anchors are declared at their honest sampled values so the
-  // resolver refuses them in pairs (`indistinct-materials`) instead of the
-  // first cut of this recipe, whose eyeballed #8a5a34/#8a5836 both resolved to
-  // a 3%-share OUTLINE cluster (#050302) and specced the outlines as his tee.
-  // Every tee/skin and hair/shorts boundary on him is a geometry trace.
+  // ★ GRETA TOOK GRIZZ'S SLOT IN THE WORLD 1 RE-CAST, and her sheet reads where
+  // his refused: brown tee, navy shorts and cream sneakers are three separated
+  // clusters. The one pair the colour ruler cannot split is hers alone — the
+  // blonde bob and her fair skin share the sheet's warm-orange cluster (blonde
+  // legally passes the skin test: the Clover lesson), so `hair` is declared at
+  // its sampled value and the resolver is left to refuse it beside `skin`.
+  // Every hair/skin boundary on her is a geometry trace in the sculpt script.
+  // ⚠️ No torso sweep: her hanging arms cover the tee's edges above z 2.10 and
+  // the tee's fold shading splits its centre run into weak-seam fragments below
+  // (a first cut swept z 1.88-2.08 and recorded halves of 0.08, 0.34 and 0.26
+  // on one garment). The torso is traced by silhouette runs in the sculpt script.
   grizz: {
-    slug: 'grizz',
+    slug: 'greta',
     views: ['front', 'threeQuarter', 'profile', 'back', 'action'],
-    materials: { shirt: { hex: '#844a23' }, skin: { hex: '#905834' }, hair: { hex: '#161314' }, pants: { hex: '#1d1e21' } },
-    sweeps: { torso: { view: 'front', material: 'shirt', role: 'centre', from: 1.80, to: 2.30, step: 0.06 } },
-    bands: {},
+    materials: {
+      shirt: { hex: '#9b4c25' },
+      skin: { hex: '#faa364' },
+      hair: { hex: '#fdca85' },
+      shorts: { hex: '#2a2a35' },
+      shoe: { hex: '#f3d4b3', paired: true },
+    },
+    sweeps: {},
+    bands: { shoe: { view: 'front', material: 'shoe' } },
   },
 
   // ★ SPROUT'S ANCHORS ARE SAMPLED, NOT REMEMBERED. The first cut declared his

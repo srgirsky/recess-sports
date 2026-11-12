@@ -68,7 +68,7 @@ sculpt library. A build change (slim → wide, short → tallest) is a rebuild.
 | Toby Okonkwo ★ | `chip` | small boy | power way up (the joke is the stat line) | strong |
 | Roz Achterberg | `diva` | girl, long hair | pitching up to 9+, age 10 | partial |
 | Kwame Boateng | `boomer` | boy | pitching up, wild | partial |
-| Greta Lindqvist | `grizz` | the chunky body | boy → girl, afro → other hair | partial |
+| Greta Lindqvist | `grizz` | nothing: re-sculpted against her own sheet (slug `greta`), November 2026 | — | sculpted |
 | Musa Farah | `gizmo` | boy, glasses, small | pitch becomes a wobbler | strong |
 | Hattie Bloom | `peaches` | girl, contact 8, bun | lines | strong |
 | Anton Reyes | `sniffles` | small boy | contact 10, age 6 | strong |

@@ -324,7 +324,7 @@ export const ROSTER: Character[] = [
     voiceGender: 'girl',
     archetype: 'wall',
     tier: 2,
-    recast: { was: 'Grizz', modelCarries: false },
+    recast: { was: 'Grizz', modelCarries: true },
     stats: { contact: 4, power: 8, speed: 2, pitching: 3, fielding: 10 },
     visual: { skin: 0, hair: 'short', hairColor: 4, uniform: 4, accessory: 'none', expression: 'determined', bodyType: 'chunky', stance: 'open',
       body: { height: 0.97, shoulderW: 55, hipW: 7, belly: 0.5, neck: -3 },

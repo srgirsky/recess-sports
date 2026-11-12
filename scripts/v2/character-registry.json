@@ -243,14 +243,14 @@
     },
     "grizz": {
       "name": "Greta Lindqvist",
-      "slug": "grizz",
-      "source": "grizz-pilot.blend",
+      "slug": "greta",
+      "source": "greta-pilot.blend",
       "traits": [
-        "towering round afro",
-        "heavy sleepy brow",
-        "chunky grounded mass",
-        "rust tee on navy shorts",
-        "tall slouched cream socks"
+        "blonde side-swept bob",
+        "built like a door",
+        "acorn-brown tee",
+        "navy piped shorts",
+        "chunky cream sneakers"
       ]
     },
     "flash": {
