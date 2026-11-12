@@ -22,10 +22,12 @@ import * as audio from '../../systems/audio';
  * behind-plate rig (art/plateView maps plate coords to it, ZONE.SCALE-sized).
  * Destroy it with the rest of the pitch visuals.
  */
-export function zoneOutline(scene: Phaser.Scene, alpha = 0.75): Phaser.GameObjects.Graphics {
+export function zoneOutline(scene: Phaser.Scene, alpha = 0.75, zoneScale = 1): Phaser.GameObjects.Graphics {
   const g = scene.add.graphics().setDepth(PLATE_VIEW.DEPTH + 2).setAlpha(alpha);
-  const W = PLATE_ZONE.W * PLATE_VIEW.ZONE.SCALE;
-  const H = PLATE_ZONE.H * PLATE_VIEW.ZONE.SCALE;
+  // `zoneScale` is the batter's own zone (`quirks.zoneScaleFor`): the box drawn
+  // is the box the umpire calls, so a small kid's small zone is visible.
+  const W = PLATE_ZONE.W * PLATE_VIEW.ZONE.SCALE * zoneScale;
+  const H = PLATE_ZONE.H * PLATE_VIEW.ZONE.SCALE * zoneScale;
   const c = plateToScreen({ x: 0, y: 0 });
   g.lineStyle(3, COLORS.white, 0.9);
   g.strokeRoundedRect(c.x - W / 2, c.y - H / 2, W, H, 10);
@@ -79,6 +81,8 @@ export function showPitchSelect(
   opts: {
     /** Juice specials to append below the base cards (locked when broke). */
     specials: SpecialPitchOption[];
+    /** The batter's own strike zone, as a fraction of the standard one. */
+    zoneScale?: number;
     onDone: (kind: PitchKind, target: PlateLoc) => void;
     /** BB2001's INTENTIONAL WALK card: when given, a 🚶 WALK pill sits left
      *  of the prompt and one tap sends the batter to first — no aim, no throw. */
@@ -210,7 +214,7 @@ export function showPitchSelect(
   });
 
   // --- Zone grid ------------------------------------------------------------
-  objs.push(zoneOutline(scene, 0.9));
+  objs.push(zoneOutline(scene, 0.9, opts.zoneScale ?? 1));
   const { W, H } = PLATE_ZONE;
   // Targets stay PLATE-coord (what resolvePitchLocation consumes); only the
   // drawn cell size is screen-scaled by the frontal mapping.

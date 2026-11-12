@@ -1366,3 +1366,40 @@ export const CROWD = {
   STAIR_SQUASH: 0.15, // landing squash (fraction of scaleY) when a kid hits a step
   SQUASH_MS: 90, // how long the landing squash takes to decay
 };
+
+// --- Signature behaviours (classic) -----------------------------------------
+
+/**
+ * The numbers behind each kid's `quirk` (`data/types.ts`); the rules that read
+ * them are in `systems/quirks.ts`.
+ *
+ * ⚠️ NONE OF THESE IS MEASURED. The cast sheet gives one number — the Clutch's
+ * firing power, 0.95 — and cites an Archetypes document for the rest that this
+ * repo has never held. Everything else here is a first guess chosen so the
+ * behaviour is visible within one game, and is the maintainer's to correct.
+ */
+export const QUIRKS = {
+  /** Winnie: her strike zone is this fraction of everyone else's, each way. */
+  SMALL_ZONE: 0.6,
+  /** Winnie, where a pitch has no location (kid mode): chance it misses her. */
+  NEVER_SWINGS_BALL: { perfect: 0.25, good: 0.45, weak: 0.7, wild: 0.95 },
+  /** Winnie, kid mode, CPU pitching: chance the pitch comes in wild. */
+  NEVER_SWINGS_WILD: 0.6,
+  /** Zaya: chance per pitch that she goes, with a base open ahead. */
+  GREEN_LIGHT_GO: 0.5,
+  /** Zaya: added to her steal odds (the roll's own 0.92 ceiling still holds). */
+  GREEN_LIGHT_EDGE: 0.15,
+  /** Kwame / Dev: their location scatter is multiplied by this. */
+  SCATTER_MULT: { wild_arm: 2.2, wobble: 1.6 },
+  /** Kwame / Dev, where a pitch has no location: added to the chance of a ball. */
+  BALL_BUMP: { wild_arm: 0.2, wobble: 0.12 },
+  /** Roya: chance one of her throws goes to a base nobody chose. */
+  WRONG_BASE: 0.35,
+  /** The Clutch, firing: the power stat she bats with (the sheet's 0.95). */
+  CLUTCH_POWER: 9.5,
+  /** Josie: chance weak contact is fouled off (everyone else: 0.25). */
+  FOUL_BACK: 0.6,
+  /** Hattie: where every ball she puts in play goes — 0 = the left-field line,
+   *  1 = the right — and how far from home it lands, px. */
+  SAME_SPOT: { SPRAY: 0.27, DIST: 235 },
+} as const;

@@ -30,6 +30,7 @@ import {
   HUD,
   PICKOFF,
   STEAL_REACT,
+  QUIRKS,
 } from '../config';
 import type { Character } from '../data/types';
 import { getCharacter } from '../data/characters';
@@ -105,6 +106,18 @@ import {
   type RunnerMove,
 } from '../systems/inning';
 import { rollSteal, cpuWantsSteal, rollPickoff, applyPickoff, stealReactBonus, canStealFrom } from '../systems/steal';
+import {
+  batterInMoment,
+  clutchFiring,
+  hasGreenLight,
+  neverSwings,
+  planForBatter,
+  scatterMultFor,
+  stealEdgeFor,
+  wrongBaseChance,
+  zoneScaleFor,
+  type Moment,
+} from '../systems/quirks';
 import { type Alignment } from '../systems/alignment';
 import {
   newJuice,
@@ -596,6 +609,8 @@ export class GameScene extends Phaser.Scene {
   private swung = false;
   private batter!: Character;
   private pitchIsWild = false;
+  /** Winnie already said no to this pitch (one bubble per pitch, not per tap). */
+  private declinedSwing = false;
   /** Flight time of the pitch currently inbound (varies by kind in main mode). */
   private pitchTravelMs = PITCH_TRAVEL_MS;
   /** The located pitch coming at the player (main mode; public for dev/tests). */
@@ -629,6 +644,27 @@ export class GameScene extends Phaser.Scene {
   private juiceGfx?: Phaser.GameObjects.Graphics;
   private announcer = new Announcer();
   private chatter = new Chatter();
+
+  /** The moment a Clutch kid reads: who is on, and whether her team trails. */
+  private moment(): Moment {
+    return { bases: this.halfState.bases, lead: this.battingSeat().score - this.fieldingSeat().score };
+  }
+
+  /** The kid as she bats right now (`quirks.batterInMoment`). */
+  private inMoment(batter: Character): Character {
+    return batterInMoment(batter, this.moment());
+  }
+
+  /** Roya just threw it somewhere nobody asked for. */
+  private flagWrongBase(): void {
+    this.pinUI(floatingText(this, GAME_WIDTH / 2, HUD.STRIP.TOP - 60, '🔀 WRONG BASE!', COLORS.red, 28));
+  }
+
+  /** A Clutch kid stepping in for her moment says so, once, above the plate. */
+  private flagClutch(batter: Character): void {
+    if (!clutchFiring(batter, this.moment())) return;
+    floatingText(this, PLATE_VIEW.ZONE.CX, PLATE_VIEW.ZONE.CY - 120, '🕰️ CLUTCH TIME!', COLORS.gold, 24);
+  }
 
   /** Field chatter: maybe let a kid pipe up (droppable — never talks over the booth). */
   private kidChat(moment: ChatterMoment, kid: Character): void {
@@ -1958,6 +1994,7 @@ export class GameScene extends Phaser.Scene {
     this.showBatter(this.batter);
     this.scoreboard.setBatter(this.batter.name, this.gameLineFor(this.batter.id));
     this.kidChat('batterUp', this.batter);
+    this.flagClutch(this.batter);
     this.swingType = 'normal'; // the chip choice is per-at-bat
     this.showSwingChips();
     this.showSpendChips();
@@ -2070,6 +2107,7 @@ export class GameScene extends Phaser.Scene {
     }
     this.phase = 'pitching';
     this.swung = false;
+    this.declinedSwing = false;
     this.pitchStart = this.time.now;
     this.firstPitchOfGame = false;
     this.pitchPlan = undefined;
@@ -2085,7 +2123,7 @@ export class GameScene extends Phaser.Scene {
       this.pitchIsWild = this.netPitchPlan.band === 'wild';
       this.netPitchPlan = undefined;
     } else {
-      this.pitchIsWild = rollAiWildPitch(this.fieldingSeat().pitcher!, () => Math.random());
+      this.pitchIsWild = rollAiWildPitch(this.fieldingSeat().pitcher!, () => Math.random(), this.batter);
     }
     const wild = this.pitchIsWild;
     this.hostCast({ t: 'pitchLaunch', wild, travelMs: travel });
@@ -2202,6 +2240,7 @@ export class GameScene extends Phaser.Scene {
     }
     this.phase = 'pitching';
     this.swung = false;
+    this.declinedSwing = false;
     this.firstPitchOfGame = false;
     // The CPU arm tires too — same drain, same sag. The ramp sharpens it.
     const moundSeat = this.fieldingSeat();
@@ -2233,10 +2272,17 @@ export class GameScene extends Phaser.Scene {
         cpuArm,
         rp.errorMs,
         getPitchBaseMs(this.mode, 'batting', this.tee),
-        () => Math.random()
+        () => Math.random(),
+        scatterMultFor(moundSeat.pitcher!)
       );
     } else {
-      plan = chooseCpuPitch(cpuArm, this.halfState.count, getPitchBaseMs(this.mode, 'batting', this.tee), () => Math.random());
+      plan = chooseCpuPitch(
+        cpuArm,
+        this.halfState.count,
+        getPitchBaseMs(this.mode, 'batting', this.tee),
+        () => Math.random(),
+        scatterMultFor(moundSeat.pitcher!)
+      );
       // A trailing CPU digs into its own juice for a special pitch. Never in
       // pass-and-play/net: the CPU must not burn a HUMAN seat's meter.
       const special =
@@ -2257,11 +2303,14 @@ export class GameScene extends Phaser.Scene {
           cpuArm,
           60,
           getPitchBaseMs(this.mode, 'batting', this.tee),
-          () => Math.random()
+          () => Math.random(),
+          scatterMultFor(moundSeat.pitcher!)
         );
         this.announceSpecialPitch(special, COLORS.red);
       }
     }
+    // Called against THIS batter's zone, before anything reads `inZone`.
+    plan = planForBatter(plan, this.batter);
     this.pitchPlan = plan;
     this.hostCast({ t: 'pitchLaunch', wild: !plan.inZone, travelMs: plan.travelMs, plan });
     this.pitchIsWild = !plan.inZone; // reuses the take-a-ball / capped-chase rules
@@ -2269,7 +2318,7 @@ export class GameScene extends Phaser.Scene {
     this.pitchStart = this.time.now;
     audio.pitchWoosh();
 
-    this.zoneGfx = zoneOutline(this);
+    this.zoneGfx = zoneOutline(this, undefined, zoneScaleFor(this.batter));
     this.scheduleDodge(plan);
     const start = this.rig.releasePoint;
     const end = plateToScreen(plan.actual);
@@ -2628,6 +2677,17 @@ export class GameScene extends Phaser.Scene {
         }
       });
       this.stealChips.push(container);
+      // Zaya has the green light: she arms her own steal. Nobody calls it —
+      // but a tap on the other chip still overrides her, like any armed steal.
+      const runnerId = this.runners.get(fromBase)?.getData('id') as string | undefined;
+      if (
+        runnerId !== undefined &&
+        this.armedSteal === undefined &&
+        hasGreenLight(getCharacter(runnerId)) &&
+        Math.random() < QUIRKS.GREEN_LIGHT_GO
+      ) {
+        container.emit('pointerdown');
+      }
     }
   }
 
@@ -2711,6 +2771,14 @@ export class GameScene extends Phaser.Scene {
 
   private onSwing(): void {
     if (this.phase !== 'pitching' || this.swung) return;
+    // Winnie has never swung the bat. The tap is heard, and declined.
+    if (neverSwings(this.batter)) {
+      if (!this.declinedSwing) {
+        this.declinedSwing = true;
+        floatingText(this, PLATE_VIEW.ZONE.CX, PLATE_VIEW.ZONE.CY - 120, '🧘 NOPE.', COLORS.white, 26);
+      }
+      return;
+    }
     this.swung = true;
     const error = this.time.now - this.pitchStart - this.pitchTravelMs;
     if (this.features.battingCursor && this.pitchPlan) {
@@ -2762,7 +2830,7 @@ export class GameScene extends Phaser.Scene {
       errorMs,
       cursor,
       plan,
-      batter: this.batter,
+      batter: this.inMoment(this.batter),
       pitcher: this.fieldingSeat().pitcher!,
       rng: () => Math.random(),
       boost: { power: powered },
@@ -2843,7 +2911,7 @@ export class GameScene extends Phaser.Scene {
     this.animateSwing(band === 'miss');
     this.showBandFeedback(band);
 
-    const outcome = resolveContact(band, this.batter, this.fieldingSeat().pitcher!, () => Math.random(), this.geo);
+    const outcome = resolveContact(band, this.inMoment(this.batter), this.fieldingSeat().pitcher!, () => Math.random(), this.geo);
     if (outcome.kind !== 'inPlay') {
       if (outcome.kind === 'strike') audio.whiff();
       else audio.crack();
@@ -2961,6 +3029,7 @@ export class GameScene extends Phaser.Scene {
         const safe = rollSteal(
           {
             runnerSpeed: runner.stats.speed,
+            edge: stealEdgeFor(runner),
             catcherArm: catcher.stats.pitching,
             pitchKind: this.pitchPlan?.kind ?? null,
             // Net: the remote defender's own reaction (undefined vs the CPU).
@@ -3307,7 +3376,7 @@ export class GameScene extends Phaser.Scene {
       // Each kid fields with their own legs, glove, and arm.
       defense: this.fieldAssignment.map((a) => {
         const c = getCharacter(a.charId);
-        return { ...a, speed: c.stats.speed, glove: c.stats.fielding, arm: c.stats.pitching };
+        return { ...a, speed: c.stats.speed, glove: c.stats.fielding, arm: c.stats.pitching, wrongBase: wrongBaseChance(c) };
       }),
       outs: this.halfState.outs,
       params,
@@ -3540,6 +3609,9 @@ export class GameScene extends Phaser.Scene {
         case 'error':
           this.callIt(e.kind === 'wild' ? 'errorWild' : 'errorDrop', {});
           break;
+        case 'wrongBase':
+          this.flagWrongBase();
+          break;
         case 'out':
           this.playHighlights.outs += 1;
           break;
@@ -3727,6 +3799,7 @@ export class GameScene extends Phaser.Scene {
     this.cpuBatter = getCharacter(batSeat.team[batSeat.lineupIdx % TEAM_SIZE]);
     this.showBatter(this.cpuBatter, true); // jogs in from the dugout
     this.scoreboard.setBatter(this.cpuBatter.name, this.gameLineFor(this.cpuBatter.id));
+    this.flagClutch(this.cpuBatter);
     this.hostCast({ t: 'settle', hud: this.hudSnap(), next: 'pitch' });
     // Your defense heckles the incoming batter, Backyard style.
     const fieldTeam = this.fieldingSeat().team;
@@ -3741,7 +3814,7 @@ export class GameScene extends Phaser.Scene {
     for (const from of [2, 1] as const) {
       if (!this.runners.has(from) || this.runners.has(from + 1)) continue;
       const runner = getCharacter(this.runners.get(from)!.getData('id') as string);
-      if (cpuWantsSteal(runner.stats.speed, () => Math.random())) return from;
+      if (cpuWantsSteal(runner.stats.speed, () => Math.random(), hasGreenLight(runner))) return from;
     }
     return undefined;
   }
@@ -3854,6 +3927,7 @@ export class GameScene extends Phaser.Scene {
     const fseat = this.fieldingSeat();
     const ability = fseat.pitcher!.ability;
     this.pitchSelect = showPitchSelect(this, {
+      zoneScale: zoneScaleFor(this.cpuBatter),
       specials: this.features.juice
         ? specialPitches().map((kind) => {
             const sk = spendKindForPitch(kind)!;
@@ -4039,13 +4113,18 @@ export class GameScene extends Phaser.Scene {
     const armStat = this.features.fatigue
       ? effectivePitching(fseat.pitcher!.stats.pitching, fseat.fatigue)
       : fseat.pitcher!.stats.pitching;
-    const plan = resolvePitchLocation(
-      kind,
-      target,
-      armStat,
-      err,
-      getPitchBaseMs(this.mode, 'pitching', this.tee),
-      () => Math.random()
+    // Scattered by this arm, then called against THIS batter's zone.
+    const plan = planForBatter(
+      resolvePitchLocation(
+        kind,
+        target,
+        armStat,
+        err,
+        getPitchBaseMs(this.mode, 'pitching', this.tee),
+        () => Math.random(),
+        scatterMultFor(fseat.pitcher!)
+      ),
+      this.cpuBatter
     );
     // Net: the REMOTE batter decides — the CPU-batter plan is a placeholder
     // and settleCpuPitch routes to the remote swing instead of consuming it.
@@ -4061,7 +4140,7 @@ export class GameScene extends Phaser.Scene {
   /** The aimed pitch flies its curved path over the drawn zone, then settles. */
   private launchCpuPitchMain(plan: PitchPlan, cpuPlan: CpuPitchPlan): void {
     audio.pitchWoosh();
-    this.zoneGfx = zoneOutline(this);
+    this.zoneGfx = zoneOutline(this, undefined, zoneScaleFor(this.cpuBatter));
     // The CPU batter flinches off inside pitches too (`swung` is a batting-
     // half flag — stale here, so this site supplies its own always-true guard;
     // a CPU swing right after simply cancels the dodge via swingBatter).
@@ -4174,7 +4253,7 @@ export class GameScene extends Phaser.Scene {
       floatingText(this, PLATE_VIEW.ZONE.CX, PLATE_VIEW.ZONE.CY - 120, '⚡ POWER SWING!', COLORS.red, 24);
       powerSwingFx(this, PLATE_VIEW.ZONE.CX, PLATE_VIEW.ZONE.CY, COLORS.red);
     }
-    const outcome = resolveContact(cpuBand, this.cpuBatter, this.fieldingSeat().pitcher!, () => Math.random(), this.geo);
+    const outcome = resolveContact(cpuBand, this.inMoment(this.cpuBatter), this.fieldingSeat().pitcher!, () => Math.random(), this.geo);
     this.animateSwing(outcome.kind === 'strike');
     if (outcome.kind !== 'inPlay') {
       if (outcome.kind === 'strike') audio.whiff();
@@ -4251,7 +4330,7 @@ export class GameScene extends Phaser.Scene {
         errorMs: sw.errorMs,
         cursor: sw.cursor,
         plan: this.netMoundPlan,
-        batter: this.cpuBatter,
+        batter: this.inMoment(this.cpuBatter),
         pitcher: this.fieldingSeat().pitcher!,
         rng: () => Math.random(),
         boost: { power: powered },
@@ -4262,7 +4341,7 @@ export class GameScene extends Phaser.Scene {
       outcome = swing;
     } else {
       // Kid mode: the meter band drives plain contact.
-      outcome = resolveContact(sw.band ?? 'miss', this.cpuBatter, this.fieldingSeat().pitcher!, () => Math.random(), this.geo);
+      outcome = resolveContact(sw.band ?? 'miss', this.inMoment(this.cpuBatter), this.fieldingSeat().pitcher!, () => Math.random(), this.geo);
     }
     this.animateSwing(outcome.kind === 'strike');
 
@@ -4412,6 +4491,7 @@ export class GameScene extends Phaser.Scene {
             this.liveView.reactTo(e, this.livePlay);
             if (e.t === 'bonk') this.callIt('bonk', {});
             else if (e.t === 'error') this.callIt(e.kind === 'wild' ? 'errorWild' : 'errorDrop', {});
+            else if (e.t === 'wrongBase') this.flagWrongBase();
           }
         }
         break;
@@ -4553,6 +4633,7 @@ export class GameScene extends Phaser.Scene {
     // OURS — the host only learns the resolved band/cursor.
     this.phase = 'pitching';
     this.swung = false;
+    this.declinedSwing = false;
     this.pitchStart = this.time.now;
     this.pitchTravelMs = m.travelMs;
     this.pitchPlan = m.plan;
@@ -4659,7 +4740,7 @@ export class GameScene extends Phaser.Scene {
       baseRunners: m.baseRunners,
       defense: m.assignment.map((a) => {
         const c = getCharacter(a.charId);
-        return { ...a, speed: c.stats.speed, glove: c.stats.fielding, arm: c.stats.pitching };
+        return { ...a, speed: c.stats.speed, glove: c.stats.fielding, arm: c.stats.pitching, wrongBase: wrongBaseChance(c) };
       }),
       outs: m.outs,
       params: this.liveParams,
@@ -4797,6 +4878,7 @@ export class GameScene extends Phaser.Scene {
       const safe = rollSteal(
         {
           runnerSpeed: runner.stats.speed,
+          edge: stealEdgeFor(runner),
           catcherArm: catcher.stats.pitching,
           pitchKind: this.lastPitchKind ?? null,
           reactBonus,

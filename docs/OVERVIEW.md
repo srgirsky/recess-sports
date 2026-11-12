@@ -120,7 +120,25 @@ tzitzit, Mars's bat — standing beside her on the draft wall, because that is
 where a kid is chosen — and Dev's chair redrawn as a cambered racing chair.
 They ride a new optional `VisualParams.signature`, separate from `accessory`
 on purpose: v2 switches on accessories and would have needed every part in
-three places on day one. The behaviours are the next piece and the larger one.
+three places on day one.
+
+**The first behaviours, in the classic game.** Eleven kids now do on the field
+what their tagline says. They ride an optional `Character.quirk`, read in one
+pure module (`src/systems/quirks.ts`) that every reducer asks rather than
+rolling for itself, under one rule: a kid without a quirk gets the unmodified
+value and never reaches an extra rng draw, so a game with none of the eleven
+in it is the game it was. Winnie takes every pitch behind a zone 60% the size
+of anyone else's, and the box drawn at the plate shrinks to match; Zaya goes on
+her own about every other pitch and says nothing all game; Mars's perfectly
+timed swing is a home run whatever was thrown; the three Clutch kids bat with a
+slugger's power in their own moment and are flagged when it arrives; Kwame's
+and Dev's pitches scatter; Roya throws about one ball in three, full power, to
+a base nobody chose; Josie fouls weak contact back; Hattie's ball lands in one
+place. Two of them take a choice away from the player on purpose — Winnie will
+not swing and Zaya does not wait to be sent — because that is the whole of who
+they are. The numbers are guesses: the cast sheet cites an Archetypes document
+this repo has never held. What is still unbuilt is listed in
+`docs/world1/cast-scope.md`.
 
 ### Design pillars (ages 4–8)
 

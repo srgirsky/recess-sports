@@ -41,12 +41,19 @@ describe('chatter', () => {
   });
 
   it('kids without signature lines fall back to the generic pool', () => {
-    // Zaya does not speak during a game; she has no signature lines on
-    // purpose, so she is the kid the generic pool has to cover.
+    const kid = { ...getCharacter('dex'), chatterLines: undefined };
+    const c = new Chatter(() => 0);
+    expect(c.pick('batterUp', 0, kid)).toBeTruthy();
+  });
+
+  it('Zaya does not speak during a game — the generic pool is not hers either', () => {
+    // She has no signature lines on purpose, and used to be covered by the
+    // generic pool, which had her chirping like everyone else.
     const zaya = getCharacter('rocket');
     expect(zaya.chatterLines).toBeUndefined();
     const c = new Chatter(() => 0);
-    expect(c.pick('batterUp', 0, zaya)).toBeTruthy();
+    expect(c.pick('batterUp', 0, zaya)).toBeNull();
+    expect(c.pick('fielding', 1e9, zaya)).toBeNull();
   });
 
   it('never repeats the same line back-to-back', () => {

@@ -12,7 +12,8 @@
 
 import type { Character } from '../data/types';
 import type { SwingBand } from './atbat';
-import { PITCH_TIMING, WILD_PITCH_CHANCE, PITCHES } from '../config';
+import { PITCH_TIMING, WILD_PITCH_CHANCE, PITCHES, QUIRKS } from '../config';
+import { ballBumpFor, neverSwings, planForBatter } from './quirks';
 import { distOffZone, edgeFactor, type PitchPlan } from './pitchkind';
 
 export type PitchBand = 'perfect' | 'good' | 'weak' | 'wild';
@@ -63,7 +64,16 @@ export function resolveCpuPitch(
     weak: 0.45,
     wild: 0.85,
   };
-  const isBall = rng() < ballChance[band];
+  // Winnie's zone is the smallest around, and a wild arm misses more of anyone's.
+  const missChance = Math.min(
+    0.97,
+    (neverSwings(batter) ? QUIRKS.NEVER_SWINGS_BALL[band] : ballChance[band]) + ballBumpFor(pitcher)
+  );
+  const isBall = rng() < missChance;
+  // She has never swung the bat. It is a philosophy.
+  if (neverSwings(batter)) {
+    return { isBall, cpuSwings: false, cpuBand: 'miss', description: isBall ? 'Ball!' : 'Strike! Looking!' };
+  }
 
   if (isBall) {
     // CPU chases a bad ball once in a while — and swings badly when it does.
@@ -96,6 +106,12 @@ export function resolveCpuPitchLocated(
   rng: () => number
 ): CpuPitchPlan {
   const def = PITCHES[plan.kind];
+  // Called against THIS batter's zone (idempotent — the scene does it too, so
+  // the umpire and the batter can never disagree).
+  plan = planForBatter(plan, batter);
+  if (neverSwings(batter)) {
+    return { isBall: !plan.inZone, cpuSwings: false, cpuBand: 'miss', description: plan.inZone ? 'Strike! Looking!' : 'Ball!' };
+  }
 
   if (!plan.inZone) {
     const off = distOffZone(plan.actual);
@@ -117,10 +133,12 @@ export function resolveCpuPitchLocated(
 }
 
 /** Chance the AI pitcher throws a visibly wild one at the player. */
-export function rollAiWildPitch(pitcher: Character, rng: () => number): boolean {
+export function rollAiWildPitch(pitcher: Character, rng: () => number, batter?: Character): boolean {
   const chance =
     WILD_PITCH_CHANCE.BASE - (pitcher.stats.pitching - 5) * WILD_PITCH_CHANCE.PER_PITCHING;
-  return rng() < Math.max(0.04, chance);
+  const base = Math.max(0.04, chance) + ballBumpFor(pitcher);
+  // Nobody can find Winnie's zone, and she is not going to help.
+  return rng() < (batter && neverSwings(batter) ? Math.max(base, QUIRKS.NEVER_SWINGS_WILD) : base);
 }
 
 /** Player swings at a wild pitch: cap the band (perfect/good -> weak, else miss). */

@@ -126,7 +126,29 @@ height (Winnie's small zone is free), Recess Week already has Monday to Friday
 with Friday awards (Ezra's Shabbat constraint has a place to live), the
 throwing arm already rides the pitching stat (the Cannons).
 
-What does not exist in either sim, in rough order of size:
+**Built in v1 as of November 2026** (`Character.quirk`, rules in
+`src/systems/quirks.ts`, numbers in `config.QUIRKS`): the Clutch layer (Nora
+when behind, Marcus with a runner in scoring position while tied or behind, Yui
+with anyone on), Moonshot (Mars), Winnie never swinging behind a 60% zone,
+Zaya's Green Light and her silence, Kwame's and Dev's scatter, Roya's wrong
+base, Josie's foul-backs and Hattie's one spot. Two departures from this page,
+both deliberate: the Clutch kids keep their roster power when NOT firing (the
+sheet's 0.30 baseline would rewrite three stat cards), and v1's zone did not
+scale with height after all, so Winnie's is a per-kid scale.
+
+**None of the numbers is measured or sourced.** The sheet gives one (the
+Clutch's 0.95); the Archetypes document it cites for the rest has never been in
+this repo. They are first guesses, all in `config.QUIRKS`, for the maintainer
+to correct. v2 has none of these behaviours yet.
+
+Still unbuilt in v1: hit by pitch (Sam), the Loop and the Rainbow (Ezra, Bao),
+Lu's one curve, Heater and Jay refusing relief, Roz's velocity, Musa's 40%,
+Brick House (Sonny) and Greta's hands, Rafi bunting every pitch, Ollie never
+being tagged, the two fence arms (Rudy, Amir), Yaz's closed eyes, the sibling
+bonus and Ezra's Friday.
+
+What did not exist in either sim when this page was written, in rough order of
+size (kept as the scoping record; see above for what v1 has since built):
 
 1. **A situational modifier layer** (Clutch: runners in scoring position while
    losing or tied swaps power 0.30 → 0.95; the sibling bonus). New, but

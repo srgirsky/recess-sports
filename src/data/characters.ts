@@ -27,9 +27,11 @@
 // `draftLine` is the kid's own excited shout when picked (spoken in their
 // derived voice — systems/voices.ts); `chatterLines` are optional signature
 // field-chatter lines for the personality-forward kids (systems/chatter.ts
-// has generic pools for everyone else). Ability hooks are data-driven; the
-// archetype mechanics the sheet describes (Clutch, the Wobble, Heater, hit by
-// pitch, Zaya's game-long silence) are sim work and arrive behind flags.
+// has generic pools for everyone else). Ability hooks are data-driven, and so
+// is `quirk` — the kid's signature behaviour in the classic game, whose rules
+// live in `systems/quirks.ts`. The mechanics the sheet describes that are NOT
+// built yet (Heater, hit by pitch, the Loop, the Rainbow, Brick House) are
+// listed in `docs/world1/cast-scope.md`.
 // ---------------------------------------------------------------------------
 
 import type { Character } from './types';
@@ -78,6 +80,7 @@ export const ROSTER: Character[] = [
       hairSpec: { volume: 1.04, length: 1.15 },
       outfit: { kind: 'tee', top: 0 } },
     ability: 'calls_shot',
+    quirk: 'moonshot',
     draftLine: 'Called it! This one is going to the MOON!',
     chatterLines: ['That one is going over the garage. Guaranteed.', 'I called it. Whatever happens, I called it.', 'Walks are for people who are scared.'],
   },
@@ -135,6 +138,7 @@ export const ROSTER: Character[] = [
       hairSpec: { volume: 0.96, wisps: 1 },
       outfit: { kind: 'tee', top: 7, bottoms: 'jeans' } },
     ability: 'unhittable_pitch',
+    quirk: 'wobble',
     draftLine: 'Yes! Nobody hits my pitch. Nobody.',
     chatterLines: ['Nobody hits the wobble.', 'Even I do not know where it goes. That is the best part.'],
   },
@@ -154,8 +158,10 @@ export const ROSTER: Character[] = [
       hairSpec: { length: 1.2, part: 0.6 },
       outfit: { kind: 'tee', top: 8 } },
     ability: 'none',
-    // Zaya does not speak during a game — the draft is before it. Her silence
-    // on the field is a chatter rule for the sim, not a line in this file.
+    quirk: 'green_light',
+    silentInGame: true,
+    // Zaya does not speak during a game — the draft is before it
+    // (`silentInGame`, read by `systems/chatter.ts`).
     draftLine: 'Good. Now keep up.',
   },
   {
@@ -313,6 +319,7 @@ export const ROSTER: Character[] = [
       hairSpec: { volume: 0.95 },
       outfit: { kind: 'stripeTee', top: 1 } },
     ability: 'none',
+    quirk: 'wild_arm',
     draftLine: 'I will throw hard! Sorry in advance!',
     chatterLines: ['Sorry! That one got away!', 'Are you okay? Sorry!'],
   },
@@ -370,6 +377,7 @@ export const ROSTER: Character[] = [
       hairSpec: { volume: 1.06, length: 0.9 },
       outfit: { kind: 'dress', top: 1 } },
     ability: 'none',
+    quirk: 'same_spot',
     draftLine: 'Single to left. You know it. I know it.',
     chatterLines: ['Same spot. Go ahead and stand there.', 'Ezra says I am underrated. Ezra talks a lot.'],
   },
@@ -408,6 +416,7 @@ export const ROSTER: Character[] = [
       hairSpec: { volume: 1.0, length: 0.9 },
       outfit: { kind: 'overalls', top: 3 } },
     ability: 'none',
+    quirk: 'never_swings',
     draftLine: 'I will not swing. That is the plan.',
     chatterLines: ['Ball. That was a ball.', 'Why would I swing? Look at my strike zone.'],
   },
@@ -446,6 +455,7 @@ export const ROSTER: Character[] = [
       hairSpec: { volume: 1.05, length: 0.95 },
       outfit: { kind: 'tee', top: 3 } },
     ability: 'none',
+    quirk: 'foul_back',
     draftLine: 'Oops! Did I hit that at you? Oops!',
     chatterLines: ['Total accident. Again.'],
   },
@@ -484,6 +494,7 @@ export const ROSTER: Character[] = [
       hairSpec: { volume: 0.94 },
       outfit: { kind: 'overalls', top: 6 } },
     ability: 'none',
+    quirk: 'clutch_behind',
     draftLine: 'Fine. Call me when we are losing.',
     chatterLines: ['Are we losing yet? Tell me when.'],
   },
@@ -503,6 +514,7 @@ export const ROSTER: Character[] = [
       hairSpec: { volume: 1.05, part: -0.5 },
       outfit: { kind: 'hoodie', top: 9, bottoms: 'jeans' } },
     ability: 'none',
+    quirk: 'clutch_risp',
     draftLine: 'Cool. Is this a real game? Then I am good.',
     chatterLines: ['Practice is not a game. This is a game.'],
   },
@@ -522,6 +534,7 @@ export const ROSTER: Character[] = [
       hairSpec: { volume: 0.9 },
       outfit: { kind: 'dress', top: 6 } },
     ability: 'none',
+    quirk: 'clutch_runners',
     draftLine: 'Me? Okay! Just put someone on base first.',
     chatterLines: ['Is anybody on base? Then I cannot explain this.'],
   },
@@ -616,6 +629,7 @@ export const ROSTER: Character[] = [
       hairSpec: { volume: 1.02, length: 1.1 },
       outfit: { kind: 'hoodie', top: 1 } },
     ability: 'none',
+    quirk: 'wrong_base',
     draftLine: 'Watch THIS throw! Which base? Does not matter!',
     chatterLines: ['Wrong base. Great throw, though.', 'Where was I supposed to throw that?'],
   },
