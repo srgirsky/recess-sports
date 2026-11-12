@@ -29,6 +29,7 @@ import type {
   FaceSpec,
   OutfitKind,
   BattingStance,
+  Signature,
 } from '../data/types';
 import { SKIN_TONES, HAIR_COLORS, UNIFORM_COLORS, STREET_COLORS, DENIM } from './palette';
 
@@ -240,6 +241,8 @@ interface Ctx {
   w: Wardrobe;
   S: string; // standard outline attributes
   usesChair: boolean;
+  /** The kid's signature look, if the roster gives them one. */
+  sig?: Signature;
   /** Team logo emoji baked into the chest/back badge (team-uniform variants). */
   logo?: string;
 }
@@ -1026,6 +1029,194 @@ function accessory(v: VisualParams): string {
   }
 }
 
+// --- Signature looks -------------------------------------------------------
+//
+// The World 1 roster gives a handful of kids one thing you would know them by
+// from across a store. They are NOT accessories: an accessory is a team-kit
+// extra that every renderer already switches on, and these have to show in
+// street clothes and in a team jersey alike, in every pose that could show
+// them. So they ride `VisualParams.signature` and are drawn here.
+//
+// Colours are the kid's OWN, not the team's (a hijab does not turn green when
+// she is drafted by the green team) — except the batting helmet and the
+// catcher's trim, which are team kit and take the jersey palette.
+//
+// Adding one:
+//   * A head item goes through `signatureHead` AND `signatureHeadRear`, inside
+//     the head transform; a body item through `signatureTorsoFront`, `Rear`
+//     and `Side`. One it can be seen from but is not drawn in vanishes
+//     mid-play — give it every view.
+//   * `hijab` and `patka` REPLACE the hair layer (front, back and rear) in
+//     `buildCharacterSVG`; art.test holds them to the nape rule the hair
+//     tests excuse them from.
+//   * The bat's per-kid knobs ride `BAT_SIG`. A bigger bat is GIRTH: the
+//     stance bat already touches the viewBox edge.
+const HIJAB = '#1f7f8c';
+const HIJAB_DK = '#155e69';
+const PATKA = '#27408b';
+const PATKA_DK = '#1b2d66';
+const GEAR = '#3a4552';
+const GEAR_LT = '#566473';
+
+/** A head-covering signature replaces a headband or cap rather than wearing
+ *  it underneath (June's record still carries her old headband for v2). */
+function headwearReplacesAccessory(v: VisualParams): boolean {
+  const covers = v.signature === 'hijab' || v.signature === 'patka' || v.signature === 'slidingHelmet';
+  return covers && (v.accessory === 'headband' || v.accessory === 'cap');
+}
+
+/** Front headwear, drawn inside the head transform over the face and hair. */
+function signatureHead(v: VisualParams): string {
+  const uni = UNIFORM_COLORS[v.uniform] ?? UNIFORM_COLORS[0];
+  const S = `stroke="${OUT}" stroke-width="${SW}" stroke-linejoin="round"`;
+  switch (v.signature) {
+    case 'hijab':
+      // One sleek wrap: over the crown, round the face, under the chin and
+      // down onto the shoulders. The face shows through an even-odd opening,
+      // so the wrap sits OVER the ears and the hairline without hiding a
+      // feature. A paler underscarf band crosses the forehead.
+      return `
+        <path fill-rule="evenodd" d="M 44 86 a56 56 0 0 1 112 0 q 4 34 -12 58 q -44 16 -88 0 q -16 -24 -12 -58 Z
+          M 100 50 a38 40 0 0 0 0 80 a38 40 0 0 0 0 -80 Z" fill="${HIJAB}" ${S}/>
+        <path d="M 66 62 q 34 -18 68 0" fill="none" stroke="${lighten(HIJAB, 0.45)}" stroke-width="5" stroke-linecap="round"/>
+        <path d="M 62 128 q 38 18 76 0" fill="none" stroke="${HIJAB_DK}" stroke-width="4" stroke-linecap="round"/>
+        <path d="M 56 60 q 8 -20 30 -28" fill="none" stroke="${lighten(HIJAB, 0.3)}" stroke-width="5" stroke-linecap="round" opacity="0.7"/>`;
+    case 'patka':
+      // The cloth covers the hair to the hairline and gathers into the
+      // topknot (joora) high on the crown — the strongest silhouette in Tier 2.
+      return `
+        <circle cx="100" cy="27" r="14" fill="${PATKA}" ${S}/>
+        <path d="M 91 24 q 9 -7 18 0" fill="none" stroke="${lighten(PATKA, 0.4)}" stroke-width="4" stroke-linecap="round"/>
+        <path d="${CAP_A}" fill="${PATKA}" ${S}/>
+        <path d="M 58 60 q 42 -30 84 0" fill="none" stroke="${PATKA_DK}" stroke-width="4" stroke-linecap="round"/>
+        <path d="M 60 56 q 8 -16 26 -22" fill="none" stroke="${lighten(PATKA, 0.4)}" stroke-width="5" stroke-linecap="round" opacity="0.7"/>`;
+    case 'slidingHelmet':
+      // A batting helmet a size too big, tipped down over one eyebrow. It
+      // stops at the brow: a helmet that hid her eyes hid the kid.
+      return `
+        <g transform="rotate(-9 100 82) translate(0 -13)">
+          <path d="M 42 80 a58 54 0 0 1 116 0 l 0 6 q -58 -16 -116 0 Z" fill="url(#jerseyG)" ${S}/>
+          <path d="M 40 82 q 60 -20 120 0 q 8 6 6 12 q -66 -16 -132 0 q -2 -6 6 -12 Z" fill="${darken(uni.jersey, 0.14)}" ${S}/>
+          <path d="M 146 84 q 12 4 10 22 q -8 6 -16 0 Z" fill="url(#jerseyG)" ${S}/>
+          <circle cx="151" cy="97" r="3.2" fill="${OUT}"/>
+          <path d="M 64 48 q 10 -14 28 -18" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round" opacity="0.55"/>
+          <circle cx="100" cy="29" r="4" fill="${uni.trim}" stroke="${OUT}" stroke-width="3"/>
+        </g>`;
+    case 'catcherGear':
+      // A hard skull cap, worn low — the catcher's helmet with the mask off.
+      return `
+        <path d="M 50 74 a50 46 0 0 1 100 0 q -50 -18 -100 0 Z" fill="${GEAR}" ${S}/>
+        <path d="M 52 73 q 48 -17 96 0" fill="none" stroke="${uni.trim}" stroke-width="4" stroke-linecap="round"/>
+        <path d="M 62 52 q 10 -14 26 -18" fill="none" stroke="${GEAR_LT}" stroke-width="6" stroke-linecap="round"/>`;
+    default:
+      return '';
+  }
+}
+
+/** The same headwear from behind. */
+function signatureHeadRear(v: VisualParams): string {
+  const uni = UNIFORM_COLORS[v.uniform] ?? UNIFORM_COLORS[0];
+  const S = `stroke="${OUT}" stroke-width="${SW}" stroke-linejoin="round"`;
+  switch (v.signature) {
+    case 'hijab':
+      return `
+        <path d="M 44 86 a56 56 0 0 1 112 0 q 4 34 -12 58 q -44 16 -88 0 q -16 -24 -12 -58 Z" fill="${HIJAB}" ${S}/>
+        <path d="M 62 128 q 38 18 76 0" fill="none" stroke="${HIJAB_DK}" stroke-width="4" stroke-linecap="round"/>
+        <path d="M 100 40 q -6 44 0 96" fill="none" stroke="${HIJAB_DK}" stroke-width="3" stroke-linecap="round" opacity="0.6"/>`;
+    case 'patka':
+      return `
+        <circle cx="100" cy="27" r="14" fill="${PATKA}" ${S}/>
+        <path d="${DOME_R}" fill="${PATKA}" ${S}/>
+        <path d="M 56 100 q 44 26 88 0" fill="none" stroke="${PATKA_DK}" stroke-width="4" stroke-linecap="round"/>`;
+    case 'slidingHelmet':
+      return `
+        <g transform="rotate(-9 100 82) translate(0 -13)">
+          <path d="M 42 80 a58 54 0 0 1 116 0 l 0 22 q -58 26 -116 0 Z" fill="url(#jerseyG)" ${S}/>
+          <circle cx="100" cy="29" r="4" fill="${uni.trim}" stroke="${OUT}" stroke-width="3"/>
+        </g>`;
+    case 'catcherGear':
+      return `
+        <path d="${DOME_R}" fill="${GEAR}" ${S}/>
+        <path d="M 52 98 q 48 26 96 0" fill="none" stroke="${uni.trim}" stroke-width="4" stroke-linecap="round"/>`;
+    default:
+      return '';
+  }
+}
+
+/** Body-level signature drawn over the FRONT torso: the chest protector, or
+ *  the tassels below the hem. */
+function signatureTorsoFront(c: Ctx, shoulderY: number, hipY: number): string {
+  const { halfW, hipW } = c.m;
+  if (c.sig === 'catcherGear') {
+    const w = halfW * 0.78;
+    const top = shoulderY - 2;
+    const bot = hipY - 6;
+    const ribs = [0.3, 0.52, 0.74]
+      .map((t) => {
+        const y = top + (bot - top) * t;
+        return `<path d="M ${100 - w + 5} ${y} q ${w - 5} 7 ${2 * (w - 5)} 0" fill="none" stroke="${GEAR_LT}" stroke-width="4" stroke-linecap="round"/>`;
+      })
+      .join('');
+    return `
+    <line x1="${100 - w + 4}" y1="${top + 4}" x2="${100 - halfW + 5}" y2="${shoulderY - 12}" stroke="${GEAR}" stroke-width="9" stroke-linecap="round"/>
+    <line x1="${100 + w - 4}" y1="${top + 4}" x2="${100 + halfW - 5}" y2="${shoulderY - 12}" stroke="${GEAR}" stroke-width="9" stroke-linecap="round"/>
+    <path d="M ${100 - w} ${top} q ${w} 12 ${2 * w} 0 l 4 ${bot - top - 8} q ${-(w + 4)} 16 ${-2 * (w + 4)} 0 Z" fill="${GEAR}" ${c.S}/>
+    ${ribs}
+    <path d="M ${100 - w + 3} ${top + 5} q ${w - 3} 11 ${2 * (w - 3)} 0" fill="none" stroke="${c.trim}" stroke-width="3.5" stroke-linecap="round"/>`;
+  }
+  if (c.sig === 'tzitzit') return tassels([100 - (halfW + hipW) + 6, 100 - halfW * 0.4, 100 + halfW * 0.4, 100 + (halfW + hipW) - 6], hipY + 6);
+  return '';
+}
+
+/** …and over the REAR torso: the protector's crossed straps, or the tassels. */
+function signatureTorsoRear(c: Ctx, shoulderY: number, hipY: number): string {
+  const { halfW, hipW } = c.m;
+  if (c.sig === 'catcherGear') {
+    return `
+    <g stroke="${GEAR}" stroke-width="9" stroke-linecap="round" fill="none">
+      <line x1="${100 - halfW + 8}" y1="${shoulderY - 8}" x2="${100 + halfW - 2}" y2="${hipY - 16}"/>
+      <line x1="${100 + halfW - 8}" y1="${shoulderY - 8}" x2="${100 - halfW + 2}" y2="${hipY - 16}"/>
+    </g>
+    <rect x="${100 - halfW - hipW}" y="${hipY - 20}" width="${2 * (halfW + hipW)}" height="9" rx="4" fill="${GEAR}" stroke="${OUT}" stroke-width="3"/>`;
+  }
+  if (c.sig === 'tzitzit') return tassels([100 - (halfW + hipW) + 6, 100 - halfW * 0.4, 100 + halfW * 0.4, 100 + (halfW + hipW) - 6], hipY + 6);
+  return '';
+}
+
+/** …and on the SIDE torso (run cycle), in that group's own leaned frame. */
+function signatureTorsoSide(c: Ctx, w: number): string {
+  if (c.sig === 'catcherGear') {
+    return `
+      <path d="M ${100 + w / 2 - 16} 150 q 14 2 16 12 l 0 30 q -6 8 -16 6 Z" fill="${GEAR}" ${c.S}/>
+      <path d="M ${100 + w / 2 - 12} 166 h 10 M ${100 + w / 2 - 12} 178 h 10" stroke="${GEAR_LT}" stroke-width="4" stroke-linecap="round"/>`;
+  }
+  if (c.sig === 'tzitzit') return tassels([100 - w / 2 + 6, 100 + w / 2 - 6], 204);
+  return '';
+}
+
+/** Tzitzit: a pair of knotted white strings at each given x, hanging from y.
+ *  Outlined so they read against cream baseball pants as well as denim. */
+function tassels(xs: number[], y: number): string {
+  return xs
+    .map(
+      (x) => `
+    <path d="M ${r1(x - 2)} ${y} q -2 6 -1 13 M ${r1(x + 2)} ${y} q 2 6 1 13" fill="none" stroke="${OUT}" stroke-width="5" stroke-linecap="round"/>
+    <path d="M ${r1(x - 2)} ${y} q -2 6 -1 13 M ${r1(x + 2)} ${y} q 2 6 1 13" fill="none" stroke="#fffaf0" stroke-width="2.4" stroke-linecap="round"/>
+    <circle cx="${r1(x)}" cy="${y + 5}" r="2.2" fill="#fffaf0" stroke="${OUT}" stroke-width="1.5"/>`
+    )
+    .join('');
+}
+
+/** Sonny's shin guards, over whatever the front legs are wearing. */
+function shinGuards(c: Ctx): string {
+  const legHalf = c.m.halfW * 0.42;
+  const guard = (x: number) => `
+    <circle cx="${r1(x)}" cy="205" r="9" fill="${GEAR}" stroke="${OUT}" stroke-width="3.5"/>
+    <rect x="${r1(x - 9)}" y="208" width="18" height="24" rx="6" fill="${GEAR}" stroke="${OUT}" stroke-width="3.5"/>
+    <path d="M ${r1(x - 5)} 216 h 10 M ${r1(x - 5)} 223 h 10" stroke="${GEAR_LT}" stroke-width="3" stroke-linecap="round"/>`;
+  return guard(100 - legHalf) + guard(100 + legHalf);
+}
+
 // --- Shared pieces ---------------------------------------------------------
 
 /**
@@ -1195,7 +1386,8 @@ function headGroup(c: Ctx, v: VisualParams, hFront: string, look = 0): string {
     <ellipse cx="100" cy="${HEAD.cy + c.m.headR}" rx="${c.m.headR}" ry="24" fill="${c.skinDk}" opacity="0.35" clip-path="url(#hc)"/>
     ${face(v, look, c.skinDk)}
     ${hFront}
-    ${accessory(v)}
+    ${headwearReplacesAccessory(v) ? '' : accessory(v)}
+    ${signatureHead(v)}
     </g>`;
 }
 
@@ -1247,7 +1439,8 @@ function headRearGroup(c: Ctx, v: VisualParams, hRear: string, profile = false):
     <ellipse cx="100" cy="${HEAD.cy + c.m.headR}" rx="${c.m.headR}" ry="24" fill="${c.skinDk}" opacity="0.35" clip-path="url(#hcr)"/>
     ${hRear}
     ${profileHint}
-    ${accessoryRear(v)}
+    ${headwearReplacesAccessory(v) ? '' : accessoryRear(v)}
+    ${signatureHeadRear(v)}
     </g>`;
 }
 
@@ -1265,7 +1458,8 @@ function torsoRear(c: Ctx): string {
   return `
     <path d="${torsoPath}" fill="${c.gJersey}" ${c.S}/>
     <path d="M ${100 - (halfW + hipW) + 2} ${hipY - 14} q ${halfW + hipW - 2} ${bow} ${2 * (halfW + hipW - 2)} 0 l 2 12 q ${-(halfW + hipW - 2)} ${bow} ${-2 * (halfW + hipW - 2)} 0 Z" fill="${c.jerseyDk}"/>
-    ${badge(c, 100, shoulderY + 28, 16)}`;
+    ${badge(c, 100, shoulderY + 28, 16)}
+    ${signatureTorsoRear(c, shoulderY, hipY)}`;
 }
 
 // --- Front poses (stand / cheer) --------------------------------------------
@@ -1273,6 +1467,10 @@ function torsoRear(c: Ctx): string {
 /** Front legs by wardrobe: baseball pants (trim stripe + sock band), street
  *  shorts (skin shins + white socks), jeans, or bare legs under a skirt. */
 function legsFront(c: Ctx): string {
+  return c.sig === 'catcherGear' ? legsFrontPlain(c) + shinGuards(c) : legsFrontPlain(c);
+}
+
+function legsFrontPlain(c: Ctx): string {
   const legHalf = c.m.halfW * 0.42;
   const kind = c.w.bottomKind;
   if (kind === 'shorts') {
@@ -1318,7 +1516,8 @@ function torsoFront(c: Ctx): string {
   return `
     <path d="${torsoPath}" fill="${c.gJersey}" ${c.S}/>
     <path d="M ${100 - (halfW + hipW) + 2} ${hipY - 14} q ${halfW + hipW - 2} ${bow} ${2 * (halfW + hipW - 2)} 0 l 2 12 q ${-(halfW + hipW - 2)} ${bow} ${-2 * (halfW + hipW - 2)} 0 Z" fill="${c.jerseyDk}"/>
-    ${garmentFront(c, torsoPath, shoulderY, hipY)}`;
+    ${garmentFront(c, torsoPath, shoulderY, hipY)}
+    ${signatureTorsoFront(c, shoulderY, hipY)}`;
 }
 
 /** Front-torso garment detail per wardrobe kind. Jersey = the classic collar
@@ -1395,23 +1594,29 @@ function armsCheer(c: Ctx): string {
 
 /** Front-view wheelchair: a big wheel on each side of the seated kid, seat + footrest. */
 function wheelchairFront(): string {
+  // ★ A RACING CHAIR, not a hospital one (Dev is the only kid in a chair, and
+  // the roster's read is "low, angled, built for speed"): the big wheels are
+  // CAMBERED — leaning in at the top — which from the front is two tilted
+  // ellipses, and a third small wheel leads out in front.
   const rim = '#2c3a47';
-  const wheel = (cx: number) => `
-    <circle cx="${cx}" cy="214" r="33" fill="#e9eef2" stroke="${OUT}" stroke-width="6"/>
-    <circle cx="${cx}" cy="214" r="20" fill="none" stroke="${rim}" stroke-width="4"/>
-    <circle cx="${cx}" cy="214" r="6" fill="${METAL_DK}"/>
-    <g stroke="${rim}" stroke-width="3">
-      <line x1="${cx}" y1="194" x2="${cx}" y2="234"/>
-      <line x1="${cx - 20}" y1="214" x2="${cx + 20}" y2="214"/>
-      <line x1="${cx - 14}" y1="200" x2="${cx + 14}" y2="228"/>
-      <line x1="${cx - 14}" y1="228" x2="${cx + 14}" y2="200"/>
+  const FRAME = '#ff7a1a';
+  const wheel = (cx: number, lean: number) => `
+    <g transform="rotate(${lean} ${cx} 247)">
+      <ellipse cx="${cx}" cy="212" rx="19" ry="35" fill="#e9eef2" stroke="${OUT}" stroke-width="6"/>
+      <ellipse cx="${cx}" cy="212" rx="11" ry="22" fill="none" stroke="${rim}" stroke-width="4"/>
+      <ellipse cx="${cx}" cy="212" rx="4" ry="6" fill="${METAL_DK}"/>
+      <g stroke="${rim}" stroke-width="3">
+        <line x1="${cx}" y1="190" x2="${cx}" y2="234"/>
+        <line x1="${cx - 11}" y1="212" x2="${cx + 11}" y2="212"/>
+      </g>
     </g>`;
   return `
-    ${wheel(46)}
-    ${wheel(154)}
-    <!-- seat + footrest -->
-    <path d="M 60 206 h 80 l -8 18 h -64 Z" fill="#3f86e0" stroke="${OUT}" stroke-width="${SW}" stroke-linejoin="round"/>
-    <rect x="84" y="228" width="32" height="9" rx="4" fill="${METAL_DK}"/>`;
+    ${wheel(48, 14)}
+    ${wheel(152, -14)}
+    <!-- bucket seat + the lead wheel out front -->
+    <path d="M 62 204 h 76 l -10 20 h -56 Z" fill="${FRAME}" stroke="${OUT}" stroke-width="${SW}" stroke-linejoin="round"/>
+    <path d="M 100 224 l 0 10" stroke="${FRAME}" stroke-width="7" stroke-linecap="round"/>
+    <ellipse cx="100" cy="240" rx="6" ry="8" fill="#e9eef2" stroke="${OUT}" stroke-width="4"/>`;
 }
 
 // --- Side poses (run1 / run2) -----------------------------------------------
@@ -1434,6 +1639,7 @@ function torsoSide(c: Ctx, dropY: number): string {
       <rect x="${100 - w / 2 + 3}" y="192" width="${w - 6}" height="11" rx="5" fill="${c.jerseyDk}"/>
       ${flare}
       ${collar}
+      ${signatureTorsoSide(c, w)}
     </g>`;
 }
 
@@ -1618,8 +1824,10 @@ function wheelchairSide(c: Ctx, frame: RunFrame): { behind: string; front: strin
     // Seat, legs, footplate — behind the torso.
     behind: `
       ${ticks}
-      <rect x="62" y="164" width="12" height="40" rx="5" fill="#3f86e0" ${c.S}/>
-      <rect x="66" y="196" width="62" height="12" rx="5" fill="#3f86e0" ${c.S}/>
+      <rect x="64" y="176" width="11" height="28" rx="5" fill="#ff7a1a" ${c.S}/>
+      <rect x="66" y="196" width="62" height="12" rx="5" fill="#ff7a1a" ${c.S}/>
+      <path d="M 124 204 L 172 ${GROUND - 14}" fill="none" stroke="${OUT}" stroke-width="10" stroke-linecap="round"/>
+      <path d="M 124 204 L 172 ${GROUND - 14}" fill="none" stroke="#ff7a1a" stroke-width="5" stroke-linecap="round"/>
       ${capsule('M 88 198 Q 112 200 126 208', PANTS, w)}
       ${capsule('M 126 208 Q 136 214 140 222', PANTS, w - 1)}
       ${sideShoe(142, 230, 6)}
@@ -1636,7 +1844,8 @@ function wheelchairSide(c: Ctx, frame: RunFrame): { behind: string; front: strin
         <line x1="${92 - 16}" y1="${wcy - 16}" x2="${92 + 16}" y2="${wcy + 16}"/>
         <line x1="${92 - 16}" y1="${wcy + 16}" x2="${92 + 16}" y2="${wcy - 16}"/>
       </g>
-      <circle cx="146" cy="${GROUND - 9}" r="9" fill="#e9eef2" stroke="${OUT}" stroke-width="4"/>
+      <circle cx="174" cy="${GROUND - 10}" r="10" fill="#e9eef2" stroke="${OUT}" stroke-width="4"/>
+      <circle cx="174" cy="${GROUND - 10}" r="3" fill="${METAL_DK}"/>
       ${arm}`,
   };
 }
@@ -1644,6 +1853,21 @@ function wheelchairSide(c: Ctx, frame: RunFrame): { behind: string; front: strin
 // --- Gameplay poses (bat / windup / ready / slide) ---------------------------
 
 const BAT_WOOD = '#d39a5c';
+
+/** Per-kid bat: `len` stretches it along its own axis (length only, never
+ *  width — the batProp rule), `choke` slides it DOWN through the hands so the
+ *  grip sits that far up the handle. Set once per SVG by buildCharacterSVG. */
+const PLAIN_BAT = { len: 1, wide: 1, choke: 0 };
+/** Mars: "a bat visibly too big for anyone". It is GIRTH, not length, and
+ *  that is the frame's doing: the stance bat already reaches the viewBox edge
+ *  in the rear stance, so a longer bat clips (art.test's "no bat leaves the
+ *  viewBox" measures 201.0 at full length and 1.35 wide). 0.97 x 1.40 is the
+ *  fattest bat that stays inside every swing frame. Standing still she has
+ *  room, and the bat beside her is drawn a quarter longer as well. */
+const BIG_BAT = { len: 0.97, wide: 1.4, choke: 0 };
+/** June: "a bat choked up halfway" — and a kid's-size bat to choke up on. */
+const CHOKED_BAT = { len: 0.94, wide: 1, choke: 15 };
+let BAT_SIG = PLAIN_BAT;
 
 /**
  * The bat itself: ONE tapered silhouette (fat rounded barrel → curved taper →
@@ -1654,9 +1878,13 @@ const BAT_WOOD = '#d39a5c';
 function batProp(gx: number, gy: number, deg: number, sx = 1, sy = 1): string {
   const edge = OUT;
   const ew = 4;
-  const scale = sx === 1 && sy === 1 ? '' : ` scale(${r1(sx)} ${r1(sy)})`;
+  const sig = BAT_SIG;
+  const ly = sy * sig.len;
+  const lx = sx * sig.wide;
+  const scale = lx === 1 && ly === 1 ? '' : ` scale(${Math.round(lx * 100) / 100} ${Math.round(ly * 100) / 100})`;
+  const choke = sig.choke ? ` translate(0 ${sig.choke})` : '';
   return `
-    <g transform="translate(${gx} ${gy}) rotate(${deg})${scale}">
+    <g transform="translate(${gx} ${gy}) rotate(${deg})${choke}${scale}">
       <path d="M -3.5 -6 L -3.5 -44 C -9 -50 -9 -56 -9 -62 L -9 -88 Q -9 -96 0 -96 Q 9 -96 9 -88 L 9 -62 C 9 -56 9 -50 3.5 -44 L 3.5 -6 Z" fill="${BAT_WOOD}" stroke="${edge}" stroke-width="${ew}" stroke-linejoin="round"/>
       <rect x="-6" y="-90" width="3.5" height="26" rx="1.75" fill="${lighten(BAT_WOOD, 0.4)}" opacity="0.6" stroke="none"/>
       <rect x="-3.5" y="-42" width="7" height="6" fill="${darken(BAT_WOOD, 0.28)}" stroke="none"/>
@@ -2650,8 +2878,13 @@ export function buildCharacterSVG(
     w,
     S: `stroke="${OUT}" stroke-width="${SW}" stroke-linejoin="round" stroke-linecap="round"`,
     usesChair: v.accessory === 'wheelchair',
+    sig: v.signature,
     logo: team?.logo,
   };
+  // The bat is the one prop with no Ctx in reach (batProp is called from
+  // fourteen pose builders), so its two per-kid knobs ride module state that
+  // is set here, once per SVG, before any pose is built.
+  BAT_SIG = v.signature === 'bigBat' ? BIG_BAT : v.signature === 'slidingHelmet' ? CHOKED_BAT : PLAIN_BAT;
   // Mass fills are gradient refs; highlight/shade are flat colours derived from
   // the kid's REAL hairColor here, because hair() can't derive a shade from a
   // 'url(#...)' and a gradient can't live on a stroke.
@@ -2662,7 +2895,10 @@ export function buildCharacterSVG(
     shade: darken(hairColor, 0.38),
   };
   const hg = buildHairSpec(v);
-  const h = hair(v.hair, hf, hg);
+  // A hijab or a patka COVERS the hair: no hair layer is drawn at all, front,
+  // back or rear, and the headwear in `signatureHead` stands in for it.
+  const covered = v.signature === 'hijab' || v.signature === 'patka';
+  const h = covered ? { back: '', front: '' } : hair(v.hair, hf, hg);
   const shoulderY = 150;
 
   // Chest number badge (front jersey poses only — street clothes have none).
@@ -2677,7 +2913,7 @@ export function buildCharacterSVG(
     pose === 'swingFollowRear'
   ) {
     // Rear poses use the back-of-head hair set; the front set is ignored.
-    const hr = hairRear(v.hair, hf, hg);
+    const hr = covered ? '' : hairRear(v.hair, hf, hg);
     layers =
       pose === 'batRear'
         ? poseBatRear(c, v, hr)
@@ -2740,6 +2976,9 @@ export function buildCharacterSVG(
     layers = c.usesChair
       ? `${wheelchairFront()}${wrapHeadBack(c, h.back)}${torsoFront(c)}${arms}${number}${headGroup(c, v, h.front)}`
       : `${wrapHeadBack(c, h.back)}${legsFront(c)}${torsoFront(c)}${arms}${number}${headGroup(c, v, h.front)}`;
+    // Mars carries her bat everywhere: standing on its knob beside her it
+    // reaches her shoulder, which is the whole joke.
+    if (c.sig === 'bigBat' && pose === 'stand') layers += batProp(100 + c.m.halfW + 31, GROUND - 3, -5, 1, 1.3);
   }
 
   // Height scale is anchored at GROUND so feet stay planted on the sacred

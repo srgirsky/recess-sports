@@ -107,6 +107,11 @@ sculptlib) plus a measured sheet:
 | sliding helmet, choked-up bat | June | small |
 | oversized bat | Mars | small |
 
+**v1 has all seven as of November 2026** (`VisualParams.signature`, drawn in
+`src/art/CharacterArt.ts` in street clothes and team jerseys; Dev's chair is
+restyled as a cambered racing chair). The v2 proxy and the sculpts do not read
+the field yet, so in v2 these kids still appear without them.
+
 The triangle and byte budgets are full roster-wide (see the asset-budget
 memory and `validate-models`), so catcher's gear and the hijab have to be paid
 for by removing geometry elsewhere on that kid.

@@ -53,7 +53,7 @@ export const ROSTER: Character[] = [
     archetype: 'table-setter',
     tier: 1,
     stats: { contact: 10, power: 2, speed: 6, pitching: 2, fielding: 6 },
-    visual: { skin: 0, hair: 'ponytail', hairColor: 5, uniform: 2, accessory: 'headband', expression: 'determined', freckles: true, stance: 'crouch',
+    visual: { signature: 'slidingHelmet', skin: 0, hair: 'ponytail', hairColor: 5, uniform: 2, accessory: 'headband', expression: 'determined', freckles: true, stance: 'crouch',
       body: { height: 0.86, shoulderW: 40 },
       face: { eyeGap: 16, eyeSize: 1.1, nose: 'dot', mouthW: 0.9 },
       hairSpec: { length: 1.15 },
@@ -72,7 +72,7 @@ export const ROSTER: Character[] = [
     tier: 1,
     recast: { was: 'Big Talk Theo', modelCarries: true },
     stats: { contact: 5, power: 10, speed: 3, pitching: 3, fielding: 3 },
-    visual: { skin: 4, hair: 'long', hairColor: 3, uniform: 4, accessory: 'none', expression: 'grin', stance: 'high',
+    visual: { signature: 'bigBat', skin: 4, hair: 'long', hairColor: 3, uniform: 4, accessory: 'none', expression: 'grin', stance: 'high',
       body: { height: 1.0, shoulderW: 50, hipW: 2, neck: 3 },
       face: { eyeGap: 18, nose: 'wedge', mouthW: 1.2 },
       hairSpec: { volume: 1.04, length: 1.15 },
@@ -111,7 +111,7 @@ export const ROSTER: Character[] = [
     recast: { was: 'Tank', modelCarries: true },
     stats: { contact: 4, power: 7, speed: 2, pitching: 3, fielding: 10 },
     // Bald, like the sculpt that carries him; the sheet leaves his hair open.
-    visual: { skin: 3, hair: 'bald', hairColor: 3, uniform: 3, accessory: 'none', expression: 'happy', bodyType: 'chunky', stance: 'open',
+    visual: { signature: 'catcherGear', skin: 3, hair: 'bald', hairColor: 3, uniform: 3, accessory: 'none', expression: 'happy', bodyType: 'chunky', stance: 'open',
       body: { height: 0.92, shoulderW: 56, hipW: 10, belly: 0.8, neck: -4, headH: 0.96 },
       face: { eyeGap: 15, eyeSize: 0.9, nose: 'dot', mouthW: 0.85 },
       outfit: { kind: 'tee', top: 9, bottom: 10 } },
@@ -168,7 +168,7 @@ export const ROSTER: Character[] = [
     tier: 1,
     recast: { was: 'Bendy Bao', modelCarries: true },
     stats: { contact: 4, power: 3, speed: 4, pitching: 9, fielding: 6 },
-    visual: { skin: 1, hair: 'curly', hairColor: 0, uniform: 2, accessory: 'none', expression: 'cool',
+    visual: { signature: 'tzitzit', skin: 1, hair: 'curly', hairColor: 0, uniform: 2, accessory: 'none', expression: 'cool',
       body: { height: 0.99, shoulderW: 42, hipW: -3, neck: 5 },
       face: { eyeGap: 18, eyeSize: 1.0, mouthW: 1.0 },
       hairSpec: { volume: 1.0 },
@@ -210,7 +210,7 @@ export const ROSTER: Character[] = [
     stats: { contact: 7, power: 4, speed: 9, pitching: 3, fielding: 7 },
     // Fatou runs in a sport hijab. Until that part exists, a bun under a
     // headband is the nearest covered-hair silhouette the kit has.
-    visual: { skin: 5, hair: 'bun', hairColor: 3, uniform: 5, accessory: 'headband', expression: 'grin', stance: 'crouch',
+    visual: { signature: 'hijab', skin: 5, hair: 'bun', hairColor: 3, uniform: 5, accessory: 'headband', expression: 'grin', stance: 'crouch',
       body: { height: 0.92, shoulderW: 40, neck: 3 },
       face: { eyeGap: 19, eyeSize: 1.1, mouthW: 1.05 },
       hairSpec: { volume: 1.04 },
@@ -231,7 +231,7 @@ export const ROSTER: Character[] = [
     stats: { contact: 5, power: 10, speed: 3, pitching: 3, fielding: 3 },
     // Guri wears a patka under the helmet; a bun is the nearest topknot shape
     // until the part exists.
-    visual: { skin: 3, hair: 'bun', hairColor: 3, uniform: 6, accessory: 'none', expression: 'goofy', stance: 'open',
+    visual: { signature: 'patka', skin: 3, hair: 'bun', hairColor: 3, uniform: 6, accessory: 'none', expression: 'goofy', stance: 'open',
       body: { height: 1.0, shoulderW: 52, hipW: 3, belly: 0.3, neck: 2, headW: 1.02 },
       face: { eyeGap: 20, eyeSize: 0.9, nose: 'wedge', mouthW: 1.15 },
       hairSpec: { volume: 1.05 },

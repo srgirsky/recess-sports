@@ -9,6 +9,9 @@ import { ROSTER } from '../data/characters';
 import { buildCharacterSVG, POSES, BAT_STANCE_GEOMETRY, headHalfWidth } from './CharacterArt';
 import { STREET_POSES } from './textureFactory';
 
+/** Signatures that replace the hair layer outright. */
+const COVERS_HAIR = new Set(['hijab', 'patka']);
+
 describe('character art', () => {
   it('produces valid SVG for every kid in every pose', () => {
     for (const char of ROSTER) {
@@ -165,10 +168,53 @@ describe('character art', () => {
     // Both views, because the rear dome is the one the rig shows at 318px.
     for (const char of ROSTER) {
       if (char.visual.hair === 'bald') continue;
+      if (COVERS_HAIR.has(char.visual.signature ?? '')) continue; // see the head-covering test
       for (const pose of ['stand', 'batRear'] as const) {
         const svg = buildCharacterSVG(char.visual, pose);
         expect(svg, `${char.id}/${pose} hair has no highlight`).toContain('data-hair="sheen"');
         expect(svg, `${char.id}/${pose} hair has no strand detail`).toContain('data-hair="strands"');
+      }
+    }
+  });
+
+  it('a head covering replaces the hair in every view, and reaches the nape', () => {
+    // Fatou's sport hijab and Guri's patka COVER the hair, so those two are
+    // excused from the two hair tests around this one — and held to the
+    // same two properties here instead, so the excuse cannot become a kid
+    // with a bare skull: no hair layer leaks out from under the covering,
+    // and from behind the covering itself runs down past the nape (y 132).
+    const covered = ROSTER.filter((c) => COVERS_HAIR.has(c.visual.signature ?? ''));
+    expect(covered.map((c) => c.id).sort()).toEqual(['big_lou', 'zippy']);
+    for (const char of covered) {
+      for (const pose of ['stand', 'run1', 'bat', 'batRear', 'catchRear'] as const) {
+        const svg = buildCharacterSVG(char.visual, pose);
+        expect(svg, `${char.id}/${pose} draws hair under a head covering`).not.toContain('data-hair=');
+      }
+      const rear = buildCharacterSVG(char.visual, 'batRear');
+      const reaches =
+        rear.includes('q 4 34 -12 58 q -44 16 -88 0') || // the hijab's drape, to y 144
+        rear.includes('l 0 24 q -50 32 -100 0'); // the patka, on the hair's own nape dome
+      expect(reaches, `${char.id} rear covering stops short of the nape`).toBe(true);
+    }
+  });
+
+  it('a signature look shows in street clothes and in a team jersey alike', () => {
+    // The roster's signatures are the kid, not the kit: each must survive the
+    // street variant the draft wall uses AND a team recolour. Compared against
+    // the same kid with the signature removed, so a signature that silently
+    // stopped drawing in one wardrobe goes red.
+    const signed = ROSTER.filter((c) => c.visual.signature);
+    expect(signed.length).toBe(6);
+    for (const char of signed) {
+      const bare = { ...char.visual, signature: undefined };
+      const pose = char.visual.signature === 'bigBat' ? 'stand' : 'stand';
+      for (const [team, opts] of [
+        [undefined, { street: true }],
+        [{ uniform: 2 }, undefined],
+      ] as const) {
+        const withSig = buildCharacterSVG(char.visual, pose, team, opts);
+        const without = buildCharacterSVG(bare, pose, team, opts);
+        expect(withSig, `${char.id}: signature missing (${opts ? 'street' : 'team'})`).not.toBe(without);
       }
     }
   });
@@ -178,8 +224,10 @@ describe('character art', () => {
     // (HEAD.cy + headR), leaving ~22px of bare scalp under the hairline — the
     // reason the rig batter read as a bald ball wearing a hair sticker.
     const NAPE = 'l 0 24 q -50 32 -100 0';
-    const domed = ROSTER.filter((c) =>
-      ['short', 'spiky', 'curly', 'ponytail', 'pigtails', 'bun'].includes(c.visual.hair)
+    const domed = ROSTER.filter(
+      (c) =>
+        ['short', 'spiky', 'curly', 'ponytail', 'pigtails', 'bun'].includes(c.visual.hair) &&
+        !COVERS_HAIR.has(c.visual.signature ?? '')
     );
     expect(domed.length).toBeGreaterThan(0);
     for (const char of domed) {
@@ -371,7 +419,11 @@ describe('character art', () => {
       [-8.5, 3],
       [8.5, 3],
     ];
-    const batXform = /<g transform="translate\((-?[\d.]+) (-?[\d.]+)\) rotate\((-?[\d.]+)\)(?: scale\((-?[\d.]+) (-?[\d.]+)\))?">\s*<path d="M -3\.5 -6/g;
+    // A signature bat adds two things to the transform, and both move ink:
+    // June's choke-up slides the bat down its own axis (`translate(0 n)`
+    // after the rotate) and Mars's big bat scales x as well as y. Both are
+    // read here, so the bat a kid actually swings is the one that is checked.
+    const batXform = /<g transform="translate\((-?[\d.]+) (-?[\d.]+)\) rotate\((-?[\d.]+)\)(?: translate\(0 (-?[\d.]+)\))?(?: scale\((-?[\d.]+) (-?[\d.]+)\))?">\s*<path d="M -3\.5 -6/g;
 
     for (const char of ROSTER) {
       for (const pose of [
@@ -387,13 +439,13 @@ describe('character art', () => {
         const svg = buildCharacterSVG(char.visual, pose);
         const hits = [...svg.matchAll(batXform)];
         expect(hits.length, `${char.id}/${pose}: bat transform not found`).toBe(1);
-        const [, gx, gy, deg, sx, sy] = hits[0];
+        const [, gx, gy, deg, choke, sx, sy] = hits[0];
         const rad = (Number(deg) * Math.PI) / 180;
         const cos = Math.cos(rad);
         const sin = Math.sin(rad);
         for (const [lx, ly] of CORNERS) {
           const px = lx * Number(sx ?? 1);
-          const py = ly * Number(sy ?? 1);
+          const py = ly * Number(sy ?? 1) + Number(choke ?? 0);
           const x = Number(gx) + px * cos - py * sin;
           const y = Number(gy) + px * sin + py * cos;
           expect(x, `${char.id}/${pose}: bat ink off the left edge`).toBeGreaterThanOrEqual(0);

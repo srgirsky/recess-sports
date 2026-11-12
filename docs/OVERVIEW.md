@@ -108,6 +108,20 @@ roots above the drawn collar, and the notch that left beside the neck was the
 "slate wedge" two critics filed until the shoulder line was raised to meet
 them. She ships at `needs-polish`; the slot stops drawing the stand-in.
 
+**The signature looks, in the classic game.** The maintainer's read of the
+re-cast was that the kids did not reflect their stories, and he was right: the
+re-cast had changed thirty names, taglines and stat lines and none of the
+things the roster says you would know a kid BY. Twenty-five of thirty had no
+behaviour of their own, and not one of the seven signature looks existed in
+the art. The looks went in first, in v1: Fatou's sport hijab and Guri's patka
+(which replace the hair layer rather than sit on it), June's too-big helmet
+and choked-up bat, Sonny's chest protector, shin guards and skull cap, Ezra's
+tzitzit, Mars's bat — standing beside her on the draft wall, because that is
+where a kid is chosen — and Dev's chair redrawn as a cambered racing chair.
+They ride a new optional `VisualParams.signature`, separate from `accessory`
+on purpose: v2 switches on accessories and would have needed every part in
+three places on day one. The behaviours are the next piece and the larger one.
+
 ### Design pillars (ages 4–8)
 
 - **Minimal reading.** Icons, color, and voice over text. A 6-year-old who can't read should be able to play.

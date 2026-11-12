@@ -43,6 +43,11 @@ one named path constant so they cannot drift apart.
   carry `hBack` inside the head transform, or afros float loose or cover faces.
   A regression test in `art.test.ts` enforces the order.
 
+## Signature looks
+
+`VisualParams.signature` is NOT an accessory: it draws in every wardrobe and
+every view. The rules are the header above `signatureHead` in `CharacterArt.ts`.
+
 ## Per-kid geometry
 
 `BodySpec` (height/shoulderW/hipW/belly/neck/headW/headH), `FaceSpec`
