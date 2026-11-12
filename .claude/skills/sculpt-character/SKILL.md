@@ -1279,3 +1279,76 @@ sheet, and check your result is not byte-identical to where you started.
   (`npm run export:signature-performance -- <id>`). A pose ladder that edits
   the source without re-exporting measures nothing; zero changed pixels across
   very different poses is the sign.
+
+## Sculpting a RE-CAST slot (Greta in `grizz`, the first one)
+
+The World 1 re-cast kept the thirty ids as slots, so a new kid is sculpted
+under the OLD id with a NEW slug. Four things differ from a first sculpt, and
+the first cost a round of measuring the wrong drawing:
+
+- **★ EDIT THE REGISTRY FIRST. The slug is read from
+  `character-registry.json`, never from the recipe.** `analyse:turnaround`,
+  `generate:face-atlas`, the provenance lint and the board all call
+  `slugFor(id)`. With the recipe pointed at the new sheet and the registry
+  still on the old slug, the analyser printed "5 views · recipe ok" for all four
+  new sheets — while reading the four OLD ones — and `generate:face-atlas`
+  would have overwritten the old kid's atlas. Registry (slug, source, traits),
+  then recipe, then everything else.
+- **The bootstrapped `.blend` opens holding the previous kid.**
+  `build-signature-source.py` imports the slot's delivered GLB, so the scene
+  starts with their three LODs under your LOD names. `main()` must purge every
+  mesh, not just three names.
+- **Flip `recast.modelCarries` to `true` BEFORE capturing evidence.** The
+  review surface draws the stand-in proxy while it is false, and the capture
+  waits for `model model` until it times out.
+- **Then re-point what is keyed by id but describes the old kid:** the
+  `FACE_SPECS` entry, the `featurelatitude` entry (slug and every latitude),
+  `sculpt-provenance`'s script name, the fidelity record's four evidence
+  filenames (the board compositor prefers `heroEvidence`, so a stale one pastes
+  the old kid into the new board), and delete the old slug's `.spec.json`.
+  The old findings' triage rows go when `apply:critique` replaces the findings.
+
+⚠️ What does NOT follow the sculpt and is still the previous kid's: the
+signature animation take (`anims_<id>_v1.glb` — Greta idles in Grizz's sleepy
+slump) and the positional direction cards in `character-directions.mjs`. Tell
+critics the idle pose is inherited, and tell the maintainer it is open.
+
+**Check the sheet against the rig before the first table.** Every kid shares
+one skeleton with the shoulder joint at z 2.471. A sheet drawn with older-kid
+proportions puts the shoulder line far above it: Mars's first sheet drew
+shoulders at 2.88 on a slim frame, which no yoke can bridge. A wide kid can
+carry a tall square yoke (Tank, Greta: shoulder line 2.75); a slim one cannot.
+Measure the shoulder row on day one and send the sheet back if it does not fit.
+
+## Lessons Greta paid for (the bob, the shorts, and a shared shoe defect)
+
+- **A hairline cut out of a ring loft must be ONE ring bent onto the line.**
+  Deciding proud-or-buried per vertex draws stair-steps (whichever ring sits
+  above the line in each column); sliding "the first vertex below the line" up
+  to it draws a sawtooth (columns disagree about which ring that is). Pick one
+  CAP_LEVELS row as the hairline ring, bend its forward half to the fringe
+  table, and re-space the rings above and below it (`build_bob` in
+  `sculpt-greta-source.py`). Outboard of the skull there is no forehead to
+  clamp to — hold those columns back to the skull's flank or the temples carry
+  a forward bill.
+- **Shorts over bare legs: a seat BOX that ends exactly where the leg tubes are
+  as wide as it is, then the tubes.** A waist wider than the tubes crosses them
+  in a sawtooth; one box to the hem reads as a skirt; piping on the legs under
+  a box that hides them detaches as a brim in motion. Each was a critic round.
+- **The pinch moves when the collar does.** Flattening a raised collar slid the
+  head-box pinch from the neck to the collar row and took three metrics out of
+  tolerance at once. Re-pin the neck's narrowest ring at the sheet's own pinch
+  z after any collar change (Clover's notch).
+- **A mid-value warm garment beside skin is authored at the SHEET's value, not
+  ·1.2.** Her acorn tee at ·1.2 delivered terracotta; Grizz found the same.
+- **`browInk` exists** (generate-face-atlas): a fair-haired kid's brows can be
+  a different colour from the lash line. Unset, older atlases are unchanged.
+- **★ A SHARED-LIBRARY DEFECT, NOT YET SWEPT: the shoe's toe end cap.** Every
+  critic of Greta filed a dark notch inside an arch low on each toe. It is
+  `sculptlib/shoe.py`'s end fan (`shoe.ends`) and it moved when `toe_point`
+  moved; it is on Tank's cream shoes too (`tank-runtime-face-grin.png`) and
+  hidden on every navy shoe. Three local attempts (no toe cap, a flat apex, a
+  sloped foxing step) did not remove it. It needs a fix in the builder and a
+  roster re-export, which is its own PR — do not spend another kid's rounds
+  on it.
+

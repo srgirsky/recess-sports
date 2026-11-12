@@ -178,6 +178,10 @@ function eye(x, y, uid, { closed = false, wink = false, heavy = false, inward = 
     <path d="M${x - EYE_HALF_W} ${y} Q${x} ${y - EYE_HALF_H * 2} ${x + EYE_HALF_W} ${y}" fill="none" stroke="${ink}" stroke-width="3.6" stroke-linecap="round"/>`;
 }
 
+// `browInk` lets a fair-haired kid's brows be a different colour from her
+// lash line: one `ink` for both drew Greta's light-brown brows as near-black
+// bars (her first independent review). Unset, every earlier atlas is
+// byte-identical.
 function brow(x, y, tilt, inner) {
   // The turnaround's brows are the boldest mark on the face: THICK angular
   // bars, low over the eyes, tapering from the nose outward. The old 5.2px
@@ -230,7 +234,7 @@ function brow(x, y, tilt, inner) {
   return `<path d="M${x - half} ${y - tilt - left} Q${x} ${y - arch} ${x + half} ${y + tilt - right}
     Q${x + half - capR} ${y + tilt} ${x + half} ${y + tilt + right}
     Q${x} ${y + base} ${x - half} ${y - tilt + left}
-    Q${x - half + capL} ${y - tilt} ${x - half} ${y - tilt - left}Z" fill="${ink}"/>`;
+    Q${x - half + capL} ${y - tilt} ${x - half} ${y - tilt - left}Z" fill="${spec.browInk ?? ink}"/>`;
 }
 
 function face(name, index) {

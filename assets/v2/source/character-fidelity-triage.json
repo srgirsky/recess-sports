@@ -465,116 +465,6 @@
       "class": "no-defect-note",
       "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: NOT FILED per instruction"
     },
-    "grizz:be78ac42d4f7": {
-      "char": "grizz",
-      "class": "no-defect-note",
-      "excerpt": "SCOPED HAND ARTICULATION PASS: fresh runtime hero/run/contact and4expression"
-    },
-    "grizz:1eaa0ef34adf": {
-      "char": "grizz",
-      "class": "interpenetration",
-      "excerpt": "INHERITED GARMENT INTERPENETRATION, BASELINE CONFIRMED: exact baseline/curre"
-    },
-    "grizz:1fa6aa80a4d9": {
-      "char": "grizz",
-      "class": "interpenetration",
-      "excerpt": "SHARED POSE CAVEAT: the far contact forearm is largely obscured by the broad"
-    },
-    "grizz:d9743537a3ed": {
-      "char": "grizz",
-      "class": "hair-nyquist",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: THE AFRO IS STILL A SHALL"
-    },
-    "grizz:d1c1e6b0ef73": {
-      "char": "grizz",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: THE NAPE IS BARE UNDER TH"
-    },
-    "grizz:ee355631e58d": {
-      "char": "grizz",
-      "class": "sheared-edges",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: THE AFRO'S CROWN IS A PEA"
-    },
-    "grizz:e223bd3bd119": {
-      "char": "grizz",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: THE EARS ARE BUILT AND RE"
-    },
-    "grizz:6fd3c5018178": {
-      "char": "grizz",
-      "class": "ears",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: THE FRONT VIEW SHOWS BARE"
-    },
-    "grizz:7a5566355575": {
-      "char": "grizz",
-      "class": "decal-not-form",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: THE NOSE HAS NO FRONT REA"
-    },
-    "grizz:b8dc153c50a2": {
-      "char": "grizz",
-      "class": "face-atlas",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: THE NEUTRAL FACE STILL GL"
-    },
-    "grizz:706aef29b349": {
-      "char": "grizz",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: THE CHEST POCKET IS ON TH"
-    },
-    "grizz:c74b7993337b": {
-      "char": "grizz",
-      "class": "decal-not-form",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: THE CHEST POCKET READS AS"
-    },
-    "grizz:58502b28902b": {
-      "char": "grizz",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CLEARED / NON-DEFECT (kep"
-    },
-    "grizz:2a33666d9d7c": {
-      "char": "grizz",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CLEARED / NON-DEFECT (kep"
-    },
-    "grizz:73f9e6179e0a": {
-      "char": "grizz",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CLEARED / NON-DEFECT (kep"
-    },
-    "grizz:0135aef9d77b": {
-      "char": "grizz",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CLEARED / NON-DEFECT (kep"
-    },
-    "grizz:fb216e8bf1d7": {
-      "char": "grizz",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: RECORDED NON-DEFECT (kept"
-    },
-    "grizz:4bfdd4ab324e": {
-      "char": "grizz",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: RECORDED NON-DEFECT (kept"
-    },
-    "grizz:5251984acb53": {
-      "char": "grizz",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: RECORDED NON-DEFECT (kept"
-    },
-    "grizz:4c5b2f56f998": {
-      "char": "grizz",
-      "class": "material-light",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: SKIN IS ONLY SLIGHTLY LIG"
-    },
-    "grizz:1334d05b26d2": {
-      "char": "grizz",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CLEARED — EVIDENCE REFRES"
-    },
-    "grizz:565e119bc381": {
-      "char": "grizz",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: NEW — NOTE, NOT A DEFECT:"
-    },
     "sprout:27c3a0154278": {
       "char": "sprout",
       "class": "no-defect-note",
@@ -2844,6 +2734,66 @@
       "char": "tank",
       "class": "stance",
       "excerpt": "Catcher squat (.art-review/catch-now2/catcher_squat-tank.png vs catch-before; PI"
+    },
+    "grizz:0e9f2185a478": {
+      "char": "grizz",
+      "class": "hair-nyquist",
+      "excerpt": "Hair has no strand grouping and reads as a cap: measure:strands gives 2.67 m"
+    },
+    "grizz:dd224849e4ff": {
+      "char": "grizz",
+      "class": "decal-not-form",
+      "excerpt": "Shoes read as hooves and carry no visible sneaker construction: greta-runtim"
+    },
+    "grizz:d439154814b3": {
+      "char": "grizz",
+      "class": "hair-nyquist",
+      "excerpt": "Side-swept fringe is lost to the mirrored hairline: greta-runtime-face-grin."
+    },
+    "grizz:d26cefd8fd97": {
+      "char": "grizz",
+      "class": "hems-cuffs",
+      "excerpt": "Shorts have crossing surfaces and flare off the leg: greta-front-apose-revie"
+    },
+    "grizz:1e679c6bdeac": {
+      "char": "grizz",
+      "class": "hair-nyquist",
+      "excerpt": "Bob side locks are flat faceted flaps: greta-runtime-face-grin.png (x 545-65"
+    },
+    "grizz:ad951bb5003b": {
+      "char": "grizz",
+      "class": "hair-nyquist",
+      "excerpt": "Profile hairline is a square step: greta-profile-apose-review.png (x 240-300"
+    },
+    "grizz:76a8f0cea00d": {
+      "char": "grizz",
+      "class": "hems-cuffs",
+      "excerpt": "Piping lacks the dolphin-hem curve: on the board and in greta-runtime-swing."
+    },
+    "grizz:893fff7556de": {
+      "char": "grizz",
+      "class": "face-atlas",
+      "excerpt": "Eyes are smaller and more almond than the sheet's: greta-front-apose-review."
+    },
+    "grizz:41915306df42": {
+      "char": "grizz",
+      "class": "proportions",
+      "excerpt": "Forearms taper to small pointed hands in greta-front-apose-review.png (x 150"
+    },
+    "grizz:5f1cd91b282a": {
+      "char": "grizz",
+      "class": "decal-not-form",
+      "excerpt": "Small dark comb-shaped ink mark on the kicked-back shoe in greta-runtime-run"
+    },
+    "grizz:7f46f009b216": {
+      "char": "grizz",
+      "class": "butt-joins",
+      "excerpt": "Sleeves butt-join the torso: greta-front-apose-review.png (x 170-200 and x 3"
+    },
+    "grizz:b283f33d29cc": {
+      "char": "grizz",
+      "class": "no-defect-note",
+      "excerpt": "Out of scope, noted once: the idle in greta-runtime-hero.png is a heavy forw"
     }
   }
 }

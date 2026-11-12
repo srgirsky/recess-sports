@@ -247,54 +247,60 @@ export const FACE_SPECS = {
     tongueOut: true,
   },
 
-  // Grizz. `hair: afro`, grumpy, powerful, napping. His face is small features
-  // in a huge field: bead eyes 19px wide each against a 195px face opening
-  // (9.7%, against Tank's 14.9%), brows 40px each (20.5% — the boldest mark on
-  // the face), a frown line at cell 82 through the island window solved in
-  // sculpt-grizz-source.py. The spec's mouth landmark REFUSES on his sheet
-  // (nose shadow and frown within 7 luminance counts), so the lip row is the
-  // bounded trace in the sculpt script's FACE_ISLAND note: z 2.684, 86.5% of
-  // the afro-inclusive head.
+  // Greta (the `grizz` slot, re-cast November 2026). Bounded traces on
+  // greta-turnaround.png's front view (crown row 180, neck pinch row 352,
+  // 1px = 0.005926ft): brow arcs centred row 251 (z 3.572), eyes rows 267-295
+  // centred row 281 (z 3.395), the closed smile at row 321 (z 3.160). Through
+  // the island window solved in sculpt-greta-source.py those land at cell
+  // rows 24 / 50 / 85. The spec's own brow landmark (19.8% of head) is her
+  // fringe's shadow, not the brow — Turbo's lesson — and its mouth refuses.
+  // Each eye is 0.189ft wide with centres 0.189ft off the midline; on the
+  // island's bearing map that is cells 28/100 with a half-width of 20, which
+  // keeps the outer corner at cell 120, one inside the no-paint margin.
   grizz: {
-    ink: '#0a0503',
-    mouthInk: '#4a2015',
-    sclera: '#fff8ec',
-    irisBrown: '#2a1710',
-    pupil: '#100a06',
-    white: '#fff4e0',
-    mouth: '#57241c',
-    mouthDark: '#39160f',
-    tongue: '#dd6f79',
-    lowerLip: '#b97e50',
-    // Small heavy-lidded beads — sleepy, not squinting. Sized against the
-    // measurement, Tank's lesson: one eye is 9.7% of his face width where
-    // Tank's is 14.9% of his head, so the marks scale by that ratio.
-    eyeHalfW: 12,
-    eyeHalfH: 6,
-    irisR: 5.5,
-    irisInward: 2,
-    eyeX: [46, 82],
-    eyeY: 52,
-    // The brows are the read: thick, dark, low over the eyes, inner ends
-    // dropped a touch — grumpy without Junebug's full scowl.
-    browThick: 5.5,
-    browThin: 3.5,
-    browHalf: 14,
-    browX: [44, 84],
-    browY: 30,
-    browTilt: 4,
-    // The mouth-cell pass: grin/cheer/tongue were near-identical on the
-    // pre-batch-4 atlases (two critics pixel-diffed it) - the batch-4 knobs
-    // open cheer and break the tongue past the lip line.
+    ink: '#3a2410',
+    mouthInk: '#8a4428',
+    sclera: '#fffdf2',
+    irisBrown: '#5a3210',
+    pupil: '#170d06',
+    white: '#fff8ea',
+    mouth: '#a04a30',
+    mouthDark: '#6e2c1a',
+    tongue: '#e57f86',
+    lowerLip: '#f0a070',
+    // Big ROUND eyes — the first build's 20x12 almond read as a squint beside
+    // the sheet's near-circles (0.189ft wide, 0.163 tall).
+    eyeHalfW: 19,
+    eyeHalfH: 15,
+    irisR: 11,
+    irisInward: 3,
+    eyeX: [29, 99],
+    eyeY: 50,
+    // Thick, soft, light-brown arcs a full eye-height above the eyes: calm
+    // and set, not scowling. The sheet's brow samples #9A5724; `browInk`
+    // keeps them that brown while the lash line stays dark.
+    browInk: '#8c5222',
+    browThick: 3.8,
+    browThin: 2.4,
+    browHalf: 18,
+    browX: [29, 99],
+    browY: 23,
+    browTilt: 0,
+    // Arched, not flat: at the default arch the bars read "stern" (second
+    // independent review); the sheet's brows are soft raised arcs.
+    browArch: 15,
+    freckles: true,
+    freckleTone: '#d07840',
     alignOpenMouth: true,
     tongueOut: true,
-    tongueReach: 1.3,
-    mouthY: 79,
-    // The pout: corners fall 4.5 cells — the concept's neutral is a clear
-    // downturned frown (rows 353-358 of the sheet diverge downward from the
-    // lip line's ends), and the review scored the straight line as losing it.
-    mouthBow: 0.6,
-    mouthDrop: 4.5,
+    tongueReach: 1.0,
+    // A small closed smile — the sheet's mouth is 0.20ft wide under a wide face.
+    // Corners lifted a full 4 cells: at -2.4 the resting mouth read as a
+    // frown from the raised gameplay camera (first independent review).
+    mouthScale: 0.9,
+    mouthY: 85,
+    mouthBow: -2.2,
+    mouthDrop: -4.0,
   },
 
   // Sprout. Big round wonder eyes — the largest on the roster relative to his

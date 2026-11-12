@@ -72,7 +72,7 @@ const concepts = join(repo, 'docs', 'v2', 'concepts');
 const GOVERNED = [
   { id: 'nostrike', script: 'sculpt-junebug-source.py' },
   { id: 'tank', script: 'sculpt-tank-source.py' },
-  { id: 'grizz', script: 'sculpt-grizz-source.py' },
+  { id: 'grizz', script: 'sculpt-greta-source.py' },
   { id: 'sprout', script: 'sculpt-sprout-source.py' },
   { id: 'bubbles', script: 'sculpt-bubbles-source.py' },
   { id: 'chip', script: 'sculpt-chip-source.py' },
