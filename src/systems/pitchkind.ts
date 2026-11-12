@@ -111,14 +111,17 @@ export function resolvePitchLocation(
   pitcherStat: number,
   meterErrorMs: number,
   baseTravelMs: number,
-  rng: () => number
+  rng: () => number,
+  /** A wild arm's multiplier (`quirks.scatterMultFor`). 1 = an ordinary arm. */
+  scatterMult = 1
 ): PitchPlan {
   const def = PITCHES[kind];
   const scatter = Math.min(
     PITCH_SCATTER.MAX,
-    PITCH_SCATTER.BASE +
+    (PITCH_SCATTER.BASE +
       Math.abs(meterErrorMs) * PITCH_SCATTER.PER_ERROR_MS +
-      Math.max(0, 5 - pitcherStat) * PITCH_SCATTER.PER_STAT_BELOW
+      Math.max(0, 5 - pitcherStat) * PITCH_SCATTER.PER_STAT_BELOW) *
+      scatterMult
   );
   const actual: PlateLoc = {
     x: target.x + (rng() * 2 - 1) * scatter,
@@ -142,7 +145,8 @@ export function chooseCpuPitch(
   pitcherStat: number,
   count: { balls: number; strikes: number },
   baseTravelMs: number,
-  rng: () => number
+  rng: () => number,
+  scatterMult = 1
 ): PitchPlan {
   const kinds = availablePitches(false);
   const kind = kinds[Math.floor(rng() * kinds.length)];
@@ -167,7 +171,7 @@ export function chooseCpuPitch(
 
   // CPU "meter error" scales down with its pitching stat.
   const errorMs = rng() * 160 * (1 - Math.min(9, pitcherStat) / 12);
-  return resolvePitchLocation(kind, target, pitcherStat, errorMs, baseTravelMs, rng);
+  return resolvePitchLocation(kind, target, pitcherStat, errorMs, baseTravelMs, rng, scatterMult);
 }
 
 /**

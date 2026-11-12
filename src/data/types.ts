@@ -187,6 +187,26 @@ export type AbilityId =
   | 'crazy_bunt'; // Signature 🤪 CRAZY BUNT swing card (SWING_TYPES.CRAZY_BUNT).
 
 /**
+ * A kid's signature BEHAVIOUR in the classic game — the habit or flaw the cast
+ * sheet gives them, as something that happens on the field. Data here; every
+ * rule and number lives in `systems/quirks.ts` and `config.QUIRKS`. Separate
+ * from `AbilityId` on purpose: abilities are read by both games, and a quirk
+ * is v1's until v2 builds its own.
+ */
+export type Quirk =
+  | 'never_swings' // Winnie: takes every pitch, behind the smallest zone around.
+  | 'green_light' // Zaya: steals when she feels like it. Nobody calls it.
+  | 'wild_arm' // Kwame: pure gas, no idea where it goes.
+  | 'wobble' // Dev: nobody knows where the wobble ends up, him included.
+  | 'wrong_base' // Roya: maximum velocity, at the wrong bag.
+  | 'clutch_behind' // Nora: ordinary until her team is losing.
+  | 'clutch_risp' // Marcus: the archetype's own rule — in scoring position, tied or behind.
+  | 'clutch_runners' // Yui: only good with somebody on base.
+  | 'moonshot' // Mars: perfect timing and it is gone, whatever the pitcher threw.
+  | 'foul_back' // Josie: fouls them straight back at the pitcher.
+  | 'same_spot'; // Hattie: the same soft single to the same spot.
+
+/**
  * The ten archetypes of the World 1 cast sheet (`docs/world1/kids-roster-v0.7.md`).
  * Content today; the sim mechanics each one implies arrive behind flags.
  */
@@ -227,6 +247,10 @@ export interface Character {
   stats: Stats;
   visual: VisualParams;
   ability: AbilityId;
+  /** This kid's signature behaviour in the classic game (`systems/quirks.ts`). */
+  quirk?: Quirk;
+  /** Says nothing during a game — field chatter never picks this kid. */
+  silentInGame?: boolean;
   /** First-person excited line this kid shouts when drafted (spoken in their derived voice). */
   draftLine?: string;
   /** Signature field-chatter lines (first person). Generic pools cover kids without them. */

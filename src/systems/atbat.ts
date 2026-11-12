@@ -15,6 +15,7 @@ import type { Character } from '../data/types';
 import { TIMING, LIVE, CURSOR, JUICE, SWING_TYPES } from '../config';
 import { HOME, DEFAULT_GEOMETRY, fencePointAt, type FieldGeometry, type Vec } from './geometry';
 import type { PitchPlan, PlateLoc } from './pitchkind';
+import { foulChance, foulLine, isMoonshot, sameSpot } from './quirks';
 
 export type SwingBand = 'perfect' | 'good' | 'weak' | 'miss';
 
@@ -132,7 +133,10 @@ export function resolveContact(
   rng: () => number,
   geo?: FieldGeometry
 ): SwingOutcome {
-  if (pitcher.ability === 'unhittable_pitch') band = downgrade(band);
+  // Mars's Moonshot: perfect timing is gone, whatever the pitcher threw — so
+  // it is read off the band BEFORE the pitcher gets to drag it down.
+  const moonshot = isMoonshot(batter) && band === 'perfect';
+  if (pitcher.ability === 'unhittable_pitch' && !moonshot) band = downgrade(band);
   if (batter.ability === 'never_strikes_out' && band === 'miss') band = 'weak';
 
   if (band === 'miss') {
@@ -140,8 +144,8 @@ export function resolveContact(
   }
 
   // Weak contact still has a small chance to be fouled straight off.
-  if (band === 'weak' && rng() < 0.25) {
-    return { kind: 'foul', description: 'Ticked it foul.' };
+  if (band === 'weak' && rng() < foulChance(batter)) {
+    return { kind: 'foul', description: foulLine(batter) };
   }
 
   const { contact, power } = batter.stats;
@@ -149,17 +153,21 @@ export function resolveContact(
   // Contact quality: the same shape as the old hitBases roll — band + power
   // (and a whisper of contact) push the ball deeper and harder.
   const bandBoost = band === 'perfect' ? 0.35 : band === 'good' ? 0.12 : 0;
-  const q = rng() + bandBoost + (power - 5) * 0.04 + (contact - 5) * 0.01;
+  let q = rng() + bandBoost + (power - 5) * 0.04 + (contact - 5) * 0.01;
+  if (moonshot) q = Math.max(q, JUICE.CALLED_SHOT_Q_FLOOR);
 
   const L = LIVE.LAUNCH;
+  const spot = sameSpot(batter);
   return {
     kind: 'inPlay',
     launch: buildLaunch({
       band,
       q,
       typeBias: 0,
+      forceType: moonshot ? 'fly' : spot ? 'liner' : undefined,
+      distFixed: spot?.dist,
       // Spray direction: RNG along the horizon between the foul lines.
-      sprayT: () => L.SPRAY_MARGIN + rng() * (1 - 2 * L.SPRAY_MARGIN),
+      sprayT: spot ? () => spot.spray : () => L.SPRAY_MARGIN + rng() * (1 - 2 * L.SPRAY_MARGIN),
       rng,
       geo,
     }),
@@ -201,13 +209,17 @@ export function resolveContactAimed(spec: {
   const { cursor, plan, batter, pitcher, rng } = spec;
   const powered = spec.boost?.power === true;
   const swingType = spec.swingType ?? 'normal';
-  if (pitcher.ability === 'unhittable_pitch') band = downgrade(band);
-
   // Cursor overlap: dead-on keeps the timing band, the sweet-spot fringe costs
   // one band, and swinging where the ball isn't is a whiff.
   const missDist = Math.hypot(cursor.x - plan.actual.x, cursor.y - plan.actual.y);
+  // Mars's Moonshot: perfect TIMING with the bat on the ball is gone, whatever
+  // the pitcher threw and wherever on the bat it met — so neither the pitcher
+  // nor the fringe may take the band away. A swing that misses the ball
+  // entirely is still a miss; she is wrong constantly.
+  const moonshot = isMoonshot(batter) && band === 'perfect' && missDist <= CURSOR.CONTACT_R;
+  if (pitcher.ability === 'unhittable_pitch' && !moonshot) band = downgrade(band);
   if (missDist > CURSOR.CONTACT_R) band = 'miss';
-  else if (missDist > CURSOR.SWEET_R) band = downgrade(band);
+  else if (missDist > CURSOR.SWEET_R && !moonshot) band = downgrade(band);
 
   if (batter.ability === 'never_strikes_out' && band === 'miss') band = 'weak';
   // A power swing muscles decent contact up a band — but can't fix a whiff.
@@ -218,8 +230,8 @@ export function resolveContactAimed(spec: {
   if (band === 'miss') {
     return { swing: { kind: 'strike', description: 'Swing and a miss!' }, band };
   }
-  if (band === 'weak' && rng() < 0.25) {
-    return { swing: { kind: 'foul', description: 'Ticked it foul.' }, band };
+  if (band === 'weak' && rng() < foulChance(batter)) {
+    return { swing: { kind: 'foul', description: foulLine(batter) }, band };
   }
 
   const { contact, power } = batter.stats;
@@ -253,7 +265,12 @@ export function resolveContactAimed(spec: {
 
   // The kid who ALWAYS calls his shot (and is always wrong) finally gets to be
   // right — a powered swing from him is a guaranteed moonshot.
-  const calledShot = powered && batter.ability === 'calls_shot';
+  const calledShot = (powered && batter.ability === 'calls_shot') || moonshot;
+  // Hattie's ball goes where it always goes, however she met it. A bunt is
+  // still a bunt: the spot is for a swing.
+  const bunting = swingType === 'bunt' || swingType === 'crazyBunt';
+  const spot = bunting ? null : sameSpot(batter);
+  if (spot) sprayT = spot.spray;
   if (calledShot) {
     q = Math.max(q, JUICE.CALLED_SHOT_Q_FLOOR);
     typeBias = 1;
@@ -263,11 +280,14 @@ export function resolveContactAimed(spec: {
     band: band as Exclude<SwingBand, 'miss'>,
     q,
     typeBias,
+    distFixed: spot?.dist,
     forceType: calledShot
       ? 'fly'
-      : swingType === 'grounder' || swingType === 'bunt' || swingType === 'crazyBunt'
-        ? 'grounder'
-        : undefined,
+      : spot
+        ? 'liner'
+        : swingType === 'grounder' || swingType === 'bunt' || swingType === 'crazyBunt'
+          ? 'grounder'
+          : undefined,
     distCap:
       swingType === 'bunt'
         ? SWING_TYPES.BUNT.DIST_CAP
@@ -298,6 +318,9 @@ export interface LaunchSpec {
   forceType?: ContactType;
   /** Hard cap on travel distance, px from home (the bunt's dead ball). */
   distCap?: number;
+  /** Travel distance outright, px from home, in place of the quality-derived
+   *  one (Hattie's spot). Still held inside the fence. */
+  distFixed?: number;
   /** The venue's field shape (fence distances / obstacles). Default: the park. */
   geo?: FieldGeometry;
 }
@@ -332,7 +355,7 @@ export function buildLaunch(spec: LaunchSpec): Launch {
   const homer = type === 'fly' && q > L.HR_Q * (dirLen / refLen) ** 2;
   // Everything else stays on the field, just short of the wall.
   const maxDist = dirLen - 14;
-  const d = homer ? dirLen + 60 : Math.min(distFor[type], maxDist, spec.distCap ?? Infinity);
+  const d = homer ? dirLen + 60 : Math.min(spec.distFixed ?? distFor[type], maxDist, spec.distCap ?? Infinity);
   const landing: Vec = { x: HOME.x + dir.x * d, y: HOME.y + dir.y * d };
   // Nothing settles inside a tree — nudge the landing to its edge.
   if (!homer) {

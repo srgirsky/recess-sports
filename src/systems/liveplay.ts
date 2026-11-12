@@ -57,6 +57,9 @@ export interface FielderState {
   speed: number;
   glove: number;
   arm: number;
+  /** Chance one of this kid's throws goes to a base nobody chose
+   *  (`quirks.wrongBaseChance` — Roya). Absent or 0 for everyone else. */
+  wrongBase?: number;
   /** After a drop/bobble the kid is flustered until this `elapsed` time. */
   fumbleUntil: number;
   /** Mid-dive until this `elapsed` time (reach bonus active). Human chaser only. */
@@ -146,6 +149,7 @@ export type LiveEvent =
   | { t: 'pickup'; fielder: string }
   | { t: 'land' }
   | { t: 'error'; kind: 'drop' | 'bobble' | 'wild'; fielder: string }
+  | { t: 'wrongBase'; fielder: string; toBase: 1 | 2 | 3 | 4 }
   | { t: 'dive'; fielder: string } // the lunge started
   | { t: 'diveMiss'; fielder: string } // came up empty — kid eats grass
   | { t: 'bonk' } // the ball smacked a venue obstacle (the sandlot oak)
@@ -274,7 +278,7 @@ export function startLivePlay(opts: {
   batter: { charId: string; speed: number };
   baseRunners: Array<{ base: 1 | 2 | 3; charId: string; speed: number }>;
   /** Stats default to 5 for callers (tests) that don't care. */
-  defense: Array<{ position: PositionId; charId: string; speed?: number; glove?: number; arm?: number }>;
+  defense: Array<{ position: PositionId; charId: string; speed?: number; glove?: number; arm?: number; wrongBase?: number }>;
   outs: number;
   params: LiveParams;
   geo?: FieldGeometry;
@@ -298,6 +302,7 @@ export function startLivePlay(opts: {
     speed: d.speed ?? 5,
     glove: d.glove ?? 5,
     arm: d.arm ?? 5,
+    wrongBase: d.wrongBase,
     fumbleUntil: 0,
   }));
 
@@ -980,10 +985,12 @@ function maybeThrow(
 
   if (s.mode === 'defense') {
     if (inputs.throwTo) {
-      const speed =
-        params.throwSpeedMin + inputs.throwTo.power * (params.throwSpeedMax - params.throwSpeedMin);
+      const base = baseSheThrowsTo(s, carrier, inputs.throwTo.base, mult, rng);
+      // The wrong base gets everything she has.
+      const power = base === inputs.throwTo.base ? inputs.throwTo.power : 1;
+      const speed = params.throwSpeedMin + power * (params.throwSpeedMax - params.throwSpeedMin);
       const wild = rollThrowError(carrier?.arm ?? 5, inputs.throwTo.power, mult, rng);
-      launchThrow(s, { kind: 'base', base: inputs.throwTo.base }, speed, 0, wild, carrier);
+      launchThrow(s, { kind: 'base', base }, speed, 0, wild, carrier);
     } else if (s.elapsed - s.heldAt >= params.autoThrowMs && anyForwardMover(s)) {
       // Idle-kid rescue: the sim throws a decent (not perfect) ball by itself.
       const speed = params.throwSpeedMin + 0.75 * (params.throwSpeedMax - params.throwSpeedMin);
@@ -1017,16 +1024,40 @@ function maybeThrow(
     // Main mode: don't fling it when no throw can beat anyone — the carrier
     // keeps the ball and hunts the runner for a tag instead (see moveFielders).
     if (params.manualBaserunning && bestBeatableBase(s, params.cpuThrowSpeed) === null) return;
+    const base = baseSheThrowsTo(s, carrier, chooseThrowTarget(s, params.cpuThrowSpeed), mult, rng);
     const wild = rollThrowError(carrier?.arm ?? 5, 0.8, mult, rng);
     launchThrow(
       s,
-      { kind: 'base', base: chooseThrowTarget(s, params.cpuThrowSpeed) },
+      { kind: 'base', base },
       params.cpuThrowSpeed,
       rng() * params.cpuThrowErrorMs,
       wild,
       carrier
     );
   }
+}
+
+/**
+ * Roya's judgment: the base this throw actually goes to. Everyone else — and
+ * Roya most of the time — throws where they meant to, and for them this draws
+ * NOTHING, which is what keeps every play without her in it unchanged. Scaled
+ * out with the mode's error multiplier like every other fielding mistake, so
+ * kid mode (0) never sees it.
+ */
+function baseSheThrowsTo(
+  s: LivePlayState,
+  carrier: FielderState | undefined,
+  meant: 1 | 2 | 3 | 4,
+  mult: number,
+  rng: () => number
+): 1 | 2 | 3 | 4 {
+  const p = carrier?.wrongBase ?? 0;
+  if (!carrier || p <= 0 || mult <= 0) return meant;
+  if (rng() >= p) return meant;
+  const others = ([1, 2, 3, 4] as const).filter((b) => b !== meant);
+  const base = others[Math.min(others.length - 1, Math.floor(rng() * others.length))];
+  s.events.push({ t: 'wrongBase', fielder: carrier.charId, toBase: base });
+  return base;
 }
 
 /** Where a throw is headed on the ground plane. */

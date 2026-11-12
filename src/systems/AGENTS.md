@@ -147,6 +147,15 @@ into `LiveParams` via `resolveLiveParams(mode, overrides, difficulty)`.
   only DISABLE a mode's features, so the all-true default is a no-op and the
   seeded stream is unaffected.
 
+## Signature behaviours — `quirks.ts`
+
+A kid's `quirk` is read ONLY through `quirks.ts`; reducers ask it and never
+test `kid.quirk` or roll for one themselves. **A kid without a quirk must get
+the unmodified value and reach no extra rng draw** — that is what keeps every
+game without those kids unchanged, and `quirks.test.ts` pins it. Numbers live
+in `config.QUIRKS`. Fielding quirks scale out with the mode's error mult, like
+every other mistake.
+
 ## The rest of the pure layer
 
 `atbat` (timing→band, `resolveContact` / `resolveContactAimed` → `buildLaunch`)

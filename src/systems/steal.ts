@@ -4,7 +4,7 @@
 // bonus when the defending player reacts fast to the throw-down prompt.
 // ---------------------------------------------------------------------------
 
-import { PICKOFF, STEAL_REACT, type PitchKind } from '../config';
+import { PICKOFF, QUIRKS, STEAL_REACT, type PitchKind } from '../config';
 import type { HalfInningState } from './inning';
 
 export interface StealSpec {
@@ -16,6 +16,8 @@ export interface StealSpec {
   pitchKind: PitchKind | null;
   /** 0-3: how sharply the defense reacted to the throw-down prompt. */
   reactBonus?: number;
+  /** Added to the odds outright (`quirks.stealEdgeFor` — Zaya's Green Light). */
+  edge?: number;
 }
 
 /** True = the runner made it. */
@@ -26,7 +28,8 @@ export function rollSteal(spec: StealSpec, rng: () => number): boolean {
     (spec.runnerSpeed - 5) * 0.05 -
     (spec.catcherArm - 5) * 0.05 -
     (spec.reactBonus ?? 0) * 0.06 +
-    slowStuff;
+    slowStuff +
+    (spec.edge ?? 0);
   return rng() < Math.min(0.92, Math.max(0.08, p));
 }
 
@@ -48,7 +51,9 @@ export function canStealFrom(bases: readonly [boolean, boolean, boolean], from: 
 }
 
 /** Should the CPU try a steal this pitch? Speedsters go, slowpokes don't. */
-export function cpuWantsSteal(runnerSpeed: number, rng: () => number): boolean {
+export function cpuWantsSteal(runnerSpeed: number, rng: () => number, greenLight = false): boolean {
+  // Zaya steals whenever she feels like it. Nobody calls it.
+  if (greenLight) return rng() < QUIRKS.GREEN_LIGHT_GO;
   return rng() < 0.1 + Math.max(0, runnerSpeed - 5) * 0.035;
 }
 

@@ -50,6 +50,9 @@ export class Chatter {
 
   /** A kid line for this beat, or null (own cooldown + chance roll + no-repeat). */
   pick(moment: ChatterMoment, now: number, kid: Character): ChatterPick | null {
+    // Not one word, all game. Before the cooldown and the roll, so her silence
+    // costs nobody else their turn to talk.
+    if (kid.silentInGame) return null;
     if (now - this.lastAt < VOICE.CHATTER.COOLDOWN_MS) return null;
     if (this.rng() >= VOICE.CHATTER.CHANCE) return null;
     const pool = [...(kid.chatterLines ?? []), ...GENERIC[moment]];
