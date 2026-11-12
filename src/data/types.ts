@@ -50,7 +50,22 @@ export interface VisualParams {
    *  variant). Jerseys stay the base look everywhere else. Omitted = the kid
    *  renders their jersey even in street mode. */
   outfit?: Outfit;
+  /** The one thing the roster says you would know this kid by from across a
+   *  store — drawn in EVERY wardrobe (street and jersey) and every pose that
+   *  shows it. Optional and orthogonal to `hair`/`accessory`, so a renderer
+   *  that does not know a signature yet (v2's proxy and sculpts) is unchanged
+   *  and simply draws the kid without it. */
+  signature?: Signature;
 }
+
+/** The World 1 cast's signature looks (docs/world1/kids-roster-v0.7.md).
+ *  - `hijab`: Fatou's sport hijab — replaces the hair.
+ *  - `patka`: Guri's patka with its topknot — replaces the hair.
+ *  - `slidingHelmet`: June's too-big batting helmet, and her bat choked up.
+ *  - `catcherGear`: Sonny's chest protector, shin guards and skull cap.
+ *  - `tzitzit`: Ezra's tassels below the hem.
+ *  - `bigBat`: Mars's bat, visibly too big for anyone. */
+export type Signature = 'hijab' | 'patka' | 'slidingHelmet' | 'catcherGear' | 'tzitzit' | 'bigBat';
 
 /** A street outfit: top garment kind + STREET_COLORS indexes + bottoms. */
 export interface Outfit {

@@ -30,7 +30,7 @@ const assets = join(repo, 'dist', 'assets');
 /**
  * Measured at PR 13, kB. The band is +-2%: bloat is the thing worth catching.
  *
- * V1 has not moved since it was pinned and must not; every raise below is v2's.
+ * V1 held its pin until the 1948 entry below; every raise before it is v2's.
  *
  * ⚠️ THE NUMBERS CHANGED MEANING at PR 21: they are now what an ENTRY LOADS
  * (its chunk plus its preloads), not the size of one file. See `entryKb`.
@@ -94,9 +94,20 @@ const assets = join(repo, 'dist', 'assets');
  *                v2 imports `net/peer.ts` lazily, so its 92kB chunk is fetched
  *                when the lobby opens a room and never by the front door. v1
  *                moved 1934.4 -> 1934.7kB (the protocol's new messages).
+ *   V1 1909 -> 1948, V2 1130 -> 1153. The signature looks, and v1's FIRST
+ *                re-pin. The pin was already stale: main measured 1940.3kB
+ *                (1.6% over, inside the band) from v1 work that each stayed
+ *                under it -- the BB2001 parity list, the switch button, the
+ *                net protocol. The looks add 7.3kB of SVG builder to
+ *                `art/CharacterArt.ts` (hijab, patka, helmet, catcher's gear,
+ *                tzitzit, the bat variants, the racing chair) and that crossed
+ *                it: 1947.6kB. v2 shares that chunk for its draft board, so it
+ *                moved by the same 7.3kB, 1145.3 -> 1152.6, and sat at exactly
+ *                2.0% -- green by rounding. Both re-pinned to what they
+ *                measure so the band is a band again.
  */
-const V1_KB = 1909;
-const V2_KB = 1130;
+const V1_KB = 1948;
+const V2_KB = 1153;
 const TOLERANCE = 0.02;
 
 /**
