@@ -1203,43 +1203,52 @@ export const FACE_SPECS = {
     mouthBow: -0.9,
     mouthDrop: -2.2,
   },
-  // Big Talk Theo. Huge open grin low on the broad face, big round eyes,
-  // thick dark brows under the oversized cap bill. Feature rows: bounded
-  // crop traces brows rows ~250-265 centred ~258 (49.8% of head), eyes
-  // centred ~294 (63.7%); the analyser's own mouth trace 84.9% (row 349)
-  // is the open smile. Cells through his island (0.92, -1.4503, 2.500)
-  // on skull z 3.06 rz 0.42.
+  // Mars (the `calls_shot` slot, re-cast November 2026). Bounded traces on
+  // mars-turnaround.png's front view (crown row 213, neck row 449, 1px =
+  // 0.006107ft): brows centred row 299 (z 3.471), eyes rows 325-360 centred
+  // row 343 (z 3.202), the open grin centred row 400 (z 2.851). Through the
+  // island window solved in sculpt-mars-source.py those land at cell rows
+  // 24 / 50 / 85. The spec REFUSES her brow and eye bands (merged-region: the
+  // mane's dark sides fuse with them), so these are the bounded probes.
+  // Each eye is 0.257ft wide, centred 0.236ft off the midline — past the
+  // island's bearing window at full size, so they are drawn at cells 29/99
+  // with a half-width of 19 (outer corner at cell 118, inside the margin).
   calls_shot: {
-    ink: '#14100a',
-    mouthInk: '#6e3220',
+    ink: '#1a0e06',
+    mouthInk: '#5a1c0c',
     sclera: '#fffdf2',
-    irisBrown: '#4a2a10',
-    pupil: '#150b04',
+    irisBrown: '#4a2408',
+    pupil: '#120a05',
     white: '#fff8ea',
-    mouth: '#8a4028',
-    mouthDark: '#5a2212',
-    tongue: '#e57f86',
-    lowerLip: '#e09058',
-    eyeHalfW: 18,
-    eyeHalfH: 13,
-    irisR: 11,
+    mouth: '#7a2418',
+    mouthDark: '#4e140c',
+    tongue: '#e0707a',
+    lowerLip: '#e07a4a',
+    eyeHalfW: 19,
+    eyeHalfH: 14,
+    irisR: 10.5,
     irisInward: 3,
-    eyeX: [31, 97],
+    eyeX: [29, 99],
     eyeY: 50,
-    browThick: 6.0,
-    browThin: 2.8,
-    browHalf: 15,
-    browX: [31, 97],
+    // The boldest mark on her face: thick dark arches, level and confident.
+    browThick: 5.6,
+    browThin: 3.2,
+    browHalf: 19,
+    browX: [29, 99],
     browY: 24,
-    browTilt: 1,
+    browTilt: 0,
+    browArch: 14,
+    freckles: true,
+    freckleTone: '#8a3a16',
     alignOpenMouth: true,
     tongueOut: true,
-    tongueReach: 1.4,
-    mouthScale: 1.3,
-    mouthY: 83,
-    // The huge open showman's grin.
-    mouthBow: -1.5,
-    mouthDrop: -4.6,
+    tongueReach: 1.2,
+    // "Huge confident grin" is her identity: the mouth mark is scaled up and
+    // its corners lifted well above the centre.
+    mouthScale: 1.45,
+    mouthY: 85,
+    mouthBow: -2.4,
+    mouthDrop: -4.5,
   },
   // Mimi Mash. Proud joyful smile, big warm brown eyes, thick dark brows,
   // blush cheeks under the curl halo. Feature rows traced by bounded crop on

@@ -1352,3 +1352,34 @@ Measure the shoulder row on day one and send the sheet back if it does not fit.
   roster re-export, which is its own PR — do not spend another kid's rounds
   on it.
 
+## Lessons Mars paid for (the long mane, and where the rig is taller than the sheet)
+
+- **The sleeve roots can stand ABOVE the sheet's collar.** The shoulder joint
+  is at z 2.471 for everyone; a sleeve 0.16 in radius tops out at 2.63. On a
+  roster-proportioned sheet with a low chin (hers: collar 2.57, chin 2.594)
+  that leaves a V notch between each sleeve root and the neck, and the raised
+  gameplay camera looks into it — two critics filed "slate wedges at the neck
+  in every runtime still". Tightening the neck hole did nothing; raising the
+  yoke and collar to the sleeve roots closed it. Check sleeve-root top against
+  collar z before the first build.
+- **A long mane's forward wall is ONE plane, and the neck goes to it.** Easing
+  the wall back to clear the shoulders opened a 380px profile pocket behind
+  the nape; easing it forward into the neck folded quads that rendered slate
+  (Greta's diamond again). A constant wall with a neck deep enough to reach
+  it — and tall enough at the back to reach the skull's underside — closes
+  the pocket with nothing to fold. Below the collar the wall is simply buried
+  in the yoke; the visible mane is what stands behind the tee's back.
+- **When the head metrics cannot be taken, the camera clamp on hair depth
+  buys nothing.** Her mane hides the neck on the sheet, so `measure:fidelity`
+  reports five head metrics NOT MEASURED on both sides. Clamping hair depth to
+  0.55 "for the camera" then only cost likeness (profile head 24% shallow).
+  Author the drawing's depth when nothing the camera rescales is measured.
+- **Deep skin: author the cheek's own hue a little above its value, not
+  halfway to the lit forehead.** The latter delivered bright orange under the
+  runtime's lit look; the luminance floor still clears.
+- **A hair shell over a tall skull needs to thicken away from the hairline**
+  (0.03 at the line, +0.055 by the crown): the skull is convex between rings
+  and pokes through a constant-thickness shell as an orange fleck.
+- **Waves are an AMPLITUDE that alternates row to row** — crest over trough —
+  with the phase fixed, so the mirror holds (Penny) and the mass ripples.
+

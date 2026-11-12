@@ -485,18 +485,27 @@ export const RECIPES = {
   // one tone step) and his cap panel, tee, sleeves and socks all share the
   // cream cluster — boundaries between them need geometry, not colour, so
   // the recipe declares the two lanes and nothing finer.
+  // ★ MARS TOOK THEO'S SLOT IN THE WORLD 1 RE-CAST. Her sheet is the SECOND one
+  // drawn: the first gave her older-kid proportions (shoulder line at z 2.88
+  // on a rig whose shoulder joint is at 2.471) and was sent back. This one
+  // holds the roster's proportions — tee from z 2.51, head 36% of the figure.
+  // ⚠️ Her deep skin (#a4451a) and her tee's shaded reds share warm-red
+  // chromaticity, and her hands hang in front of the tee's lower edges, so
+  // there is no torso sweep: the tee is traced by silhouette and cluster rows
+  // in the sculpt script. The hair's two tones (#24140a / #5c4235) are one
+  // material; `hair` is anchored on the dark modal cluster.
   calls_shot: {
-    slug: 'theo',
+    slug: 'mars',
     views: ['front', 'threeQuarter', 'profile', 'back', 'action'],
     materials: {
-      skin: { hex: '#ee9f68' },
-      hair: { hex: '#1d0f06' },
-      jacket: { hex: '#2b5260' },
-      cream: { hex: '#f2dbbc' },
-      shorts: { hex: '#383a40' },
+      skin: { hex: '#a4451a' },
+      hair: { hex: '#24140a' },
+      shirt: { hex: '#f53a32' },
+      shorts: { hex: '#3c5573' },
+      shoe: { hex: '#fde3cc', paired: true },
     },
     sweeps: {},
-    bands: {},
+    bands: { shoe: { view: 'front', material: 'shoe' } },
   },
 
   // ★ MIMI'S HAIR AND SHOE-RUST BOTH NEIGHBOUR HER HOODIE'S SHADOW TONES —

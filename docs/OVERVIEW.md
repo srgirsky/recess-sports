@@ -95,6 +95,19 @@ slot's animation take and direction card are still the previous kid's, which
 is why she idles in Grizz's slump. The procedure is in the sculpt skill's
 re-cast section.
 
+**Mars followed on her second sheet.** Redrawn at the roster's proportions
+(tee from z 2.51, head 36% of the figure), she fits the rig, and three
+independent critics scored three builds 3/4/3/3/3/3, 3/4/3/3/4/3 and
+3/3/3/3/4/3 — the last one dropping proportions a point on its own row scans,
+because her mane hides the neck on the drawing and `measure:fidelity` cannot
+take the five head metrics on either side. What it can take (the shoe band and
+the stance) is inside tolerance, and her hair carries 65% of the drawing's
+strand count, the most of any re-cast kid so far. The rig turned out to be
+TALLER than her sheet at one place: the fixed shoulder joint puts her sleeve
+roots above the drawn collar, and the notch that left beside the neck was the
+"slate wedge" two critics filed until the shoulder line was raised to meet
+them. She ships at `needs-polish`; the slot stops drawing the stand-in.
+
 ### Design pillars (ages 4–8)
 
 - **Minimal reading.** Icons, color, and voice over text. A 6-year-old who can't read should be able to play.

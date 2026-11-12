@@ -95,76 +95,6 @@
       "class": "no-defect-note",
       "excerpt": "Historical finding retained; its exact numerical/crop claim was not remeasur"
     },
-    "calls_shot:52f4f98c982b": {
-      "char": "calls_shot",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED — Shoes: all three shoe metrics now pass (32.1/67.9/29.3 vs concept"
-    },
-    "calls_shot:0aa61333046a": {
-      "char": "calls_shot",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED — Cap front panel extent: with PANEL_FRONTNESS 0.90 (sculpt-theo-so"
-    },
-    "calls_shot:c281f9026d1b": {
-      "char": "calls_shot",
-      "class": "ears",
-      "excerpt": "CLEARED (visibility) / CARRIED (construction) — Ear in profile (rubric 3.10"
-    },
-    "calls_shot:dbcd8b5dfee9": {
-      "char": "calls_shot",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED — Profile nose: nose_push (sculpt-theo-source.py:130) was re-author"
-    },
-    "calls_shot:216e726bd45e": {
-      "char": "calls_shot",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED — Brown hair lock on the cheek: in all four theo-runtime-face-*.png"
-    },
-    "calls_shot:75f676b3a378": {
-      "char": "calls_shot",
-      "class": "hair-nyquist",
-      "excerpt": "CARRIED (improved, NOT CLEARED) — Profile hair nape/back: the new 2.800 nap"
-    },
-    "calls_shot:4631b2de2fa6": {
-      "char": "calls_shot",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED — Slate/outline patch between ear and hair: 6x crops of theo-runtim"
-    },
-    "calls_shot:0253ad3a3241": {
-      "char": "calls_shot",
-      "class": "sheared-edges",
-      "excerpt": "CARRIED (minor) — Slate notch at the nape silhouette: theo-runtime-hero.png"
-    },
-    "calls_shot:cc4150eb83f2": {
-      "char": "calls_shot",
-      "class": "sheared-edges",
-      "excerpt": "CARRIED (minor) — Pale fleck inside the rear hair in profile: theo-profile-"
-    },
-    "calls_shot:169901b867ab": {
-      "char": "calls_shot",
-      "class": "hair-nyquist",
-      "excerpt": "CARRIED (minor) — Navy underbrim chevrons between the fringe tufts: all fou"
-    },
-    "calls_shot:d194a74897dc": {
-      "char": "calls_shot",
-      "class": "hair-nyquist",
-      "excerpt": "CARRIED — Cap and hair are still hard-faceted: the profile crown ring (theo"
-    },
-    "calls_shot:c87d85115d37": {
-      "char": "calls_shot",
-      "class": "other",
-      "excerpt": "CARRIED (minor) — Small dark fleck on the cream tee near the hem: theo-runt"
-    },
-    "calls_shot:5f1a5b6db14c": {
-      "char": "calls_shot",
-      "class": "no-defect-note",
-      "excerpt": "NON-DEFECT — Head height 32.7% vs 35.0% and width:height 0.94 vs 1.05 stay "
-    },
-    "calls_shot:23d23c37a679": {
-      "char": "calls_shot",
-      "class": "no-defect-note",
-      "excerpt": "NON-DEFECT (reclassified) — The old finding 'Section 6 integration evidence"
-    },
     "wheelchair_ace:94d81849d8f4": {
       "char": "wheelchair_ace",
       "class": "no-defect-note",
@@ -2794,6 +2724,66 @@
       "char": "grizz",
       "class": "no-defect-note",
       "excerpt": "Out of scope, noted once: the idle in greta-runtime-hero.png is a heavy forw"
+    },
+    "calls_shot:dbcf38c0e1b3": {
+      "char": "calls_shot",
+      "class": "decal-not-form",
+      "excerpt": "Shoes do not read as high-tops (mars-runtime-face-grin.png x430-620 y560-690"
+    },
+    "calls_shot:e87e49b4e3eb": {
+      "char": "calls_shot",
+      "class": "decal-not-form",
+      "excerpt": "Shared shoe-builder defect, visible on her cream shoes: a slate-navy notch o"
+    },
+    "calls_shot:519e61097fde": {
+      "char": "calls_shot",
+      "class": "hair-nyquist",
+      "excerpt": "Profile mane is about a third too shallow and its back is a flat wall (mars-"
+    },
+    "calls_shot:06c352362532": {
+      "char": "calls_shot",
+      "class": "hair-nyquist",
+      "excerpt": "Hair surface reads as flat facets, not waves, at runtime (mars-runtime-hero."
+    },
+    "calls_shot:09e4ddac7748": {
+      "char": "calls_shot",
+      "class": "decal-not-form",
+      "excerpt": "A flat hair plate stands off the mane's right edge and lights pale grey (mar"
+    },
+    "calls_shot:d6625cf9679e": {
+      "char": "calls_shot",
+      "class": "interpenetration",
+      "excerpt": "Residual slate wedges beside the jaw: mars-runtime-hero.png about x535-547 y"
+    },
+    "calls_shot:49f36df44315": {
+      "char": "calls_shot",
+      "class": "proportions",
+      "excerpt": "Arms and hands are too slight for the slugger (mars-front-apose-review.png, "
+    },
+    "calls_shot:c53ad1ef8cde": {
+      "char": "calls_shot",
+      "class": "hair-nyquist",
+      "excerpt": "Temple hairline is a hard straight-edged step from the brow down to the ear "
+    },
+    "calls_shot:e563053e600c": {
+      "char": "calls_shot",
+      "class": "hems-cuffs",
+      "excerpt": "A neck column is visible between chin and collar in mars-runtime-hero.png (a"
+    },
+    "calls_shot:14799f321544": {
+      "char": "calls_shot",
+      "class": "hems-cuffs",
+      "excerpt": "Tee neckline has two squared corners on mars-front-apose-review.png (about x"
+    },
+    "calls_shot:daa6552a55f1": {
+      "char": "calls_shot",
+      "class": "hems-cuffs",
+      "excerpt": "Shorts have a cuff but no pockets, fly or stitching (mars-front-apose-review"
+    },
+    "calls_shot:0f74eb5b4699": {
+      "char": "calls_shot",
+      "class": "face-atlas",
+      "excerpt": "Eyes are almond with pointed corners and a dull off-white sclera (187,188,16"
     }
   }
 }

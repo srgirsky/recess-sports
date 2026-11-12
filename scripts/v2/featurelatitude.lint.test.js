@@ -457,12 +457,21 @@ const TURNAROUND = {
   // the mouth is the analyser's own trace (84.9, the open grin). Its brow
   // pick at 96.6 was the collar shadow, rejected by the crop.
   calls_shot: {
-    slug: 'theo',
-    brow: 49.8,
-    eye: 63.7,
-    mouth: 84.9,
-    earLine: 54.8,
-    span: { crownZ: 3.99, neckZ: 2.60 },
+    // Mars took this slot in the World 1 re-cast; the entry is hers.
+    slug: 'mars',
+    // Bounded traces on mars-turnaround.png (crown row 213, neck row 449 —
+    // the visible neck under the chin; the spec's own neck row 409 is the
+    // mane's waist): brows centred row 299, eyes rows 325-360 centred row
+    // 343, the open grin centred row 400. The spec REFUSES her brow and eye
+    // bands (merged-region: the mane's dark sides fuse with them).
+    // ⚠️ No `earLine`: both ears stand clear and she builds an EarSpec, but
+    // the mane is wider than the ears at every row they occupy, so the
+    // widest-row detector reads hair. Her ears are a bounded trace (rows
+    // 349-404) recorded beside EAR_SPEC — not gateable, never "not drawn".
+    brow: 36.3,
+    eye: 55.0,
+    mouth: 79.2,
+    span: { crownZ: 3.995, neckZ: 2.553 },
     tolerance: 2.5,
   },
   // Bounded traces on mimi-mash-turnaround.png (halo crown row 92, neck row

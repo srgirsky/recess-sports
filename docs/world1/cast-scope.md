@@ -55,7 +55,7 @@ sculpt library. A build change (slim → wide, short → tallest) is a rebuild.
 | New kid | Slot | Carries | Changes | Carry |
 |---|---|---|---|---|
 | June Halloran (T1) | `nostrike` | everything | freckles, sliding helmet, choked-up bat; age 6 | strong |
-| Mars Delacruz (T1) | `calls_shot` | the ability | boy → girl, tallest, broad, oversized bat; Theo's sculpt does not carry | rebuild |
+| Mars Delacruz (T1) | `calls_shot` | the ability; re-sculpted against her own sheet (slug `mars`), November 2026 | oversized bat still to build | sculpted |
 | Jay Park (T1) | `smokey` | boy, pitching 9, wiry | add glasses, leg-kick windup clip | partial |
 | Sonny Fifita (T1) | `tank` | the big body (the exemplar sculpt) | catcher's gear, soft voice | partial |
 | Dev Raghunathan (T1) | `wheelchair_ace` | chair, pitching 10 | racing chair, Wobble replaces unhittable | strong |

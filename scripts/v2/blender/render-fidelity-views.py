@@ -184,7 +184,9 @@ A_POSE_BY_ID = {"tank": 50.0}
 # that, an angle here can only choose which of the two to be wrong about, and
 # this table chooses the thighs, because that is the one a child sees.
 LEGS_IN_BY_ID = {
-    # Drawn-open stances hold their sheets (Junebug 46.9, Theo 56.9 drawn).
+    # Drawn-open stances hold their sheets (Junebug 46.9; Mars, who took
+    # Theo's slot, is drawn at 46.9 too and measures 35.8 at 0 — inside
+    # tolerance, re-checked when her sculpt landed).
     "nostrike": 0.0, "calls_shot": 0.0,
     # Per-kid ceilings from the stance calibration: the largest angle whose
     # silhouettes do NOT touch - contact encloses the between-legs window

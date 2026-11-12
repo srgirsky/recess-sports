@@ -97,7 +97,7 @@ const GOVERNED = [
   { id: 'peaches', script: 'sculpt-peaches-source.py' },
   { id: 'lefty', script: 'sculpt-lefty-source.py' },
   { id: 'mimi_mash', script: 'sculpt-mimi-mash-source.py' },
-  { id: 'calls_shot', script: 'sculpt-theo-source.py' },
+  { id: 'calls_shot', script: 'sculpt-mars-source.py' },
   { id: 'wheelchair_ace', script: 'sculpt-zoom-source.py' },
   { id: 'big_lou', script: 'sculpt-big-lou-source.py' },
 ];
