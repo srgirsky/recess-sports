@@ -15,14 +15,14 @@
     },
     "calls_shot": {
       "name": "Mars Delacruz",
-      "slug": "theo",
-      "source": "theo-pilot.blend",
+      "slug": "mars",
+      "source": "mars-pilot.blend",
       "traits": [
-        "oversized cap",
-        "broad tapered face",
-        "open varsity jacket",
-        "confident chest",
-        "kid-sized swagger"
+        "long wavy black mane",
+        "broad square shoulders",
+        "tomato-red tee",
+        "cuffed denim shorts",
+        "cream high-tops and striped socks"
       ]
     },
     "wheelchair_ace": {

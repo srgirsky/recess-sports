@@ -70,7 +70,7 @@ export const ROSTER: Character[] = [
     voiceGender: 'girl',
     archetype: 'slugger',
     tier: 1,
-    recast: { was: 'Big Talk Theo', modelCarries: false },
+    recast: { was: 'Big Talk Theo', modelCarries: true },
     stats: { contact: 5, power: 10, speed: 3, pitching: 3, fielding: 3 },
     visual: { skin: 4, hair: 'long', hairColor: 3, uniform: 4, accessory: 'none', expression: 'grin', stance: 'high',
       body: { height: 1.0, shoulderW: 50, hipW: 2, neck: 3 },
