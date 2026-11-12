@@ -64,7 +64,7 @@ const plan = (x: number, y: number): PitchPlan => ({
 });
 
 describe('the roster carries the behaviours the cast sheet gives it', () => {
-  it('★ exactly these eleven kids have a quirk — a new one is a decision, not a typo', () => {
+  it('★ exactly these sixteen kids have a quirk — a new one is a decision, not a typo', () => {
     const got = Object.fromEntries(ROSTER.filter((c) => c.quirk).map((c) => [c.id, c.quirk]));
     const want: Record<string, Quirk> = {
       calls_shot: 'moonshot',
@@ -78,6 +78,11 @@ describe('the roster carries the behaviours the cast sheet gives it', () => {
       dex: 'clutch_risp',
       bubbles: 'clutch_runners',
       moose: 'wrong_base',
+      noodle: 'hit_by_pitch',
+      sprout: 'always_bunts',
+      lefty: 'one_curve',
+      bend_it: 'the_loop',
+      the_prof: 'rainbow',
     };
     expect(got).toEqual(want);
   });
@@ -419,5 +424,153 @@ describe('Roya: incredible arm, catastrophic judgment', () => {
       const r = play('SS', kid, seed);
       if (r) expect(r.events.some((e) => e.t === 'wrongBase')).toBe(false);
     }
+  });
+});
+
+// --- The second batch ---------------------------------------------------------
+
+import { SWING_TYPES } from '../config';
+import { newHalfInning, applyAtBat } from './inning';
+import {
+  alwaysBunts,
+  batterMustChase,
+  countWhenHit,
+  hitByPitchChance,
+  leansIn,
+  pitchMenuFor,
+  pitchOnMenu,
+  planForPitcher,
+  travelMultFor,
+} from './quirks';
+
+describe('the second batch leaves everyone else alone too', () => {
+  const kid = plain();
+  it('every new hook is the identity for a kid without the quirk', () => {
+    const p = plan(0, 0);
+    expect(planForPitcher(p, kid)).toBe(p);
+    expect(travelMultFor(kid)).toBe(1);
+    expect([...pitchMenuFor(kid)]).toEqual(['fastball', 'changeup', 'curve', 'screwball']);
+    expect(pitchOnMenu(kid, 'fastball')).toBe('fastball');
+    expect(batterMustChase(kid, 'curve')).toBe(false);
+    expect(alwaysBunts(kid)).toBe(false);
+    expect(leansIn(kid)).toBe(false);
+    expect(hitByPitchChance(kid)).toBe(0);
+  });
+
+  it('and the CPU picks the same pitch off the same roll with the default menu', () => {
+    expect(chooseCpuPitch(6, { balls: 0, strikes: 2 }, 600, counted(9), 1, pitchMenuFor(kid))).toEqual(
+      chooseCpuPitch(6, { balls: 0, strikes: 2 }, 600, counted(9))
+    );
+  });
+});
+
+describe('Sam gets hit by the pitch on purpose', () => {
+  const sam = getCharacter('noodle');
+  it('he never chases a ball, in either game', () => {
+    const rng = counted(61);
+    for (let i = 0; i < 500; i++) {
+      const a = resolveCpuPitch(BANDS[i % 4], plain(), sam, rng);
+      if (a.isBall) expect(a.cpuSwings).toBe(false);
+      const off = plan(PLATE_ZONE.W / 2 + 4 + rng() * 30, 0);
+      expect(resolveCpuPitchLocated(off, 'good', sam, rng).cpuSwings).toBe(false);
+    }
+  });
+
+  it('★ being hit is a free base by the walk rule: only forced runners move', () => {
+    expect(hitByPitchChance(sam)).toBe(QUIRKS.HIT_BY_PITCH);
+    // First pitch, runner on second only: he takes first, the runner stays.
+    const before = { ...newHalfInning(), bases: [false, true, false] as [boolean, boolean, boolean], count: { balls: 0, strikes: 2 } };
+    const hit = applyAtBat(countWhenHit(before), { kind: 'ball', bases: 0, description: '' });
+    expect(hit.batterDone).toBe(true);
+    expect(hit.batterOut).toBe(false);
+    expect(hit.state.bases).toEqual([true, true, false]);
+    expect(hit.state.count).toEqual({ balls: 0, strikes: 0 });
+    expect(hit.state.outs).toBe(0);
+    // Bases loaded: it forces a run in.
+    const loaded = { ...newHalfInning(), bases: [true, true, true] as [boolean, boolean, boolean] };
+    expect(applyAtBat(countWhenHit(loaded), { kind: 'ball', bases: 0, description: '' }).runsScored).toBe(1);
+    // The state handed in is never written to.
+    expect(before.count).toEqual({ balls: 0, strikes: 2 });
+  });
+});
+
+describe('Rafi bunts every single pitch', () => {
+  const rafi = getCharacter('sprout');
+  const dist = (l: { x: number; y: number }) => Math.hypot(l.x - HOME.x, l.y - HOME.y);
+
+  it('★ everything he puts in play is a bunt: a grounder dead in front of the plate', () => {
+    const rng = counted(71);
+    let n = 0;
+    for (let i = 0; i < 600; i++) {
+      const out = resolveContact((['perfect', 'good', 'weak'] as const)[i % 3], rafi, plain(), rng);
+      if (out.kind !== 'inPlay') continue;
+      n++;
+      expect(out.launch.type).toBe('grounder');
+      expect(out.launch.homer).toBe(false);
+      expect(dist(out.launch.landing)).toBeLessThanOrEqual(SWING_TYPES.BUNT.DIST_CAP + 0.001);
+    }
+    expect(n).toBeGreaterThan(300);
+  });
+
+  it('whatever card he is handed — except his own crazy bunt', () => {
+    const swing = (swingType: 'normal' | 'big' | 'crazyBunt') =>
+      resolveContactAimed({ band: 'perfect', errorMs: 0, cursor: { x: 0, y: 0 }, plan: plan(0, 0), batter: rafi, pitcher: plain(), rng: counted(4), swingType }).swing;
+    for (const t of ['normal', 'big'] as const) {
+      const s = swing(t);
+      expect(s.kind).toBe('inPlay');
+      if (s.kind === 'inPlay') {
+        expect(s.launch.type).toBe('grounder');
+        expect(dist(s.launch.landing)).toBeLessThanOrEqual(SWING_TYPES.BUNT.DIST_CAP + 0.001);
+      }
+    }
+    const crazy = swing('crazyBunt');
+    if (crazy.kind === 'inPlay') expect(dist(crazy.launch.landing)).toBeLessThanOrEqual(SWING_TYPES.CRAZY_BUNT.DIST_CAP + 0.001);
+  });
+});
+
+describe('Lu, Ezra and Bao throw what they throw', () => {
+  const lu = getCharacter('lefty');
+  const ezra = getCharacter('bend_it');
+  const bao = getCharacter('the_prof');
+
+  it('Lu has one pitch, and the CPU throws it every time', () => {
+    expect([...pitchMenuFor(lu)]).toEqual(['curve']);
+    const rng = counted(81);
+    for (let i = 0; i < 200; i++) {
+      expect(chooseCpuPitch(9, { balls: i % 4, strikes: i % 3 }, 600, rng, 1, pitchMenuFor(lu)).kind).toBe('curve');
+    }
+    expect(pitchOnMenu(lu, 'fastball')).toBe('curve');
+    expect(pitchOnMenu(lu, 'fireball')).toBe('fireball'); // juice is juice
+  });
+
+  it('Ezra has never thrown a fastball, and still throws everything else', () => {
+    expect(pitchMenuFor(ezra)).not.toContain('fastball');
+    const rng = counted(82);
+    const seen = new Set<string>();
+    for (let i = 0; i < 400; i++) seen.add(chooseCpuPitch(9, { balls: 0, strikes: 0 }, 600, rng, 1, pitchMenuFor(ezra)).kind);
+    expect([...seen].sort()).toEqual(['changeup', 'curve', 'screwball']);
+    expect(pitchOnMenu(ezra, 'fastball')).toBe('changeup');
+  });
+
+  it('batters always go after his curve, and nobody else\'s', () => {
+    expect(batterMustChase(ezra, 'curve')).toBe(true);
+    expect(batterMustChase(ezra, 'changeup')).toBe(false);
+    expect(batterMustChase(lu, 'curve')).toBe(false);
+    const rng = counted(83);
+    const off = { ...plan(PLATE_ZONE.W / 2 + 30, 0), kind: 'curve' as const };
+    let chased = 0;
+    for (let i = 0; i < 300; i++) {
+      expect(resolveCpuPitchLocated(off, 'good', plain(), rng, true).cpuSwings).toBe(true);
+      if (resolveCpuPitchLocated(off, 'good', plain(), rng).cpuSwings) chased++;
+    }
+    expect(chased).toBeLessThan(150);
+  });
+
+  it("Bao's pitch takes half again as long to get there, and is otherwise the same pitch", () => {
+    const p = plan(3, 4);
+    const slow = planForPitcher(p, bao);
+    expect(slow.travelMs).toBeCloseTo(p.travelMs * QUIRKS.RAINBOW_TRAVEL, 6);
+    expect({ ...slow, travelMs: 0 }).toEqual({ ...p, travelMs: 0 });
+    expect(QUIRKS.RAINBOW_TRAVEL).toBeGreaterThan(1.3);
   });
 });

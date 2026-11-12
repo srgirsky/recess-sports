@@ -1402,4 +1402,8 @@ export const QUIRKS = {
   /** Hattie: where every ball she puts in play goes — 0 = the left-field line,
    *  1 = the right — and how far from home it lands, px. */
   SAME_SPOT: { SPRAY: 0.27, DIST: 235 },
+  /** Sam: chance a ball he takes hits him instead, and he walks to first. */
+  HIT_BY_PITCH: 0.4,
+  /** Bao: every pitch of his takes this many times as long to arrive. */
+  RAINBOW_TRAVEL: 1.55,
 } as const;

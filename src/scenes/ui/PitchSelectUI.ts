@@ -81,6 +81,8 @@ export function showPitchSelect(
   opts: {
     /** Juice specials to append below the base cards (locked when broke). */
     specials: SpecialPitchOption[];
+    /** This pitcher's own base menu (`quirks.pitchMenuFor`). Default: the four. */
+    kinds?: readonly PitchKind[];
     /** The batter's own strike zone, as a fraction of the standard one. */
     zoneScale?: number;
     onDone: (kind: PitchKind, target: PlateLoc) => void;
@@ -190,7 +192,7 @@ export function showPitchSelect(
   }
 
   // --- Pitch cards (right edge, base group + specials group) ---------------
-  const cards: CardDef[] = availablePitches(false).map((kind) => ({
+  const cards: CardDef[] = (opts.kinds ?? availablePitches(false)).map((kind) => ({
     id: kind,
     ...cardParts(kind),
   }));

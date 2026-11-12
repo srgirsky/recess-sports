@@ -204,7 +204,12 @@ export type Quirk =
   | 'clutch_runners' // Yui: only good with somebody on base.
   | 'moonshot' // Mars: perfect timing and it is gone, whatever the pitcher threw.
   | 'foul_back' // Josie: fouls them straight back at the pitcher.
-  | 'same_spot'; // Hattie: the same soft single to the same spot.
+  | 'same_spot' // Hattie: the same soft single to the same spot.
+  | 'hit_by_pitch' // Sam: leans into anything off the plate. Calls it strategy.
+  | 'always_bunts' // Rafi: bunts every single pitch. He has been begged.
+  | 'one_curve' // Lu: one perfect curve. It is all she throws.
+  | 'the_loop' // Ezra: never a fastball, and a curve batters always swing at.
+  | 'rainbow'; // Bao: his pitch loops so high it counts as weather.
 
 /**
  * The ten archetypes of the World 1 cast sheet (`docs/world1/kids-roster-v0.7.md`).

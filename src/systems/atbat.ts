@@ -15,7 +15,7 @@ import type { Character } from '../data/types';
 import { TIMING, LIVE, CURSOR, JUICE, SWING_TYPES } from '../config';
 import { HOME, DEFAULT_GEOMETRY, fencePointAt, type FieldGeometry, type Vec } from './geometry';
 import type { PitchPlan, PlateLoc } from './pitchkind';
-import { foulChance, foulLine, isMoonshot, sameSpot } from './quirks';
+import { alwaysBunts, foulChance, foulLine, isMoonshot, sameSpot } from './quirks';
 
 export type SwingBand = 'perfect' | 'good' | 'weak' | 'miss';
 
@@ -158,16 +158,25 @@ export function resolveContact(
 
   const L = LIVE.LAUNCH;
   const spot = sameSpot(batter);
+  // Rafi bunts every pitch: dead in front of the plate, between the lines —
+  // the same ball the BUNT card makes, on the same single spray draw.
+  const B = SWING_TYPES.BUNT;
+  const bunt = alwaysBunts(batter);
   return {
     kind: 'inPlay',
     launch: buildLaunch({
       band,
       q,
       typeBias: 0,
-      forceType: moonshot ? 'fly' : spot ? 'liner' : undefined,
+      forceType: moonshot ? 'fly' : spot ? 'liner' : bunt ? 'grounder' : undefined,
       distFixed: spot?.dist,
+      distCap: bunt ? B.DIST_CAP : undefined,
       // Spray direction: RNG along the horizon between the foul lines.
-      sprayT: spot ? () => spot.spray : () => L.SPRAY_MARGIN + rng() * (1 - 2 * L.SPRAY_MARGIN),
+      sprayT: spot
+        ? () => spot.spray
+        : bunt
+          ? () => B.SPRAY_MIN + rng() * (B.SPRAY_MAX - B.SPRAY_MIN)
+          : () => L.SPRAY_MARGIN + rng() * (1 - 2 * L.SPRAY_MARGIN),
       rng,
       geo,
     }),
@@ -208,7 +217,10 @@ export function resolveContactAimed(spec: {
   let { band } = spec;
   const { cursor, plan, batter, pitcher, rng } = spec;
   const powered = spec.boost?.power === true;
-  const swingType = spec.swingType ?? 'normal';
+  // Rafi bunts every pitch, whatever card a caller hands in — his own CRAZY
+  // BUNT is the one other thing he will do.
+  const asked = spec.swingType ?? 'normal';
+  const swingType: SwingType = alwaysBunts(spec.batter) && asked !== 'crazyBunt' ? 'bunt' : asked;
   // Cursor overlap: dead-on keeps the timing band, the sweet-spot fringe costs
   // one band, and swinging where the ball isn't is a whiff.
   const missDist = Math.hypot(cursor.x - plan.actual.x, cursor.y - plan.actual.y);
