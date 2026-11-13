@@ -13,7 +13,7 @@
 import type { Character } from '../data/types';
 import type { SwingBand } from './atbat';
 import { PITCH_TIMING, WILD_PITCH_CHANCE, PITCHES, QUIRKS } from '../config';
-import { ballBumpFor, neverSwings, planForBatter } from './quirks';
+import { ballBumpFor, leansIn, neverSwings, planForBatter } from './quirks';
 import { distOffZone, edgeFactor, type PitchPlan } from './pitchkind';
 
 export type PitchBand = 'perfect' | 'good' | 'weak' | 'wild';
@@ -76,6 +76,8 @@ export function resolveCpuPitch(
   }
 
   if (isBall) {
+    // Sam never chases: a ball is an opportunity.
+    if (leansIn(batter)) return { isBall, cpuSwings: false, cpuBand: 'miss', description: 'Ball!' };
     // CPU chases a bad ball once in a while — and swings badly when it does.
     const chases = rng() < 0.2;
     if (!chases) {
@@ -103,7 +105,9 @@ export function resolveCpuPitchLocated(
   plan: PitchPlan,
   band: PitchBand,
   batter: Character,
-  rng: () => number
+  rng: () => number,
+  /** Ezra's Loop (`quirks.batterMustChase`): this one is always swung at. */
+  mustChase = false
 ): CpuPitchPlan {
   const def = PITCHES[plan.kind];
   // Called against THIS batter's zone (idempotent — the scene does it too, so
@@ -114,8 +118,11 @@ export function resolveCpuPitchLocated(
   }
 
   if (!plan.inZone) {
+    if (leansIn(batter)) return { isBall: true, cpuSwings: false, cpuBand: 'miss', description: 'Ball!' };
     const off = distOffZone(plan.actual);
-    const chaseChance = Math.min(0.5, Math.max(0.05, 0.15 + def.deception * 0.35 - off * 0.004));
+    const chaseChance = mustChase
+      ? 1
+      : Math.min(0.5, Math.max(0.05, 0.15 + def.deception * 0.35 - off * 0.004));
     if (rng() >= chaseChance) {
       return { isBall: true, cpuSwings: false, cpuBand: 'miss', description: 'Ball!' };
     }

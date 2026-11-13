@@ -136,7 +136,10 @@ and Dev's pitches scatter; Roya throws about one ball in three, full power, to
 a base nobody chose; Josie fouls weak contact back; Hattie's ball lands in one
 place. Two of them take a choice away from the player on purpose — Winnie will
 not swing and Zaya does not wait to be sent — because that is the whole of who
-they are. The numbers are guesses: the cast sheet cites an Archetypes document
+they are. A second batch followed: Sam takes every ball and is hit by four in
+ten of them, Rafi's only card is the bunt, Lu throws one pitch, Ezra never
+throws a fastball, and Bao's pitch takes half again as long to arrive. The
+numbers are guesses: the cast sheet cites an Archetypes document
 this repo has never held. What is still unbuilt is listed in
 `docs/world1/cast-scope.md`.
 

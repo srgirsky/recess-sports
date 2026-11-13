@@ -107,8 +107,16 @@ import {
 } from '../systems/inning';
 import { rollSteal, cpuWantsSteal, rollPickoff, applyPickoff, stealReactBonus, canStealFrom } from '../systems/steal';
 import {
+  alwaysBunts,
   batterInMoment,
+  batterMustChase,
   clutchFiring,
+  countWhenHit,
+  hitByPitchChance,
+  pitchMenuFor,
+  pitchOnMenu,
+  planForPitcher,
+  travelMultFor,
   hasGreenLight,
   neverSwings,
   planForBatter,
@@ -653,6 +661,20 @@ export class GameScene extends Phaser.Scene {
   /** The kid as she bats right now (`quirks.batterInMoment`). */
   private inMoment(batter: Character): Character {
     return batterInMoment(batter, this.moment());
+  }
+
+  /**
+   * Sam took a ball: did it hit him? If so the count jumps to one short of a
+   * walk, so the ball the caller is about to record sends him to first by the
+   * walk's own forced-runner rule. Draws nothing for any other batter.
+   */
+  private hitByPitch(batter: Character): boolean {
+    const p = hitByPitchChance(batter);
+    if (p <= 0 || Math.random() >= p) return false;
+    this.halfState = countWhenHit(this.halfState);
+    this.scoreboard.umpCall('OW!', COLORS.red);
+    floatingText(this, PLATE_VIEW.ZONE.CX, PLATE_VIEW.ZONE.CY - 120, '🛡️ FREE BASE!', COLORS.gold, 26);
+    return true;
   }
 
   /** Roya just threw it somewhere nobody asked for. */
@@ -1995,7 +2017,7 @@ export class GameScene extends Phaser.Scene {
     this.scoreboard.setBatter(this.batter.name, this.gameLineFor(this.batter.id));
     this.kidChat('batterUp', this.batter);
     this.flagClutch(this.batter);
-    this.swingType = 'normal'; // the chip choice is per-at-bat
+    this.swingType = alwaysBunts(this.batter) ? 'bunt' : 'normal'; // the chip choice is per-at-bat
     this.showSwingChips();
     this.showSpendChips();
     // Net: the batter is now known — the guest shows the intro and (fielding)
@@ -2115,7 +2137,7 @@ export class GameScene extends Phaser.Scene {
     // makes contact. Everything downstream (ring + ball tweens) reads `travel`.
     // Through the one resolver, never the raw constants — the defensive half
     // read them directly and silently missed the tee case for months.
-    const travel = getPitchBaseMs(this.mode, 'batting', this.tee);
+    const travel = getPitchBaseMs(this.mode, 'batting', this.tee) * travelMultFor(this.fieldingSeat().pitcher!);
     this.pitchTravelMs = travel;
     // Sometimes the AI throws a WILD one — telegraphed in red, visibly off the
     // plate. Don't swing at those! Taking it earns a ball (4 = walk).
@@ -2281,7 +2303,8 @@ export class GameScene extends Phaser.Scene {
         this.halfState.count,
         getPitchBaseMs(this.mode, 'batting', this.tee),
         () => Math.random(),
-        scatterMultFor(moundSeat.pitcher!)
+        scatterMultFor(moundSeat.pitcher!),
+        pitchMenuFor(moundSeat.pitcher!)
       );
       // A trailing CPU digs into its own juice for a special pitch. Never in
       // pass-and-play/net: the CPU must not burn a HUMAN seat's meter.
@@ -2309,8 +2332,9 @@ export class GameScene extends Phaser.Scene {
         this.announceSpecialPitch(special, COLORS.red);
       }
     }
-    // Called against THIS batter's zone, before anything reads `inZone`.
-    plan = planForBatter(plan, this.batter);
+    // Thrown by THIS arm and called against THIS batter's zone, before
+    // anything reads `travelMs` or `inZone`.
+    plan = planForBatter(planForPitcher(plan, moundSeat.pitcher!), this.batter);
     this.pitchPlan = plan;
     this.hostCast({ t: 'pitchLaunch', wild: !plan.inZone, travelMs: plan.travelMs, plan });
     this.pitchIsWild = !plan.inZone; // reuses the take-a-ball / capped-chase rules
@@ -2394,6 +2418,8 @@ export class GameScene extends Phaser.Scene {
       { id: 'grounder', icon: '⬇️', label: 'GROUNDER' },
       { id: 'bunt', icon: '🤏', label: 'BUNT' },
     ];
+    // Rafi bunts every single pitch: the bunt is the only base card he holds.
+    if (alwaysBunts(this.batter)) cards.splice(0, cards.length, cards[cards.length - 1]);
     if (this.batter.ability === 'crazy_bunt') {
       cards.push({ id: 'crazyBunt', icon: '🤪', label: 'CRAZY BUNT', gapBefore: true });
     }
@@ -2890,6 +2916,10 @@ export class GameScene extends Phaser.Scene {
     if (took) {
       if (takenAt) this.showRestingBall(takenAt.x, takenAt.y);
       if (this.pitchIsWild) {
+        if (this.hitByPitch(this.batter)) {
+          this.applyAndContinue({ kind: 'ball', bases: 0, description: 'Hit by the pitch! Free base!' });
+          return;
+        }
         // Good eye! Letting a wild one go is a ball.
         this.scoreboard.umpCall('BALL!', BALL_GREEN);
         this.applyAndContinue({ kind: 'ball', bases: 0, description: 'Ball! Good eye!' });
@@ -3072,7 +3102,8 @@ export class GameScene extends Phaser.Scene {
     const struckOut = result.kind === 'strike' && applied.batterOut;
     // The K'd kid turns to the camera and slumps.
     if (struckOut) this.rig.reactBatter('upset', ANIM.REACT_HOLD_MS);
-    let msg = walked ? 'WALK!' : struckOut ? 'STRIKEOUT!' : result.description;
+    const plunked = result.description.startsWith('Hit by the pitch');
+    let msg = walked ? (plunked ? 'HIT BY THE PITCH!' : 'WALK!') : struckOut ? 'STRIKEOUT!' : result.description;
     if (applied.runsScored > 0)
       msg += `\n+${applied.runsScored} RUN${applied.runsScored > 1 ? 'S' : ''}!`;
     const big = walked || struckOut || applied.runsScored > 0;
@@ -3928,6 +3959,7 @@ export class GameScene extends Phaser.Scene {
     const ability = fseat.pitcher!.ability;
     this.pitchSelect = showPitchSelect(this, {
       zoneScale: zoneScaleFor(this.cpuBatter),
+      kinds: pitchMenuFor(fseat.pitcher!),
       specials: this.features.juice
         ? specialPitches().map((kind) => {
             const sk = spendKindForPitch(kind)!;
@@ -4061,7 +4093,7 @@ export class GameScene extends Phaser.Scene {
     // to be CPU_PITCH_TRAVEL_MS hardcoded in both places, which ignored `tee` —
     // so a tee-ball game lobbed at 1500ms when you batted and fired a 278ms
     // laser when you pitched, in the tier that is meant to be the easiest.
-    const travel = getPitchBaseMs(this.mode, 'pitching', this.tee);
+    const travel = getPitchBaseMs(this.mode, 'pitching', this.tee) * travelMultFor(this.fieldingSeat().pitcher!);
     this.hostCast({ t: 'pitchLaunch', wild: band === 'wild', travelMs: travel });
     this.time.delayedCall(ANIM.WINDUP_MS, () => this.launchCpuPitch(band, plan, travel));
   }
@@ -4086,6 +4118,10 @@ export class GameScene extends Phaser.Scene {
       this.guestSend({ t: 'pitchPlan', kind, target, band, errorMs: errorMs ?? NOMINAL_NET[band] });
       return;
     }
+    // A kid throws only what is on her own menu: an auto-throw, a headless
+    // caller or a net guest asking Lu for a fastball gets her curve. Juice
+    // specials are not base pitches and pass through.
+    kind = pitchOnMenu(this.fieldingSeat().pitcher!, kind);
     this.lastPitchKind = kind;
     // Speedy CPU runners sometimes take off on the pitch — decided when the
     // menu opened (so a pickoff could read it), or right now if it never did.
@@ -4115,14 +4151,17 @@ export class GameScene extends Phaser.Scene {
       : fseat.pitcher!.stats.pitching;
     // Scattered by this arm, then called against THIS batter's zone.
     const plan = planForBatter(
-      resolvePitchLocation(
-        kind,
-        target,
-        armStat,
-        err,
-        getPitchBaseMs(this.mode, 'pitching', this.tee),
-        () => Math.random(),
-        scatterMultFor(fseat.pitcher!)
+      planForPitcher(
+        resolvePitchLocation(
+          kind,
+          target,
+          armStat,
+          err,
+          getPitchBaseMs(this.mode, 'pitching', this.tee),
+          () => Math.random(),
+          scatterMultFor(fseat.pitcher!)
+        ),
+        fseat.pitcher!
       ),
       this.cpuBatter
     );
@@ -4130,7 +4169,13 @@ export class GameScene extends Phaser.Scene {
     // and settleCpuPitch routes to the remote swing instead of consuming it.
     const cpuPlan = this.seatIsRemote(this.battingSeat())
       ? { isBall: !plan.inZone, cpuSwings: false, cpuBand: 'miss' as SwingBand, description: '' }
-      : resolveCpuPitchLocated(plan, band, rampedCpuBatter(this.cpuBatter, this.ramp), () => Math.random());
+      : resolveCpuPitchLocated(
+          plan,
+          band,
+          rampedCpuBatter(this.cpuBatter, this.ramp),
+          () => Math.random(),
+          batterMustChase(fseat.pitcher!, plan.kind)
+        );
     this.netMoundPlan = plan;
     this.netSwing = undefined; // a fresh pitch invalidates any stale swing
     this.hostCast({ t: 'pitchLaunch', wild: false, travelMs: plan.travelMs, plan, stealFrom: this.cpuStealFrom });
@@ -4229,6 +4274,10 @@ export class GameScene extends Phaser.Scene {
     if (!plan.cpuSwings) {
       if (this.lastPlateBall) this.showRestingBall(this.lastPlateBall.x, this.lastPlateBall.y);
       if (plan.isBall) {
+        if (this.hitByPitch(this.cpuBatter)) {
+          this.resolveCpuStealThen({ kind: 'ball', bases: 0, description: 'Hit by the pitch! Free base!' });
+          return;
+        }
         this.scoreboard.umpCall('BALL!', BALL_GREEN);
         this.resolveCpuStealThen({ kind: 'ball', bases: 0, description: 'Ball!' });
       } else {
@@ -4965,7 +5014,9 @@ export class GameScene extends Phaser.Scene {
     // YOUR strikeout victim slumps too.
     if (struckOut) this.rig.reactBatter('upset', ANIM.REACT_HOLD_MS);
     let msg = walked
-      ? `${prevBatter.name} walks!`
+      ? result.description.startsWith('Hit by the pitch')
+        ? `${prevBatter.name} got hit! Free base!`
+        : `${prevBatter.name} walks!`
       : struckOut
         ? `STRIKEOUT!\nYou got ${prevBatter.name}!`
         : `${prevBatter.name}: ${result.description}`;

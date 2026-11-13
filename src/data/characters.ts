@@ -30,7 +30,7 @@
 // has generic pools for everyone else). Ability hooks are data-driven, and so
 // is `quirk` — the kid's signature behaviour in the classic game, whose rules
 // live in `systems/quirks.ts`. The mechanics the sheet describes that are NOT
-// built yet (Heater, hit by pitch, the Loop, the Rainbow, Brick House) are
+// built yet (Heater, Brick House, the fence arms, the sibling bonus) are
 // listed in `docs/world1/cast-scope.md`.
 // ---------------------------------------------------------------------------
 
@@ -180,6 +180,7 @@ export const ROSTER: Character[] = [
       hairSpec: { volume: 1.0 },
       outfit: { kind: 'stripeTee', top: 7, bottoms: 'jeans' } }, // tzitzit below the hem: a cast-2 part
     ability: 'none',
+    quirk: 'the_loop',
     draftLine: 'Good choice. Velocity is overrated.',
     chatterLines: ['You are swinging early. Everyone does.', 'I have never thrown a fastball. On principle.'],
   },
@@ -436,6 +437,7 @@ export const ROSTER: Character[] = [
       hairSpec: { volume: 1.0 },
       outfit: { kind: 'overalls', top: 2 } },
     ability: 'crazy_bunt', // the signature 🤪 CRAZY BUNT card joins his swing stack
+    quirk: 'always_bunts',
     draftLine: 'Bunt! Bunt! You cannot stop me!',
     chatterLines: ['Nobody ever fields my crazy bunt.', 'What if I bunt? I am going to bunt.'],
   },
@@ -475,6 +477,7 @@ export const ROSTER: Character[] = [
       hairSpec: { volume: 0.95 },
       outfit: { kind: 'stripeTee', top: 11, bottoms: 'jeans' } },
     ability: 'none',
+    quirk: 'hit_by_pitch',
     draftLine: 'Great. Hit me. I mean the pitcher. Hit me.',
     chatterLines: ['Ow. Free base.', 'It is strategy.'],
   },
@@ -554,6 +557,7 @@ export const ROSTER: Character[] = [
       hairSpec: { volume: 0.94, length: 0.85 },
       outfit: { kind: 'jacket', top: 7 } },
     ability: 'none',
+    quirk: 'one_curve',
     draftLine: 'My curveball says thank you!',
     chatterLines: ['Here comes the curve. Yes, again.'],
   },
@@ -573,6 +577,7 @@ export const ROSTER: Character[] = [
       hairSpec: { volume: 1.04, part: 0.3 },
       outfit: { kind: 'jacket', top: 10, bottoms: 'jeans' } },
     ability: 'none',
+    quirk: 'rainbow',
     draftLine: 'The Rainbow is ready! Look UP!',
     chatterLines: ['Keep looking up. It is still coming.'],
   },

@@ -131,7 +131,11 @@ throwing arm already rides the pitching stat (the Cannons).
 when behind, Marcus with a runner in scoring position while tied or behind, Yui
 with anyone on), Moonshot (Mars), Winnie never swinging behind a 60% zone,
 Zaya's Green Light and her silence, Kwame's and Dev's scatter, Roya's wrong
-base, Josie's foul-backs and Hattie's one spot. Two departures from this page,
+base, Josie's foul-backs and Hattie's one spot; then, in a second batch, Sam
+getting hit by a ball he takes (a free base by the walk's forced-runner rule),
+Rafi bunting every pitch, Lu's one-pitch menu, Ezra's no-fastball menu and a
+curve CPU batters always swing at, and Bao's pitches arriving half again as
+late on the slow-pitch arc. Two departures from this page,
 both deliberate: the Clutch kids keep their roster power when NOT firing (the
 sheet's 0.30 baseline would rewrite three stat cards), and v1's zone did not
 scale with height after all, so Winnie's is a per-kid scale.
@@ -141,11 +145,12 @@ Clutch's 0.95); the Archetypes document it cites for the rest has never been in
 this repo. They are first guesses, all in `config.QUIRKS`, for the maintainer
 to correct. v2 has none of these behaviours yet.
 
-Still unbuilt in v1: hit by pitch (Sam), the Loop and the Rainbow (Ezra, Bao),
-Lu's one curve, Heater and Jay refusing relief, Roz's velocity, Musa's 40%,
-Brick House (Sonny) and Greta's hands, Rafi bunting every pitch, Ollie never
-being tagged, the two fence arms (Rudy, Amir), Yaz's closed eyes, the sibling
-bonus and Ezra's Friday.
+Still unbuilt in v1: Heater and Jay refusing relief, Roz's velocity, Musa's
+40%, Brick House (Sonny) and Greta's hands, Ollie never being tagged, the two
+fence arms (Rudy, Amir), Yaz's closed eyes, the sibling bonus and Ezra's
+Friday. Ezra's Loop is a menu and a chase rule, not yet a pitch with its own
+flight; Bao's Rainbow has its arc only in classic (kid mode's pitch is drawn
+straight, just slower).
 
 What did not exist in either sim when this page was written, in rough order of
 size (kept as the scoping record; see above for what v1 has since built):

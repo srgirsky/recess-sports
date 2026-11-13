@@ -146,9 +146,10 @@ export function chooseCpuPitch(
   count: { balls: number; strikes: number },
   baseTravelMs: number,
   rng: () => number,
-  scatterMult = 1
+  scatterMult = 1,
+  /** This arm's own menu (`quirks.pitchMenuFor`). Default: the standard four. */
+  kinds: readonly PitchKind[] = availablePitches(false)
 ): PitchPlan {
-  const kinds = availablePitches(false);
   const kind = kinds[Math.floor(rng() * kinds.length)];
 
   // Aim: corners by default; waste off the zone when ahead; groove when behind.

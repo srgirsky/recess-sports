@@ -22,6 +22,11 @@
 //   moonshot       Mars      perfect timing is a home run, whatever was thrown
 //   foul_back      Josie     weak contact goes foul far more often
 //   same_spot      Hattie    every ball in play lands in the same place
+//   hit_by_pitch   Sam       never chases; a ball he takes may hit him — free base
+//   always_bunts   Rafi      every swing of his is a bunt
+//   one_curve      Lu        the curve is her whole menu
+//   the_loop       Ezra      no fastball; batters always go after his curve
+//   rainbow        Bao       every pitch arrives late, on a high arc
 //
 // A kid the PLAYER controls keeps the quirk: the player times Mars's swing and
 // steers Roya's throw, and the quirk does the rest. The two that take a choice
@@ -30,7 +35,8 @@
 // ---------------------------------------------------------------------------
 
 import type { Character, Quirk } from '../data/types';
-import { PLATE_ZONE, QUIRKS } from '../config';
+import { PLATE_ZONE, QUIRKS, type PitchKind } from '../config';
+import type { HalfInningState } from './inning';
 import type { PitchPlan, PlateLoc } from './pitchkind';
 
 const has = (kid: Character | undefined, q: Quirk): boolean => kid?.quirk === q;
@@ -110,7 +116,74 @@ export function sameSpot(batter: Character): { spray: number; dist: number } | n
   return has(batter, 'same_spot') ? { spray: QUIRKS.SAME_SPOT.SPRAY, dist: QUIRKS.SAME_SPOT.DIST } : null;
 }
 
+/** Rafi bunts every single pitch. */
+export function alwaysBunts(batter: Character): boolean {
+  return has(batter, 'always_bunts');
+}
+
+/** Sam does not chase: a ball is an opportunity. */
+export function leansIn(batter: Character): boolean {
+  return has(batter, 'hit_by_pitch');
+}
+
+/** Chance that a ball this batter TAKES hits him instead. */
+export function hitByPitchChance(batter: Character): number {
+  return has(batter, 'hit_by_pitch') ? QUIRKS.HIT_BY_PITCH : 0;
+}
+
+/**
+ * The half inning as it stands the instant he is hit: one ball short of a
+ * walk, so the ball about to be recorded sends him to first and moves only the
+ * runners he forces — which is exactly the rule for a hit batter. Done here
+ * rather than as a new at-bat result so the rules layer, which both games
+ * share, does not grow a case only one of them can reach.
+ */
+export function countWhenHit(state: HalfInningState): HalfInningState {
+  return { ...state, count: { ...state.count, balls: 3 } };
+}
+
 // --- The pitcher ------------------------------------------------------------
+
+const BASE_MENU: readonly PitchKind[] = ['fastball', 'changeup', 'curve', 'screwball'];
+const LU_MENU: readonly PitchKind[] = ['curve'];
+const EZRA_MENU: readonly PitchKind[] = ['changeup', 'curve', 'screwball'];
+
+/**
+ * The pitches this kid throws without juice. Lu has one; Ezra has never thrown
+ * a fastball. Everyone else gets the standard four, in the standard order —
+ * the CPU samples this list with ONE draw whatever its length.
+ */
+export function pitchMenuFor(pitcher: Character): readonly PitchKind[] {
+  if (has(pitcher, 'one_curve')) return LU_MENU;
+  if (has(pitcher, 'the_loop')) return EZRA_MENU;
+  return BASE_MENU;
+}
+
+/**
+ * The pitch this kid actually throws when asked for `kind`: a base pitch that
+ * is not on her menu becomes the first one that is. Juice specials are not
+ * base pitches and pass through untouched.
+ */
+export function pitchOnMenu(pitcher: Character, kind: PitchKind): PitchKind {
+  const menu = pitchMenuFor(pitcher);
+  return BASE_MENU.includes(kind) && !menu.includes(kind) ? menu[0] : kind;
+}
+
+/** Ezra's Loop starts outside the zone and lands in it: batters always swing. */
+export function batterMustChase(pitcher: Character, kind: PitchKind): boolean {
+  return has(pitcher, 'the_loop') && kind === 'curve';
+}
+
+/** How many times longer this kid's pitches take to arrive. */
+export function travelMultFor(pitcher: Character): number {
+  return has(pitcher, 'rainbow') ? QUIRKS.RAINBOW_TRAVEL : 1;
+}
+
+/** The same pitch, thrown by THIS arm. Identity for everyone but Bao. */
+export function planForPitcher(plan: PitchPlan, pitcher: Character): PitchPlan {
+  const k = travelMultFor(pitcher);
+  return k === 1 ? plan : { ...plan, travelMs: plan.travelMs * k };
+}
 
 /** How much wider this arm's pitches land than its pitching stat says. */
 export function scatterMultFor(pitcher: Character): number {
