@@ -138,7 +138,17 @@ place. Two of them take a choice away from the player on purpose — Winnie will
 not swing and Zaya does not wait to be sent — because that is the whole of who
 they are. A second batch followed: Sam takes every ball and is hit by four in
 ten of them, Rafi's only card is the bunt, Lu throws one pitch, Ezra never
-throws a fastball, and Bao's pitch takes half again as long to arrive. The
+throws a fastball, and Bao's pitch takes half again as long to arrive. A third
+batch gave the last nine theirs, so every kid on the wall now plays to a
+tagline: Jay's first fastball of each half is the Heater, at twice the stamina,
+and no relief button exists while he is on the mound; every pitch of Roz's
+arrives early; Musa has one pitch, which wobbles four times in ten and floats
+the other six; Sonny and Greta never roll for a drop, and Sonny reaches
+further than anyone; no tag, caught-stealing or pickoff ever lands on Ollie,
+though a ball that beats him to a bag still retires him; Rudy and Amir throw
+half again as hard, never wild, and straight at the bag from the outfield
+instead of to the cutoff man; and Yaz's ball vanishes halfway to the plate,
+with whatever she touches going up a band. The
 numbers are guesses: the cast sheet cites an Archetypes document
 this repo has never held. What is still unbuilt is listed in
 `docs/world1/cast-scope.md`.

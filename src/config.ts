@@ -1406,4 +1406,28 @@ export const QUIRKS = {
   HIT_BY_PITCH: 0.4,
   /** Bao: every pitch of his takes this many times as long to arrive. */
   RAINBOW_TRAVEL: 1.55,
+  /** Jay: the Heater arrives in this fraction of his usual time. One fastball
+   *  per half inning (the first pitch of the half where pitches have no
+   *  kind), at twice the stamina. A CPU batter always swings late at it. */
+  HEATER_TRAVEL: 0.72,
+  /** Roz: EVERY pitch of hers arrives in this fraction of the usual time. */
+  VELOCITY_TRAVEL: 0.86,
+  /** Roz: chance a CPU batter is late on any one of them (down one band). */
+  VELOCITY_LATE: 0.3,
+  /** Musa: chance the wobbler works. The sheet's own number. */
+  WOBBLER_WORKS: 0.4,
+  /** Musa, when it does not: the floater takes this many times as long. */
+  WOBBLER_FLAT_TRAVEL: 1.25,
+  /** Sonny: his catch and pickup reach is multiplied by this. */
+  BRICK_HOUSE_REACH: 1.6,
+  /** Rudy / Amir: their throws travel this many times as fast. */
+  CANNON_SPEED: 1.5,
+  /** Amir: the speed stat he chases a ball with (he covers it all himself). */
+  ALONE_RANGE: 10,
+  /** Yaz, human at bat: the ball disappears after this fraction of its flight. */
+  EYES_CLOSED_AT: 0.5,
+  /** Yaz, CPU at bat: her swing is this lottery, whatever was thrown.
+   *  Cumulative thresholds on one draw: perfect below the first, then good,
+   *  then weak, else a miss. */
+  EYES_CLOSED_BANDS: { perfect: 0.24, good: 0.4, weak: 0.55 },
 } as const;

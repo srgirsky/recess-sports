@@ -13,7 +13,7 @@
 import type { Character } from '../data/types';
 import type { SwingBand } from './atbat';
 import { PITCH_TIMING, WILD_PITCH_CHANCE, PITCHES, QUIRKS } from '../config';
-import { ballBumpFor, leansIn, neverSwings, planForBatter } from './quirks';
+import { ballBumpFor, cpuBlindBand, leansIn, neverSwings, planForBatter } from './quirks';
 import { distOffZone, edgeFactor, type PitchPlan } from './pitchkind';
 
 export type PitchBand = 'perfect' | 'good' | 'weak' | 'wild';
@@ -88,7 +88,7 @@ export function resolveCpuPitch(
   }
 
   // --- In the zone: CPU swings, quality from contact then shifted by pitch --
-  let cpuBand = cpuSwingBand(batter.stats.contact, rng);
+  let cpuBand = cpuBlindBand(batter, rng) ?? cpuSwingBand(batter.stats.contact, rng);
   if (band === 'perfect') cpuBand = downgradeSwing(cpuBand);
   if (band === 'wild') cpuBand = upgradeCapped(cpuBand); // a hanger right in the zone
 
@@ -130,7 +130,7 @@ export function resolveCpuPitchLocated(
     return { isBall: true, cpuSwings: true, cpuBand, description: 'Chased a bad one!' };
   }
 
-  let cpuBand = cpuSwingBand(batter.stats.contact, rng);
+  let cpuBand = cpuBlindBand(batter, rng) ?? cpuSwingBand(batter.stats.contact, rng);
   if (band === 'perfect') cpuBand = downgradeSwing(cpuBand);
   if (band === 'wild') cpuBand = upgradeCapped(cpuBand); // blew the meter but it found the zone: a hanger
   if (rng() < edgeFactor(plan.actual) * 0.4) cpuBand = downgradeSwing(cpuBand); // painted the corner
@@ -163,6 +163,26 @@ export function cpuSwingBand(contact: number, rng: () => number): SwingBand {
 }
 
 const SWING_ORDER: SwingBand[] = ['miss', 'weak', 'good', 'perfect'];
+
+/**
+ * The CPU batter is LATE on this one (`quirks.lateSwingChance`): a swing drops
+ * a band. A chance of 0 or 1 is settled without a draw, so an arm with no
+ * velocity to speak of costs the stream nothing.
+ */
+export function swingLate(plan: CpuPitchPlan, chance: number, rng: () => number): CpuPitchPlan {
+  if (chance <= 0 || !plan.cpuSwings) return plan;
+  if (chance < 1 && rng() >= chance) return plan;
+  return { ...plan, cpuBand: downgradeSwing(plan.cpuBand) };
+}
+
+/**
+ * Musa's wobbler against a CPU batter: the one that works fools the swing
+ * down a band; the one that does not is a floater, and gets hit up a band.
+ */
+export function againstWobbler(plan: CpuPitchPlan, w: 'works' | 'flat' | null): CpuPitchPlan {
+  if (w === null || !plan.cpuSwings) return plan;
+  return { ...plan, cpuBand: w === 'works' ? downgradeSwing(plan.cpuBand) : upgradeCapped(plan.cpuBand) };
+}
 
 function downgradeSwing(band: SwingBand): SwingBand {
   return SWING_ORDER[Math.max(0, SWING_ORDER.indexOf(band) - 1)];
