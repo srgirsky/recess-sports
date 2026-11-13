@@ -901,3 +901,84 @@ describe('the Walls, the Cannons and the kid nobody has tagged', () => {
     }
   });
 });
+
+// --- The family, and Friday ---------------------------------------------------
+
+import { playsWithSibling, pitchLabelFor, siblingOf, sitsOnFriday, withFamily, SIBLINGS } from './quirks';
+import { FRIDAY, teamForDay } from './season';
+
+describe('siblings are better together', () => {
+  const roz = getCharacter('diva');
+  const rudy = getCharacter('flash');
+  it('the sheet has two pairs, and every id in them is on the roster', () => {
+    expect(SIBLINGS).toEqual([
+      ['diva', 'flash'],
+      ['peaches', 'bend_it'],
+    ]);
+    for (const id of SIBLINGS.flat()) expect(ROSTER.some((c) => c.id === id)).toBe(true);
+    expect(siblingOf('diva')).toBe('flash');
+    expect(siblingOf('bend_it')).toBe('peaches');
+    expect(siblingOf('chip')).toBeNull();
+  });
+
+  it('★ apart, or on a team without them, a kid is the very same object', () => {
+    expect(withFamily(roz, ['diva', 'chip'])).toBe(roz);
+    expect(withFamily(roz, ['flash', 'chip'])).toBe(roz); // her sister is there; she is not
+    expect(withFamily(plain(), ['diva', 'flash', 'x'])).toEqual(plain());
+    expect(playsWithSibling(roz, ['diva', 'chip'])).toBe(false);
+  });
+
+  it('together, both are one better at everything, and nobody passes ten', () => {
+    const team = ['diva', 'flash', 'chip'];
+    const r = withFamily(rudy, team).stats;
+    expect(r.contact).toBe(rudy.stats.contact + QUIRKS.SIBLING_BONUS);
+    expect(r.fielding).toBe(Math.min(10, rudy.stats.fielding + QUIRKS.SIBLING_BONUS));
+    expect(withFamily(roz, team).stats.pitching).toBe(10);
+    expect(withFamily(roz, team).quirk).toBe('velocity'); // still herself
+  });
+});
+
+describe('Ezra does not play on Fridays', () => {
+  const sits = (id: string) => sitsOnFriday(getCharacter(id));
+  const bench = ROSTER.map((c) => c.id);
+  const mine = ['bend_it', 'chip', 'turbo', 'tank', 'grizz', 'flash', 'ace_kid', 'sniffles', 'zippy'];
+  const theirs = ['smokey', 'diva', 'gizmo', 'penny', 'dex', 'bubbles', 'lefty', 'the_prof', 'moose'];
+
+  it('he is the only one', () => {
+    expect(ROSTER.filter(sitsOnFriday).map((c) => c.id)).toEqual(['bend_it']);
+  });
+
+  it('★ Monday to Thursday the team is the team', () => {
+    for (let g = 0; g < FRIDAY; g++) {
+      const d = teamForDay(mine, theirs, g, bench, sits);
+      expect(d.team).toBe(mine);
+      expect(d.swaps).toEqual([]);
+    }
+  });
+
+  it('★ on Friday a kid from the block fills his slot: nine, no duplicates, nobody from either team', () => {
+    const d = teamForDay(mine, theirs, FRIDAY, bench, sits);
+    expect(d.team).toHaveLength(9);
+    expect(d.team).not.toContain('bend_it');
+    expect(new Set(d.team).size).toBe(9);
+    expect(d.swaps).toHaveLength(1);
+    expect(d.swaps[0].out).toBe('bend_it');
+    expect(mine).not.toContain(d.swaps[0].in);
+    expect(theirs).not.toContain(d.swaps[0].in);
+    expect(d.team.indexOf(d.swaps[0].in)).toBe(0); // in his slot
+    expect(mine).toContain('bend_it'); // the week's own nine is untouched
+  });
+
+  it('a team without him is untouched on Friday, and with nobody left to ask he plays', () => {
+    expect(teamForDay(theirs, mine, FRIDAY, bench, sits).team).toBe(theirs);
+    expect(teamForDay(mine, theirs, FRIDAY, [...mine, ...theirs], sits).team).toEqual(mine);
+  });
+});
+
+describe("Musa's one card says what it is", () => {
+  it('and nobody else gets a relabelled card', () => {
+    expect(pitchLabelFor(getCharacter('gizmo'), 'changeup')).toBe('🎲 WOBBLER');
+    expect(pitchLabelFor(getCharacter('gizmo'), 'fireball')).toBeUndefined();
+    expect(pitchLabelFor(plain(), 'changeup')).toBeUndefined();
+  });
+});

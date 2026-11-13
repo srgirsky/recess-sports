@@ -163,16 +163,28 @@ Known thin spots in that batch, none of them hidden by a test: Greta's sure
 hands and Sonny's are invisible in kid mode, where nobody drops anything;
 the lineup's auto-assign does not know Sonny is a catcher or Amir a centre
 fielder (`lineup.ts` is shared with v2 and was left alone), so they play
-where their stats put them; Musa's one card still reads SLOW; Yaz's blindfold
+where their stats put them; Yaz's blindfold
 and band bump are not applied to a net guest's swing; and a single Cannon in
 centre moved outs per play from 1.247 to 1.269 over 1,444 seeded plays, which
 is a small edge for a kid whose tagline is about it.
 
-Still unbuilt in v1: the sibling bonus and Ezra's
-Friday. Ezra's Loop is a menu and a chase rule, not yet a pitch with its own
-flight; Bao's Rainbow has its arc only in classic (kid mode's pitch is drawn
-straight, just slower). Brick House is reach and sure hands on a fielder, not
-the catcher blocking model item 7 below asks for.
+Then the two rules that are about a team rather than a kid. **Siblings**
+(Roz and Rudy, Hattie and Ezra) drafted onto the same nine are each one better
+at every stat, capped at ten, wherever a stat is read at the plate, on the
+mound or in the field (`quirks.withFamily`); a runner's legs are not covered.
+The sheet says only "a bonus"; the size is a guess. **Ezra's Friday**: in
+Recess Week's fifth game he is not there, on either side, and the weakest arm
+on neither team fills his slot for the day
+(`season.teamForDay`); the week's own nine, its stats and the Saturday final
+are untouched, and the Friday slot on the week board carries a candle and his
+name. The draft card now names each kid's behaviour on the chip abilities
+already used, and Musa's one pitch card reads WOBBLER.
+
+Still open in v1: Ezra's Loop is a menu and a chase rule, not yet a pitch
+with its own flight; Bao's Rainbow has its arc only in classic (kid mode's
+pitch is drawn straight, just slower); Brick House is reach and sure hands on
+a fielder, not the catcher blocking model item 7 below asks for; and the
+lineup's auto-assign still places nobody by story.
 
 What did not exist in either sim when this page was written, in rough order of
 size (kept as the scoping record; see above for what v1 has since built):

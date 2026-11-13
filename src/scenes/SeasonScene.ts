@@ -10,7 +10,9 @@
 
 import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT, COLORS } from '../config';
-import { getSeason, isWeekOver, wins, WEEKDAYS, type SeasonState } from '../systems/season';
+import { getSeason, isWeekOver, wins, teamForDay, FRIDAY, WEEKDAYS, type SeasonState } from '../systems/season';
+import { sitsOnFriday } from '../systems/quirks';
+import { ROSTER, getCharacter } from '../data/characters';
 import { standings, finalOpponent, finalPending, YOU, type StandingsRow } from '../systems/league';
 import { TEAM_LOGOS, teamName } from '../systems/team';
 import { UNIFORM_COLORS } from '../art/palette';
@@ -75,6 +77,16 @@ export class SeasonScene extends Phaser.Scene {
         .setOrigin(0.5)
         .setAlpha(played ? 0.65 : 1);
       slot.add([dayTxt, face, logo]);
+      // Friday, and somebody on your nine is not coming. No speech: a candle
+      // and a name, under the day.
+      const away = i === FRIDAY && !played ? season.playerTeam.map(getCharacter).find(sitsOnFriday) : undefined;
+      if (away) {
+        slot.add(
+          this.add
+            .text(0, 112, `🕯️ no ${away.name.split(' ')[0]}`, { fontFamily: FONT, fontSize: '16px', color: '#ffce3a', fontStyle: 'bold' })
+            .setOrigin(0.5)
+        );
+      }
       if (played) {
         const r = season.results[i];
         const mark = this.add
@@ -223,9 +235,18 @@ export class SeasonScene extends Phaser.Scene {
 
   private nextGame(season: SeasonState): void {
     audio.pop();
+    // Whoever does not play on this day is not there; a kid from the block
+    // fills in for each of them, on both sides.
+    // Weakest arm first: the best arm available is simply not there, and
+    // whoever turns up in his place is not another one.
+    const bench = [...ROSTER].sort((a, b) => a.stats.pitching - b.stats.pitching).map((c) => c.id);
+    const sits = (id: string) => sitsOnFriday(getCharacter(id));
+    const rival = season.rivalTeams[season.gameIndex];
+    const mine = teamForDay(season.playerTeam, rival, season.gameIndex, bench, sits);
+    const theirs = teamForDay(rival, mine.team, season.gameIndex, bench, sits);
     this.scene.start('Lineup', {
-      playerTeam: season.playerTeam,
-      aiTeam: season.rivalTeams[season.gameIndex],
+      playerTeam: mine.team,
+      aiTeam: theirs.team,
       seasonGame: true,
     });
   }

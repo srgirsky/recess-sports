@@ -52,6 +52,48 @@ import type { SwingBand } from './atbat';
 
 const has = (kid: Character | undefined, q: Quirk): boolean => kid?.quirk === q;
 
+// --- The family ---------------------------------------------------------------
+
+/** The cast sheet's two sets of siblings, by roster id. */
+export const SIBLINGS: ReadonlyArray<readonly [string, string]> = [
+  ['diva', 'flash'], // Roz & Rudy Achterberg — arms run in the family
+  ['peaches', 'bend_it'], // Hattie & Ezra Bloom
+];
+
+/** This kid's sibling, if the sheet gives them one. */
+export function siblingOf(id: string): string | null {
+  for (const [a, b] of SIBLINGS) {
+    if (a === id) return b;
+    if (b === id) return a;
+  }
+  return null;
+}
+
+/** Is this kid playing beside their brother or sister right now? */
+export function playsWithSibling(kid: Character, team: readonly string[]): boolean {
+  const sib = siblingOf(kid.id);
+  return sib !== null && team.includes(kid.id) && team.includes(sib);
+}
+
+/**
+ * The kid as they play on THIS team: siblings drafted together are each a
+ * little better at everything. The same object, untouched, for everyone else.
+ */
+export function withFamily(kid: Character, team: readonly string[]): Character {
+  if (!playsWithSibling(kid, team)) return kid;
+  const up = (n: number) => Math.min(10, n + QUIRKS.SIBLING_BONUS);
+  const s = kid.stats;
+  return {
+    ...kid,
+    stats: { contact: up(s.contact), power: up(s.power), speed: up(s.speed), pitching: up(s.pitching), fielding: up(s.fielding) },
+  };
+}
+
+/** Ezra does not play on Fridays. */
+export function sitsOnFriday(kid: Character): boolean {
+  return has(kid, 'the_loop');
+}
+
 // --- The batter -------------------------------------------------------------
 
 /** Winnie has never swung the bat. */
@@ -212,6 +254,11 @@ export function pitchMenuFor(pitcher: Character): readonly PitchKind[] {
 export function pitchOnMenu(pitcher: Character, kind: PitchKind): PitchKind {
   const menu = pitchMenuFor(pitcher);
   return BASE_MENU.includes(kind) && !menu.includes(kind) ? menu[0] : kind;
+}
+
+/** What this kid's card for `kind` says, when it is not the usual label. */
+export function pitchLabelFor(pitcher: Character, kind: PitchKind): string | undefined {
+  return has(pitcher, 'forty_percent') && kind === 'changeup' ? '🎲 WOBBLER' : undefined;
 }
 
 /** Ezra's Loop starts outside the zone and lands in it: batters always swing. */
