@@ -12,6 +12,7 @@ import { GAME_WIDTH, GAME_HEIGHT, COLORS } from '../config';
 import { getCharacter } from '../data/characters';
 import type { TeamState } from '../data/types';
 import type { PositionId } from '../systems/geometry';
+import { storyLineup } from '../systems/quirks';
 import { autoAssign, swapOrder, swapPositions, validateLineup, type LineupPlan } from '../systems/lineup';
 import { makeButton } from '../ui/Button';
 import { heading, ribbon, pill, FONT } from '../ui/theme';
@@ -134,8 +135,8 @@ export class LineupScene extends Phaser.Scene {
     const passB = this.matchType === 'passplay' && this.pass === 2;
     const netGuest = this.matchType === 'net' && this.netRole === 'guest';
     this.editingTeam = passB || netGuest ? data.aiTeam : data.playerTeam;
-    this.plan = autoAssign(this.editingTeam);
-    this.aiPlan = autoAssign(data.aiTeam);
+    this.plan = storyLineup(autoAssign(this.editingTeam));
+    this.aiPlan = storyLineup(autoAssign(data.aiTeam));
     this.selected = undefined;
     if (this.matchType === 'net') {
       // Identities were agreed in the lobby — fixed for this game.
@@ -227,7 +228,7 @@ export class LineupScene extends Phaser.Scene {
       width: 210,
       height: 74,
       onClick: () => {
-        this.plan = autoAssign(this.editingTeam);
+        this.plan = storyLineup(autoAssign(this.editingTeam));
         this.selected = undefined;
         audio.pop();
         this.buildChips();

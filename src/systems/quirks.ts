@@ -49,6 +49,9 @@ import { PLATE_ZONE, QUIRKS, type PitchKind } from '../config';
 import type { HalfInningState } from './inning';
 import type { PitchPlan, PlateLoc } from './pitchkind';
 import type { SwingBand } from './atbat';
+import { getCharacter } from '../data/characters';
+import type { PositionId } from './geometry';
+import { swapPositions, type LineupPlan } from './lineup';
 
 const has = (kid: Character | undefined, q: Quirk): boolean => kid?.quirk === q;
 
@@ -87,6 +90,41 @@ export function withFamily(kid: Character, team: readonly string[]): Character {
     ...kid,
     stats: { contact: up(s.contact), power: up(s.power), speed: up(s.speed), pitching: up(s.pitching), fielding: up(s.fielding) },
   };
+}
+
+/** Where a kid's story says they stand, most particular claim first. */
+const STORY_POSITIONS: ReadonlyArray<{ quirk: Quirk; spots: readonly PositionId[] }> = [
+  { quirk: 'brick_house', spots: ['C'] }, // Sonny is the catcher. He is wearing the gear.
+  { quirk: 'plays_alone', spots: ['CF'] }, // Amir plays centre field alone.
+  { quirk: 'fence_arm', spots: ['RF', 'LF', 'CF'] }, // Rudy throws them out from the fence.
+];
+
+/**
+ * The same lineup, with the kids whose story names a position standing in it.
+ * Each trades places with whoever was there; the pitcher is never moved, and
+ * neither is a kid already standing somewhere their own story allows. A plan
+ * with none of these kids in the field comes back as the object it was.
+ */
+export function storyLineup(plan: LineupPlan): LineupPlan {
+  let out = plan;
+  const settled = new Set<string>();
+  for (const { quirk, spots } of STORY_POSITIONS) {
+    for (const id of Object.keys(plan.positions)) {
+      if (!has(getCharacter(id), quirk) || id === out.pitcherId) continue;
+      if (spots.includes(out.positions[id])) {
+        settled.add(id);
+        continue;
+      }
+      for (const spot of spots) {
+        const holder = Object.keys(out.positions).find((k) => out.positions[k] === spot);
+        if (!holder || settled.has(holder) || holder === out.pitcherId) continue;
+        out = swapPositions(out, id, holder);
+        settled.add(id);
+        break;
+      }
+    }
+  }
+  return out;
 }
 
 /** Ezra does not play on Fridays. */

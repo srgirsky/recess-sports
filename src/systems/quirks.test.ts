@@ -982,3 +982,44 @@ describe("Musa's one card says what it is", () => {
     expect(pitchLabelFor(plain(), 'changeup')).toBeUndefined();
   });
 });
+
+// --- Where their story says they stand ----------------------------------------
+
+import { autoAssign, validateLineup } from './lineup';
+import { storyLineup } from './quirks';
+
+describe('the auto lineup puts a kid where their story says', () => {
+  const ids = ROSTER.map((c) => c.id);
+  it('★ a nine with none of them comes back as the same plan', () => {
+    const team = ['nostrike', 'calls_shot', 'smokey', 'rocket', 'zippy', 'big_lou', 'chip', 'peaches', 'sniffles'];
+    const plan = autoAssign(team);
+    expect(storyLineup(plan)).toBe(plan);
+  });
+
+  it('Sonny catches, Amir plays centre, Rudy is on the grass — and the plan is still a plan', () => {
+    const team = ['tank', 'ace_kid', 'flash', 'smokey', 'chip', 'peaches', 'sniffles', 'zippy', 'big_lou'];
+    const plan = storyLineup(autoAssign(team));
+    expect(plan.positions.tank).toBe('C');
+    expect(plan.positions.ace_kid).toBe('CF');
+    expect(['LF', 'RF']).toContain(plan.positions.flash);
+    expect(plan.pitcherId).toBe('smokey');
+    expect(validateLineup(plan, team)).toBe(true);
+    expect(plan.order).toEqual(autoAssign(team).order); // the batting order is not its business
+  });
+
+  it('★ every nine it is handed stays valid, and the pitcher never moves', () => {
+    let a = 12345;
+    const rnd = () => ((a = (a * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
+    for (let n = 0; n < 400; n++) {
+      const team = [...ids].sort(() => rnd() - 0.5).slice(0, 9);
+      const base = autoAssign(team);
+      const plan = storyLineup(base);
+      expect(validateLineup(plan, team)).toBe(true);
+      expect(plan.pitcherId).toBe(base.pitcherId);
+      expect(plan.positions[plan.pitcherId]).toBe('P');
+      if (team.includes('tank') && base.pitcherId !== 'tank') expect(plan.positions.tank).toBe('C');
+      if (team.includes('ace_kid') && base.pitcherId !== 'ace_kid') expect(plan.positions.ace_kid).toBe('CF');
+      if (team.includes('flash') && base.pitcherId !== 'flash') expect(['LF', 'RF', 'CF']).toContain(plan.positions.flash);
+    }
+  });
+});
