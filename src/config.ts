@@ -1430,4 +1430,7 @@ export const QUIRKS = {
    *  Cumulative thresholds on one draw: perfect below the first, then good,
    *  then weak, else a miss. */
   EYES_CLOSED_BANDS: { perfect: 0.24, good: 0.4, weak: 0.55 },
+  /** Siblings on the same team: added to every stat of both (capped at 10).
+   *  The sheet says only "a bonus when played together". */
+  SIBLING_BONUS: 1,
 } as const;

@@ -125,6 +125,9 @@ import {
   scatterMultFor,
   stealEdgeFor,
   wrongBaseChance,
+  pitchLabelFor,
+  playsWithSibling,
+  withFamily,
   ballVisibleUntil,
   blindSwingBand,
   cannonFor,
@@ -680,7 +683,13 @@ export class GameScene extends Phaser.Scene {
 
   /** The kid as she bats right now (`quirks.batterInMoment`). */
   private inMoment(batter: Character): Character {
-    return batterInMoment(batter, this.moment());
+    return batterInMoment(withFamily(batter, this.battingSeat().team), this.moment());
+  }
+
+  /** A kid stepping in beside a brother or sister on the same team says so. */
+  private flagFamily(batter: Character): void {
+    if (!playsWithSibling(batter, this.battingSeat().team)) return;
+    floatingText(this, PLATE_VIEW.ZONE.CX, PLATE_VIEW.ZONE.CY - 150, '👫 FAMILY!', COLORS.gold, 22);
   }
 
   /**
@@ -742,7 +751,7 @@ export class GameScene extends Phaser.Scene {
 
   /** A fielder as the live-play sim sees her: her own legs, glove, arm and habits. */
   private fielderFor<T extends { charId: string }>(a: T) {
-    const c = getCharacter(a.charId);
+    const c = withFamily(getCharacter(a.charId), this.fieldingSeat().team);
     return {
       ...a,
       speed: chaseSpeedFor(c),
@@ -2110,6 +2119,7 @@ export class GameScene extends Phaser.Scene {
     this.scoreboard.setBatter(this.batter.name, this.gameLineFor(this.batter.id));
     this.kidChat('batterUp', this.batter);
     this.flagClutch(this.batter);
+    this.flagFamily(this.batter);
     this.swingType = alwaysBunts(this.batter) ? 'bunt' : 'normal'; // the chip choice is per-at-bat
     this.showSwingChips();
     this.showSpendChips();
@@ -2369,8 +2379,8 @@ export class GameScene extends Phaser.Scene {
     const moundSeat = this.fieldingSeat();
     if (this.features.fatigue) moundSeat.fatigue = drainPitch(moundSeat.fatigue, null);
     let cpuArm = this.features.fatigue
-      ? effectivePitching(moundSeat.pitcher!.stats.pitching, moundSeat.fatigue)
-      : moundSeat.pitcher!.stats.pitching;
+      ? effectivePitching(withFamily(moundSeat.pitcher!, moundSeat.team).stats.pitching, moundSeat.fatigue)
+      : withFamily(moundSeat.pitcher!, moundSeat.team).stats.pitching;
     cpuArm = rampedArm(cpuArm, this.ramp);
     let plan;
     const rp = this.netPitchPlan;
@@ -3967,6 +3977,7 @@ export class GameScene extends Phaser.Scene {
     this.showBatter(this.cpuBatter, true); // jogs in from the dugout
     this.scoreboard.setBatter(this.cpuBatter.name, this.gameLineFor(this.cpuBatter.id));
     this.flagClutch(this.cpuBatter);
+    this.flagFamily(this.cpuBatter);
     this.hostCast({ t: 'settle', hud: this.hudSnap(), next: 'pitch' });
     // Your defense heckles the incoming batter, Backyard style.
     const fieldTeam = this.fieldingSeat().team;
@@ -4099,6 +4110,7 @@ export class GameScene extends Phaser.Scene {
     this.pitchSelect = showPitchSelect(this, {
       zoneScale: zoneScaleFor(this.cpuBatter),
       kinds: pitchMenuFor(fseat.pitcher!),
+      labelFor: (kind) => pitchLabelFor(fseat.pitcher!, kind),
       specials: this.features.juice
         ? specialPitches().map((kind) => {
             const sk = spendKindForPitch(kind)!;
@@ -4295,8 +4307,8 @@ export class GameScene extends Phaser.Scene {
     const fseat = this.fieldingSeat();
     if (this.features.fatigue) fseat.fatigue = drainPitch(fseat.fatigue, kind);
     const armStat = this.features.fatigue
-      ? effectivePitching(fseat.pitcher!.stats.pitching, fseat.fatigue)
-      : fseat.pitcher!.stats.pitching;
+      ? effectivePitching(withFamily(fseat.pitcher!, fseat.team).stats.pitching, fseat.fatigue)
+      : withFamily(fseat.pitcher!, fseat.team).stats.pitching;
     // Musa's wobbler works or it does not; Jay's first fastball of the half
     // is the Heater. Both are null/false, with no draw, for every other arm.
     const wobbler = rollWobbler(fseat.pitcher!, kind, () => Math.random());

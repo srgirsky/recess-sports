@@ -148,7 +148,10 @@ further than anyone; no tag, caught-stealing or pickoff ever lands on Ollie,
 though a ball that beats him to a bag still retires him; Rudy and Amir throw
 half again as hard, never wild, and straight at the bag from the outfield
 instead of to the cutoff man; and Yaz's ball vanishes halfway to the plate,
-with whatever she touches going up a band. The
+with whatever she touches going up a band. Two rules about teams closed
+the sheet: siblings drafted together are each one better at everything, and
+Ezra is not there for Friday's game of Recess Week, where a kid from the block
+fills his slot. The draft card names each behaviour on a chip. The
 numbers are guesses: the cast sheet cites an Archetypes document
 this repo has never held. What is still unbuilt is listed in
 `docs/world1/cast-scope.md`.

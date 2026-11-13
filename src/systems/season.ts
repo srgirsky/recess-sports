@@ -75,6 +75,36 @@ export function newSeason(
   };
 }
 
+/** FRI, as an index into the week. */
+export const FRIDAY = WEEKDAYS.indexOf('FRI');
+
+/**
+ * The nine who actually show up for game `gameIndex`. A kid who `sits` on a
+ * Friday is not there, and the first kid from `bench` who is on neither team
+ * fills in for the day. No speech, no lesson: the team builds around it.
+ * Returns the team it was given on any other day, or when nobody sits.
+ */
+export function teamForDay(
+  team: string[],
+  other: string[],
+  gameIndex: number,
+  bench: string[],
+  sits: (id: string) => boolean
+): { team: string[]; swaps: Array<{ out: string; in: string }> } {
+  if (gameIndex !== FRIDAY || !team.some(sits)) return { team, swaps: [] };
+  const taken = new Set([...team, ...other]);
+  const swaps: Array<{ out: string; in: string }> = [];
+  const next = team.map((id) => {
+    if (!sits(id)) return id;
+    const sub = bench.find((b) => !taken.has(b) && !sits(b));
+    if (!sub) return id; // nobody left to ask: he plays
+    taken.add(sub);
+    swaps.push({ out: id, in: sub });
+    return sub;
+  });
+  return { team: next, swaps };
+}
+
 /** Fold one finished game into the week. */
 export function recordSeasonGame(
   s: SeasonState,

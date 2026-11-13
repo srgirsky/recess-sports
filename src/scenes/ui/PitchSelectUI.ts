@@ -66,8 +66,8 @@ const ALIGN_LABEL: Record<Alignment, string> = {
 };
 
 /** Card label = the PITCHES label minus its leading emoji (the icon slot). */
-const cardParts = (kind: PitchKind): { icon: string; label: string } => {
-  const [icon, ...rest] = PITCHES[kind].label.split(' ');
+const cardParts = (kind: PitchKind, text = PITCHES[kind].label): { icon: string; label: string } => {
+  const [icon, ...rest] = text.split(' ');
   return { icon, label: rest.join(' ') };
 };
 
@@ -83,6 +83,8 @@ export function showPitchSelect(
     specials: SpecialPitchOption[];
     /** This pitcher's own base menu (`quirks.pitchMenuFor`). Default: the four. */
     kinds?: readonly PitchKind[];
+    /** A base card's own label for this pitcher (`quirks.pitchLabelFor`). */
+    labelFor?: (kind: PitchKind) => string | undefined;
     /** The batter's own strike zone, as a fraction of the standard one. */
     zoneScale?: number;
     onDone: (kind: PitchKind, target: PlateLoc) => void;
@@ -194,7 +196,7 @@ export function showPitchSelect(
   // --- Pitch cards (right edge, base group + specials group) ---------------
   const cards: CardDef[] = (opts.kinds ?? availablePitches(false)).map((kind) => ({
     id: kind,
-    ...cardParts(kind),
+    ...cardParts(kind, opts.labelFor?.(kind)),
   }));
   opts.specials.forEach((sp, i) => {
     cards.push({
