@@ -5,7 +5,7 @@
 // ★ ONE RULE HOLDS ALL OF THIS TOGETHER: A KID WITHOUT A QUIRK NEVER REACHES
 // AN EXTRA RNG DRAW. Every hook here returns the unmodified value, drawing
 // nothing, unless the kid in question carries the quirk it reads. That is what
-// keeps a game with none of these eleven kids in it identical to the game
+// keeps a game with none of these kids in it identical to the game
 // before they had behaviours, and it is why each call site asks this module
 // instead of rolling for itself.
 //
@@ -27,6 +27,16 @@
 //   one_curve      Lu        the curve is her whole menu
 //   the_loop       Ezra      no fastball; batters always go after his curve
 //   rainbow        Bao       every pitch arrives late, on a high arc
+//   heater         Jay       one fastball a half inning at full gas, for double
+//                            the stamina; and nobody takes him off the mound
+//   velocity       Roz       every pitch arrives early
+//   forty_percent  Musa      one pitch: a wobbler that works, or a floater
+//   brick_house    Sonny     never drops one, and reaches further than anyone
+//   sure_hands     Greta     never drops one
+//   never_tagged   Ollie     no tag, caught-stealing or pickoff ever gets him
+//   fence_arm      Rudy      throws half again as hard, straight to the bag
+//   plays_alone    Amir      the same arm, and he covers the ground himself
+//   eyes_closed    Yaz       the ball vanishes halfway; what she hits, she HITS
 //
 // A kid the PLAYER controls keeps the quirk: the player times Mars's swing and
 // steers Roya's throw, and the quirk does the rest. The two that take a choice
@@ -38,6 +48,7 @@ import type { Character, Quirk } from '../data/types';
 import { PLATE_ZONE, QUIRKS, type PitchKind } from '../config';
 import type { HalfInningState } from './inning';
 import type { PitchPlan, PlateLoc } from './pitchkind';
+import type { SwingBand } from './atbat';
 
 const has = (kid: Character | undefined, q: Quirk): boolean => kid?.quirk === q;
 
@@ -142,11 +153,44 @@ export function countWhenHit(state: HalfInningState): HalfInningState {
   return { ...state, count: { ...state.count, balls: 3 } };
 }
 
+/** Yaz swings with her eyes closed. */
+export function swingsBlind(batter: Character): boolean {
+  return has(batter, 'eyes_closed');
+}
+
+/** The fraction of a pitch's flight this batter can see (1 = all of it). */
+export function ballVisibleUntil(batter: Character): number {
+  return has(batter, 'eyes_closed') ? QUIRKS.EYES_CLOSED_AT : 1;
+}
+
+const BAND_UP: Record<SwingBand, SwingBand> = { miss: 'miss', weak: 'good', good: 'perfect', perfect: 'perfect' };
+
+/**
+ * A HUMAN's timing band, as this kid swings it. Yaz insists closing her eyes
+ * helps, and it does: whatever she touches goes up a band. A miss stays a miss.
+ */
+export function blindSwingBand(batter: Character, band: SwingBand): SwingBand {
+  return has(batter, 'eyes_closed') ? BAND_UP[band] : band;
+}
+
+/**
+ * The CPU's swing for a kid who is not looking: a lottery that ignores the
+ * pitch. Null for everyone else — draw the usual contact roll instead. One
+ * draw either way, so the stream is the same length with or without her.
+ */
+export function cpuBlindBand(batter: Character, rng: () => number): SwingBand | null {
+  if (!has(batter, 'eyes_closed')) return null;
+  const r = rng();
+  const t = QUIRKS.EYES_CLOSED_BANDS;
+  return r < t.perfect ? 'perfect' : r < t.good ? 'good' : r < t.weak ? 'weak' : 'miss';
+}
+
 // --- The pitcher ------------------------------------------------------------
 
 const BASE_MENU: readonly PitchKind[] = ['fastball', 'changeup', 'curve', 'screwball'];
 const LU_MENU: readonly PitchKind[] = ['curve'];
 const EZRA_MENU: readonly PitchKind[] = ['changeup', 'curve', 'screwball'];
+const MUSA_MENU: readonly PitchKind[] = ['changeup'];
 
 /**
  * The pitches this kid throws without juice. Lu has one; Ezra has never thrown
@@ -156,6 +200,7 @@ const EZRA_MENU: readonly PitchKind[] = ['changeup', 'curve', 'screwball'];
 export function pitchMenuFor(pitcher: Character): readonly PitchKind[] {
   if (has(pitcher, 'one_curve')) return LU_MENU;
   if (has(pitcher, 'the_loop')) return EZRA_MENU;
+  if (has(pitcher, 'forty_percent')) return MUSA_MENU;
   return BASE_MENU;
 }
 
@@ -176,7 +221,69 @@ export function batterMustChase(pitcher: Character, kind: PitchKind): boolean {
 
 /** How many times longer this kid's pitches take to arrive. */
 export function travelMultFor(pitcher: Character): number {
-  return has(pitcher, 'rainbow') ? QUIRKS.RAINBOW_TRAVEL : 1;
+  if (has(pitcher, 'rainbow')) return QUIRKS.RAINBOW_TRAVEL;
+  if (has(pitcher, 'velocity')) return QUIRKS.VELOCITY_TRAVEL;
+  return 1;
+}
+
+/**
+ * Is THIS pitch Jay's Heater? One a half inning: his first fastball, or his
+ * first pitch where pitches have no kind (`kind === null`, kid mode). The
+ * caller owns `thrownThisHalf` and sets it when this returns true.
+ */
+export function throwsHeater(pitcher: Character, kind: PitchKind | null, thrownThisHalf: boolean): boolean {
+  return has(pitcher, 'heater') && !thrownThisHalf && (kind === null || kind === 'fastball');
+}
+
+/** How many times as fast the Heater arrives. */
+export function heaterTravelMult(): number {
+  return QUIRKS.HEATER_TRAVEL;
+}
+
+/** The same pitch, thrown as the Heater. */
+export function heaterPlan(plan: PitchPlan): PitchPlan {
+  return { ...plan, travelMs: plan.travelMs * QUIRKS.HEATER_TRAVEL };
+}
+
+/** Jay will not come out. Nobody relieves him, him included. */
+export function refusesRelief(pitcher: Character): boolean {
+  return has(pitcher, 'heater');
+}
+
+/**
+ * Chance a CPU batter is LATE on this pitch — down one band. The Heater
+ * always; anything of Roz's sometimes; 0 for everyone else, and 0 and 1 are
+ * both decided without a draw (`pitch.swingLate`).
+ */
+export function lateSwingChance(pitcher: Character, heater: boolean): number {
+  if (heater) return 1;
+  return has(pitcher, 'velocity') ? QUIRKS.VELOCITY_LATE : 0;
+}
+
+/** How one of Musa's wobblers came out. */
+export type Wobbler = 'works' | 'flat';
+
+/**
+ * Musa's one pitch: it works 40% of the time. Null — and NO draw — for every
+ * other arm, and for a juice special (that is not the wobbler).
+ */
+export function rollWobbler(pitcher: Character, kind: PitchKind | null, rng: () => number): Wobbler | null {
+  if (!has(pitcher, 'forty_percent')) return null;
+  if (kind !== null && !BASE_MENU.includes(kind)) return null;
+  return rng() < QUIRKS.WOBBLER_WORKS ? 'works' : 'flat';
+}
+
+/**
+ * The kind a wobbler flies as: when it works it gets the wobbling flight of
+ * the CRAZY pitch, free; when it does not it is the floater it started as.
+ */
+export function wobblerKind(w: Wobbler | null, kind: PitchKind): PitchKind {
+  return w === 'works' ? 'crazy' : kind;
+}
+
+/** How many times as long this wobbler takes to arrive (the flat one floats). */
+export function wobblerTravelMult(w: Wobbler | null): number {
+  return w === 'flat' ? QUIRKS.WOBBLER_FLAT_TRAVEL : 1;
 }
 
 /** The same pitch, thrown by THIS arm. Identity for everyone but Bao. */
@@ -206,6 +313,11 @@ export function hasGreenLight(runner: Character): boolean {
   return has(runner, 'green_light');
 }
 
+/** Ollie has never been tagged out: no tag, caught-stealing or pickoff gets him. */
+export function neverTagged(runner: Character): boolean {
+  return has(runner, 'never_tagged');
+}
+
 /** Added to this runner's steal odds. */
 export function stealEdgeFor(runner: Character): number {
   return has(runner, 'green_light') ? QUIRKS.GREEN_LIGHT_EDGE : 0;
@@ -216,4 +328,27 @@ export function stealEdgeFor(runner: Character): number {
 /** Chance that one of this kid's throws goes to a base nobody chose. */
 export function wrongBaseChance(fielder: Character): number {
   return has(fielder, 'wrong_base') ? QUIRKS.WRONG_BASE : 0;
+}
+
+/** Sonny and Greta have never dropped anything: no drop or bobble roll at all. */
+export function sureHands(fielder: Character): boolean {
+  return has(fielder, 'brick_house') || has(fielder, 'sure_hands');
+}
+
+/** How much further than anyone else this kid reaches for a ball. */
+export function reachMultFor(fielder: Character): number {
+  return has(fielder, 'brick_house') ? QUIRKS.BRICK_HOUSE_REACH : 1;
+}
+
+/**
+ * How many times as fast this kid's throws travel. Above 1 is a Cannon: she
+ * also never throws wild, and never needs the cutoff man.
+ */
+export function cannonFor(fielder: Character): number {
+  return has(fielder, 'fence_arm') || has(fielder, 'plays_alone') ? QUIRKS.CANNON_SPEED : 1;
+}
+
+/** The speed stat this kid chases a ball with. */
+export function chaseSpeedFor(fielder: Character): number {
+  return has(fielder, 'plays_alone') ? Math.max(fielder.stats.speed, QUIRKS.ALONE_RANGE) : fielder.stats.speed;
 }

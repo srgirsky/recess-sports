@@ -60,6 +60,13 @@ export interface FielderState {
   /** Chance one of this kid's throws goes to a base nobody chose
    *  (`quirks.wrongBaseChance` — Roya). Absent or 0 for everyone else. */
   wrongBase?: number;
+  /** Never drops or bobbles — no roll at all (`quirks.sureHands`). */
+  sure?: boolean;
+  /** Catch and pickup reach multiplier (`quirks.reachMultFor` — Sonny). */
+  reach?: number;
+  /** Throw-speed multiplier (`quirks.cannonFor`). Above 1 is a Cannon: never
+   *  wild, and she throws at the bag from any depth instead of relaying. */
+  cannon?: number;
   /** After a drop/bobble the kid is flustered until this `elapsed` time. */
   fumbleUntil: number;
   /** Mid-dive until this `elapsed` time (reach bonus active). Human chaser only. */
@@ -85,6 +92,9 @@ export interface RunnerState {
   pos: Vec;
   /** Kid mode: walking back to startBase after a caught fly — can't be put out. */
   returning: boolean;
+  /** No tag ever lands on this runner (`quirks.neverTagged` — Ollie). A ball
+   *  that beats him to a bag still retires him. */
+  untaggable?: boolean;
   /**
    * Main mode: retreating to startBase after a caught fly (a real tag-up —
    * CAN be doubled off). Retreat legs run with `to < from`. Cleared on touch.
@@ -150,6 +160,7 @@ export type LiveEvent =
   | { t: 'land' }
   | { t: 'error'; kind: 'drop' | 'bobble' | 'wild'; fielder: string }
   | { t: 'wrongBase'; fielder: string; toBase: 1 | 2 | 3 | 4 }
+  | { t: 'fenceThrow'; fielder: string; toBase: 1 | 2 | 3 | 4 } // a Cannon, from the outfield, straight at a bag
   | { t: 'dive'; fielder: string } // the lunge started
   | { t: 'diveMiss'; fielder: string } // came up empty — kid eats grass
   | { t: 'bonk' } // the ball smacked a venue obstacle (the sandlot oak)
@@ -275,10 +286,10 @@ export interface LiveOutcome {
 export function startLivePlay(opts: {
   mode: 'defense' | 'offense';
   launch: Launch;
-  batter: { charId: string; speed: number };
-  baseRunners: Array<{ base: 1 | 2 | 3; charId: string; speed: number }>;
+  batter: { charId: string; speed: number; untaggable?: boolean };
+  baseRunners: Array<{ base: 1 | 2 | 3; charId: string; speed: number; untaggable?: boolean }>;
   /** Stats default to 5 for callers (tests) that don't care. */
-  defense: Array<{ position: PositionId; charId: string; speed?: number; glove?: number; arm?: number; wrongBase?: number }>;
+  defense: Array<{ position: PositionId; charId: string; speed?: number; glove?: number; arm?: number; wrongBase?: number; sure?: boolean; reach?: number; cannon?: number }>;
   outs: number;
   params: LiveParams;
   geo?: FieldGeometry;
@@ -289,8 +300,8 @@ export function startLivePlay(opts: {
   const runSpeedBase = mode === 'offense' ? params.playerRunSpeed : params.cpuRunSpeed;
 
   const runners: RunnerState[] = [
-    ...opts.baseRunners.map((r) => makeRunner(r.charId, r.base, r.speed, runSpeedBase, false)),
-    makeRunner(opts.batter.charId, 0, opts.batter.speed, runSpeedBase, true),
+    ...opts.baseRunners.map((r) => makeRunner(r.charId, r.base, r.speed, runSpeedBase, false, r.untaggable)),
+    makeRunner(opts.batter.charId, 0, opts.batter.speed, runSpeedBase, true, opts.batter.untaggable),
   ];
 
   const fielders: FielderState[] = opts.defense.map((d) => ({
@@ -303,6 +314,9 @@ export function startLivePlay(opts: {
     glove: d.glove ?? 5,
     arm: d.arm ?? 5,
     wrongBase: d.wrongBase,
+    ...(d.sure ? { sure: true } : {}),
+    ...(d.reach && d.reach !== 1 ? { reach: d.reach } : {}),
+    ...(d.cannon && d.cannon !== 1 ? { cannon: d.cannon } : {}),
     fumbleUntil: 0,
   }));
 
@@ -354,11 +368,15 @@ function makeRunner(
   base: Base,
   speedStat: number,
   baseSpeed: number,
-  isBatter: boolean
+  isBatter: boolean,
+  untaggable?: boolean
 ): RunnerState {
   return {
     charId,
     isBatter,
+    // Present only for the kid who has it, so every other runner's state is
+    // the same object it always was.
+    ...(untaggable ? { untaggable: true } : {}),
     startBase: base,
     from: base,
     to: base,
@@ -633,6 +651,7 @@ function moveFielders(
     let best = Infinity;
     for (const r of s.runners) {
       if (r.done !== null || onABag(r)) continue;
+      if (r.untaggable) continue; // nobody has ever caught him; they stopped trying
       if (s.flyCaught && r.to > r.from) continue; // advancing tag-up: throw, don't chase
       // A relay is in progress, or this runner is one the look-back rule already
       // conceded. Chasing him would take back with the glove exactly what the
@@ -900,13 +919,15 @@ function tryGrabBall(s: LivePlayState, params: LiveParams, rng: () => number): v
   const chaser = s.fielders[s.active];
   if (s.elapsed < chaser.fumbleUntil) return; // still flustered from the muff
   const diveReach = chaser.diveUntil !== undefined ? params.diveReachBonus : 0;
-  const catchR = (s.mode === 'defense' ? params.catchRadius : params.cpuCatchRadius) + diveReach;
-  const pickupR = (s.mode === 'defense' ? params.pickupRadius : params.cpuPickupRadius) + diveReach;
+  // Sonny smothers anything within reach, and his reach is the longest there is.
+  const reach = chaser.reach ?? 1;
+  const catchR = (s.mode === 'defense' ? params.catchRadius : params.cpuCatchRadius) * reach + diveReach;
+  const pickupR = (s.mode === 'defense' ? params.pickupRadius : params.cpuPickupRadius) * reach + diveReach;
 
   if (b.phase === 'flight') {
     const t = b.flightT / b.flightMs;
     if (t >= 1 - LIVE.CATCHABLE_TAIL && dist(chaser.pos, b.pos) <= catchR) {
-      if (!rollCatch(chaser.glove, 'fly', defErrorMult(s, params), rng)) {
+      if (!chaser.sure && !rollCatch(chaser.glove, 'fly', defErrorMult(s, params), rng)) {
         fumble(s, chaser, 'drop'); // clanked it — ball's live on the grass, nobody's out
         return;
       }
@@ -941,7 +962,7 @@ function tryGrabBall(s: LivePlayState, params: LiveParams, rng: () => number): v
     // A hopping ball is only grabbable low — you scoop the short hop, you
     // don't pluck it off the top of a bounce. Never an out either way.
     if (dist(chaser.pos, b.pos) <= pickupR && b.height <= LIVE.BOUNCE.PICKUP_MAX_H) {
-      if (!rollCatch(chaser.glove, 'grounder', defErrorMult(s, params), rng)) {
+      if (!chaser.sure && !rollCatch(chaser.glove, 'grounder', defErrorMult(s, params), rng)) {
         fumble(s, chaser, 'bobble');
         return;
       }
@@ -988,8 +1009,11 @@ function maybeThrow(
       const base = baseSheThrowsTo(s, carrier, inputs.throwTo.base, mult, rng);
       // The wrong base gets everything she has.
       const power = base === inputs.throwTo.base ? inputs.throwTo.power : 1;
-      const speed = params.throwSpeedMin + power * (params.throwSpeedMax - params.throwSpeedMin);
-      const wild = rollThrowError(carrier?.arm ?? 5, inputs.throwTo.power, mult, rng);
+      const cannon = cannonOf(carrier);
+      const speed = (params.throwSpeedMin + power * (params.throwSpeedMax - params.throwSpeedMin)) * cannon;
+      // A Cannon does not throw wild — and does not roll for it either.
+      const wild = cannon > 1 ? false : rollThrowError(carrier?.arm ?? 5, inputs.throwTo.power, mult, rng);
+      noteFenceThrow(s, carrier, base);
       launchThrow(s, { kind: 'base', base }, speed, 0, wild, carrier);
     } else if (s.elapsed - s.heldAt >= params.autoThrowMs && anyForwardMover(s)) {
       // Idle-kid rescue: the sim throws a decent (not perfect) ball by itself.
@@ -1015,26 +1039,43 @@ function maybeThrow(
 
     if (s.elapsed - s.heldAt < params.cpuThrowDelayMs + catchGatherFor(s, params)) return;
 
-    // Out on the grass? Relay it in instead of firing at a bag.
-    if (shouldRelay(s, params)) {
+    // Out on the grass? Relay it in instead of firing at a bag — unless the
+    // kid holding it is a Cannon, who throws runners out from the fence and
+    // has never once looked for the cutoff man.
+    const cannon = cannonOf(carrier);
+    if (cannon === 1 && shouldRelay(s, params)) {
       throwRelayLeg(s, params, rng, carrier, mult);
       return;
     }
     if (!anyForwardMover(s)) return;
+    const throwSpeed = params.cpuThrowSpeed * cannon;
     // Main mode: don't fling it when no throw can beat anyone — the carrier
     // keeps the ball and hunts the runner for a tag instead (see moveFielders).
-    if (params.manualBaserunning && bestBeatableBase(s, params.cpuThrowSpeed) === null) return;
-    const base = baseSheThrowsTo(s, carrier, chooseThrowTarget(s, params.cpuThrowSpeed), mult, rng);
-    const wild = rollThrowError(carrier?.arm ?? 5, 0.8, mult, rng);
+    if (params.manualBaserunning && bestBeatableBase(s, throwSpeed) === null) return;
+    const base = baseSheThrowsTo(s, carrier, chooseThrowTarget(s, throwSpeed), mult, rng);
+    const wild = cannon > 1 ? false : rollThrowError(carrier?.arm ?? 5, 0.8, mult, rng);
+    noteFenceThrow(s, carrier, base);
     launchThrow(
       s,
       { kind: 'base', base },
-      params.cpuThrowSpeed,
+      throwSpeed,
       rng() * params.cpuThrowErrorMs,
       wild,
       carrier
     );
   }
+}
+
+/** This carrier's throw-speed multiplier; 1 for everyone who is not a Cannon. */
+function cannonOf(carrier: FielderState | undefined): number {
+  return carrier?.cannon ?? 1;
+}
+
+/** A Cannon letting go from the outfield grass: the booth wants to know. */
+function noteFenceThrow(s: LivePlayState, carrier: FielderState | undefined, base: 1 | 2 | 3 | 4): void {
+  if (!carrier || cannonOf(carrier) === 1) return;
+  if (dist(s.ball.pos, HOME) < BASEPATH_PX * LIVE.RELAY.DEPTH_LEGS) return;
+  s.events.push({ t: 'fenceThrow', fielder: carrier.charId, toBase: base });
 }
 
 /**
@@ -1280,6 +1321,7 @@ function carrierTouchesBags(s: LivePlayState, params: LiveParams): void {
     for (const r of s.runners) {
       if (halfHasThreeOuts(s)) return;
       if (r.done !== null || r.returning || onABag(r)) continue;
+      if (r.untaggable) continue; // Ollie has never been tagged out
       if (dist(carrier.pos, r.pos) <= RUN2.TAG_RADIUS) {
         r.done = 'out';
         s.outs += 1;

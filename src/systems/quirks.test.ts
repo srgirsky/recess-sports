@@ -64,7 +64,7 @@ const plan = (x: number, y: number): PitchPlan => ({
 });
 
 describe('the roster carries the behaviours the cast sheet gives it', () => {
-  it('★ exactly these sixteen kids have a quirk — a new one is a decision, not a typo', () => {
+  it('★ exactly these twenty-five kids have a quirk — a new one is a decision, not a typo', () => {
     const got = Object.fromEntries(ROSTER.filter((c) => c.quirk).map((c) => [c.id, c.quirk]));
     const want: Record<string, Quirk> = {
       calls_shot: 'moonshot',
@@ -83,6 +83,15 @@ describe('the roster carries the behaviours the cast sheet gives it', () => {
       lefty: 'one_curve',
       bend_it: 'the_loop',
       the_prof: 'rainbow',
+      smokey: 'heater',
+      diva: 'velocity',
+      gizmo: 'forty_percent',
+      tank: 'brick_house',
+      grizz: 'sure_hands',
+      turbo: 'never_tagged',
+      flash: 'fence_arm',
+      ace_kid: 'plays_alone',
+      mimi_mash: 'eyes_closed',
     };
     expect(got).toEqual(want);
   });
@@ -572,5 +581,323 @@ describe('Lu, Ezra and Bao throw what they throw', () => {
     expect(slow.travelMs).toBeCloseTo(p.travelMs * QUIRKS.RAINBOW_TRAVEL, 6);
     expect({ ...slow, travelMs: 0 }).toEqual({ ...p, travelMs: 0 });
     expect(QUIRKS.RAINBOW_TRAVEL).toBeGreaterThan(1.3);
+  });
+});
+
+// --- The third batch ----------------------------------------------------------
+
+import { againstWobbler, swingLate, type CpuPitchPlan } from './pitch';
+import { basePos } from './geometry';
+import {
+  ballVisibleUntil,
+  blindSwingBand,
+  cannonFor,
+  chaseSpeedFor,
+  cpuBlindBand,
+  heaterPlan,
+  lateSwingChance,
+  neverTagged,
+  reachMultFor,
+  refusesRelief,
+  rollWobbler,
+  sureHands,
+  swingsBlind,
+  throwsHeater,
+  wobblerKind,
+  wobblerTravelMult,
+} from './quirks';
+
+const swings = (cpuBand: CpuPitchPlan['cpuBand']): CpuPitchPlan => ({ isBall: false, cpuSwings: true, cpuBand, description: '' });
+
+describe('the third batch leaves everyone else alone too', () => {
+  const kid = plain();
+  it('★ every new hook is the identity for a kid without the quirk, and draws nothing', () => {
+    const rng = counted(5);
+    expect(throwsHeater(kid, 'fastball', false)).toBe(false);
+    expect(throwsHeater(kid, null, false)).toBe(false);
+    expect(refusesRelief(kid)).toBe(false);
+    expect(lateSwingChance(kid, false)).toBe(0);
+    expect(rollWobbler(kid, 'changeup', rng)).toBeNull();
+    expect(rollWobbler(kid, null, rng)).toBeNull();
+    expect(wobblerKind(null, 'curve')).toBe('curve');
+    expect(wobblerTravelMult(null)).toBe(1);
+    expect(sureHands(kid)).toBe(false);
+    expect(reachMultFor(kid)).toBe(1);
+    expect(cannonFor(kid)).toBe(1);
+    expect(chaseSpeedFor(kid)).toBe(kid.stats.speed);
+    expect(neverTagged(kid)).toBe(false);
+    expect(swingsBlind(kid)).toBe(false);
+    expect(ballVisibleUntil(kid)).toBe(1);
+    expect(cpuBlindBand(kid, rng)).toBeNull();
+    for (const b of ['miss', 'weak', 'good', 'perfect'] as const) expect(blindSwingBand(kid, b)).toBe(b);
+    const p = swings('good');
+    expect(swingLate(p, lateSwingChance(kid, false), rng)).toBe(p);
+    expect(againstWobbler(p, null)).toBe(p);
+    expect(rng.draws()).toBe(0);
+  });
+
+  it('and the CPU batter draws exactly what it drew: Yaz swaps one roll for one roll', () => {
+    const a = counted(9);
+    const b = counted(9);
+    resolveCpuPitch('perfect', kid, kid, a);
+    resolveCpuPitch('perfect', kid, getCharacter('mimi_mash'), b);
+    expect(b.draws()).toBe(a.draws());
+  });
+});
+
+describe('Jay throws the Heater, and will not come out', () => {
+  const jay = getCharacter('smokey');
+  it('one a half inning: his first fastball, or his first pitch where pitches have no kind', () => {
+    expect(throwsHeater(jay, 'fastball', false)).toBe(true);
+    expect(throwsHeater(jay, null, false)).toBe(true);
+    expect(throwsHeater(jay, 'curve', false)).toBe(false);
+    expect(throwsHeater(jay, 'fireball', false)).toBe(false);
+    expect(throwsHeater(jay, 'fastball', true)).toBe(false);
+    expect(throwsHeater(jay, null, true)).toBe(false);
+  });
+
+  it('it gets there sooner and is otherwise the same pitch', () => {
+    const p = plan(10, -5);
+    expect(heaterPlan(p)).toEqual({ ...p, travelMs: p.travelMs * QUIRKS.HEATER_TRAVEL });
+    expect(QUIRKS.HEATER_TRAVEL).toBeLessThan(1);
+  });
+
+  it('a CPU batter is always late on it — settled without a roll', () => {
+    const rng = counted(3);
+    expect(lateSwingChance(jay, true)).toBe(1);
+    expect(swingLate(swings('perfect'), 1, rng).cpuBand).toBe('good');
+    expect(swingLate(swings('weak'), 1, rng).cpuBand).toBe('miss');
+    expect(rng.draws()).toBe(0);
+    // His other pitches are just pitches, and a batter who takes is not late.
+    expect(lateSwingChance(jay, false)).toBe(0);
+    const take: CpuPitchPlan = { isBall: true, cpuSwings: false, cpuBand: 'miss', description: '' };
+    expect(swingLate(take, 1, rng)).toBe(take);
+  });
+
+  it('nobody relieves him', () => {
+    expect(refusesRelief(jay)).toBe(true);
+    expect(ROSTER.filter(refusesRelief).map((c) => c.id)).toEqual(['smokey']);
+  });
+});
+
+describe('Roz throws harder than Jay', () => {
+  const roz = getCharacter('diva');
+  it('every pitch of hers arrives early', () => {
+    expect(travelMultFor(roz)).toBe(QUIRKS.VELOCITY_TRAVEL);
+    expect(QUIRKS.VELOCITY_TRAVEL).toBeLessThan(1);
+    const p = plan(0, 0);
+    expect(planForPitcher(p, roz).travelMs).toBeCloseTo(p.travelMs * QUIRKS.VELOCITY_TRAVEL);
+  });
+
+  it('and a CPU batter is late on about three in ten', () => {
+    const rng = counted(21);
+    let late = 0;
+    const N = 4000;
+    for (let i = 0; i < N; i++) if (swingLate(swings('good'), lateSwingChance(roz, false), rng).cpuBand === 'weak') late++;
+    expect(late / N).toBeGreaterThan(QUIRKS.VELOCITY_LATE - 0.04);
+    expect(late / N).toBeLessThan(QUIRKS.VELOCITY_LATE + 0.04);
+    expect(rng.draws()).toBe(N);
+  });
+});
+
+describe('Musa has one pitch, and it works 40% of the time', () => {
+  const musa = getCharacter('gizmo');
+  it('there is no plan B on the menu', () => {
+    expect(pitchMenuFor(musa)).toEqual(['changeup']);
+    expect(pitchOnMenu(musa, 'fastball')).toBe('changeup');
+    expect(pitchOnMenu(musa, 'fireball')).toBe('fireball');
+  });
+
+  it('★ it works at the rate on the sheet', () => {
+    const rng = counted(17);
+    let works = 0;
+    const N = 5000;
+    for (let i = 0; i < N; i++) if (rollWobbler(musa, i % 2 ? 'changeup' : null, rng) === 'works') works++;
+    expect(works / N).toBeGreaterThan(0.37);
+    expect(works / N).toBeLessThan(0.43);
+    // A juice special is not the wobbler.
+    expect(rollWobbler(musa, 'fireball', rng)).toBeNull();
+    expect(rng.draws()).toBe(N);
+  });
+
+  it('when it works it wobbles and fools the swing; when it does not it floats and gets hit', () => {
+    expect(wobblerKind('works', 'changeup')).toBe('crazy');
+    expect(wobblerKind('flat', 'changeup')).toBe('changeup');
+    expect(wobblerTravelMult('works')).toBe(1);
+    expect(wobblerTravelMult('flat')).toBe(QUIRKS.WOBBLER_FLAT_TRAVEL);
+    expect(againstWobbler(swings('good'), 'works').cpuBand).toBe('weak');
+    expect(againstWobbler(swings('good'), 'flat').cpuBand).toBe('perfect');
+  });
+});
+
+describe('Yaz swings with her eyes closed', () => {
+  const yaz = getCharacter('mimi_mash');
+  it('a human loses the ball halfway, and whatever she touches goes up a band', () => {
+    expect(ballVisibleUntil(yaz)).toBe(QUIRKS.EYES_CLOSED_AT);
+    expect(blindSwingBand(yaz, 'miss')).toBe('miss');
+    expect(blindSwingBand(yaz, 'weak')).toBe('good');
+    expect(blindSwingBand(yaz, 'good')).toBe('perfect');
+    expect(blindSwingBand(yaz, 'perfect')).toBe('perfect');
+  });
+
+  it('the CPU plays her as a lottery: more perfect contact AND more misses than her stat buys', () => {
+    const tally = (kid: Character) => {
+      const rng = counted(31);
+      const got = { perfect: 0, good: 0, weak: 0, miss: 0 };
+      for (let i = 0; i < 6000; i++) got[resolveCpuPitch('good', plain(), kid, rng).cpuBand]++;
+      return got;
+    };
+    const blind = tally(yaz);
+    const sighted = tally({ ...yaz, quirk: undefined });
+    expect(blind.perfect).toBeGreaterThan(sighted.perfect);
+    expect(blind.miss).toBeGreaterThan(sighted.miss);
+  });
+});
+
+describe('the Walls, the Cannons and the kid nobody has tagged', () => {
+  const POSITIONS: PositionId[] = ['P', 'C', '1B', '2B', 'SS', '3B', 'LF', 'CF', 'RF'];
+  const main = resolveLiveParams('main');
+  type Flags = { sure?: boolean; reach?: number; cannon?: number };
+
+  /** Hard contact with a runner on first against a CPU defence of nine `flags` kids. */
+  const play = (flags: Flags, seed: number, band: 'good' | 'perfect' = 'perfect') => {
+    const rng = counted(seed);
+    const launch = resolveContact(band, plain(), plain(), counted(seed + 100));
+    if (launch.kind !== 'inPlay' || launch.launch.homer) return null;
+    let s: LivePlayState = startLivePlay({
+      mode: 'offense',
+      launch: launch.launch,
+      batter: { charId: 'bat', speed: 5 },
+      baseRunners: [{ base: 1, charId: 'r1', speed: 5 }],
+      defense: POSITIONS.map((p, i) => ({ position: p, charId: `f${i}`, ...flags })),
+      outs: 0,
+      params: main,
+    });
+    const events: LiveEvent[] = [];
+    let guard = 0;
+    while (s.phase !== 'done' && guard++ < 6000) {
+      s = stepLivePlay(s, { run: true }, 50, main, rng);
+      events.push(...s.events);
+    }
+    return { s, events, draws: rng.draws() };
+  };
+  const sweep = (flags: Flags) => {
+    const all: LiveEvent[] = [];
+    for (let seed = 1; seed <= 120; seed++) {
+      const r = play(flags, seed, seed % 2 ? 'perfect' : 'good');
+      if (!r) continue;
+      expect(r.s.phase, `seed ${seed}`).toBe('done');
+      all.push(...r.events);
+    }
+    return all;
+  };
+  const muffs = (ev: LiveEvent[]) => ev.filter((e) => e.t === 'error' && e.kind !== 'wild').length;
+
+  it('flags that say nothing change nothing: same events, same draws', () => {
+    for (let seed = 1; seed <= 40; seed++) {
+      const a = play({}, seed);
+      const b = play({ sure: false, reach: 1, cannon: 1 }, seed);
+      if (!a || !b) continue;
+      expect(b.events).toEqual(a.events);
+      expect(b.draws).toBe(a.draws);
+    }
+  });
+
+  it('★ Sonny and Greta have never dropped anything', () => {
+    expect(sureHands(getCharacter('tank'))).toBe(true);
+    expect(sureHands(getCharacter('grizz'))).toBe(true);
+    expect(muffs(sweep({}))).toBeGreaterThan(0); // ordinary kids do drop them
+    expect(muffs(sweep({ sure: true }))).toBe(0);
+  });
+
+  it('Sonny reaches further than anyone, and Greta does not', () => {
+    expect(reachMultFor(getCharacter('tank'))).toBe(QUIRKS.BRICK_HOUSE_REACH);
+    expect(reachMultFor(getCharacter('grizz'))).toBe(1);
+    // A longer reach gets to more balls in the air: more fly outs, never fewer.
+    const catches = (ev: LiveEvent[]) => ev.filter((e) => e.t === 'catch').length;
+    expect(catches(sweep({ sure: true, reach: QUIRKS.BRICK_HOUSE_REACH }))).toBeGreaterThanOrEqual(
+      catches(sweep({ sure: true }))
+    );
+  });
+
+  it('★ a Cannon throws at the bag from the fence: no relay, no wild one, and the play still ends', () => {
+    expect(cannonFor(getCharacter('flash'))).toBe(QUIRKS.CANNON_SPEED);
+    expect(cannonFor(getCharacter('ace_kid'))).toBe(QUIRKS.CANNON_SPEED);
+    const ordinary = sweep({});
+    const cannons = sweep({ cannon: QUIRKS.CANNON_SPEED });
+    expect(ordinary.filter((e) => e.t === 'relay').length).toBeGreaterThan(0);
+    expect(ordinary.some((e) => e.t === 'fenceThrow')).toBe(false);
+    expect(cannons.filter((e) => e.t === 'relay').length).toBe(0);
+    expect(cannons.filter((e) => e.t === 'fenceThrow').length).toBeGreaterThan(0);
+    expect(cannons.some((e) => e.t === 'error' && e.kind === 'wild')).toBe(false);
+    // And it is worth something: more outs than the same nine kids relaying.
+    const outs = (ev: LiveEvent[]) => ev.filter((e) => e.t === 'out').length;
+    expect(outs(cannons)).toBeGreaterThan(outs(ordinary));
+  });
+
+  it('Amir covers the ground himself', () => {
+    const amir = getCharacter('ace_kid');
+    expect(chaseSpeedFor(amir)).toBe(QUIRKS.ALONE_RANGE);
+    expect(chaseSpeedFor(amir)).toBeGreaterThan(amir.stats.speed);
+    expect(chaseSpeedFor(getCharacter('flash'))).toBe(getCharacter('flash').stats.speed);
+  });
+
+  it('★ a carrier standing on Ollie between the bags tags anyone else, and not him', () => {
+    expect(neverTagged(getCharacter('turbo'))).toBe(true);
+    const caught = (untaggable: boolean) => {
+      const launch = resolveContact('good', plain(), plain(), counted(3));
+      if (launch.kind !== 'inPlay') throw new Error('fixture');
+      const s: LivePlayState = startLivePlay({
+        mode: 'offense',
+        launch: { ...launch.launch, homer: false },
+        batter: { charId: 'bat', speed: 5 },
+        baseRunners: [{ base: 1, charId: 'r1', speed: 5, untaggable }],
+        defense: POSITIONS.map((p, i) => ({ position: p, charId: `f${i}` })),
+        outs: 0,
+        params: main,
+      });
+      // Put the ball in the shortstop's glove and stand him on the runner,
+      // who is halfway from first to second.
+      const r = s.runners.find((x) => x.charId === 'r1')!;
+      const a = basePos(1);
+      const b = basePos(2);
+      r.from = 1;
+      r.to = 2;
+      r.progress = 0.5;
+      r.legMs = 4000;
+      r.pos = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+      const idx = s.fielders.findIndex((f) => f.position === 'SS');
+      s.fielders.forEach((f, i) => (f.hasBall = i === idx));
+      s.fielders[idx].pos = { ...r.pos };
+      s.ball.phase = 'held';
+      s.ball.heldBy = idx;
+      s.ball.pos = { ...r.pos };
+      s.active = idx;
+      s.heldAt = s.elapsed;
+      const next = stepLivePlay(s, {}, 16, main, counted(1));
+      return next.runners.find((x) => x.charId === 'r1')!.done === 'out';
+    };
+    expect(caught(false)).toBe(true);
+    expect(caught(true)).toBe(false);
+  });
+
+  it('a play with him caught between bags still ends: a ball that beats him to a bag retires him', () => {
+    for (let seed = 1; seed <= 60; seed++) {
+      const rng = counted(seed);
+      const launch = resolveContact('good', plain(), plain(), counted(seed + 100));
+      if (launch.kind !== 'inPlay' || launch.launch.homer) continue;
+      let s: LivePlayState = startLivePlay({
+        mode: 'offense',
+        launch: launch.launch,
+        batter: { charId: 'bat', speed: 5, untaggable: true },
+        baseRunners: [{ base: 1, charId: 'r1', speed: 5, untaggable: true }],
+        defense: POSITIONS.map((p, i) => ({ position: p, charId: `f${i}` })),
+        outs: 0,
+        params: main,
+      });
+      let guard = 0;
+      while (s.phase !== 'done' && guard++ < 6000) s = stepLivePlay(s, { run: true }, 50, main, rng);
+      expect(s.phase, `seed ${seed}`).toBe('done');
+    }
   });
 });

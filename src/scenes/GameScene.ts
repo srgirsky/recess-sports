@@ -49,6 +49,8 @@ import {
   resolveCpuPitch,
   resolveCpuPitchLocated,
   rollAiWildPitch,
+  swingLate,
+  againstWobbler,
   wildSwingBand,
   type PitchBand,
   type CpuPitchPlan,
@@ -123,6 +125,21 @@ import {
   scatterMultFor,
   stealEdgeFor,
   wrongBaseChance,
+  ballVisibleUntil,
+  blindSwingBand,
+  cannonFor,
+  chaseSpeedFor,
+  heaterPlan,
+  heaterTravelMult,
+  lateSwingChance,
+  neverTagged,
+  reachMultFor,
+  refusesRelief,
+  rollWobbler,
+  sureHands,
+  throwsHeater,
+  wobblerKind,
+  wobblerTravelMult,
   zoneScaleFor,
   type Moment,
 } from '../systems/quirks';
@@ -239,6 +256,8 @@ interface SeatState {
   pitcher?: Character;
   plan?: LineupPlan;
   fatigue: FatigueState;
+  /** Jay's Heater has gone this half inning (`quirks.throwsHeater`). */
+  heaterThrown: boolean;
   juice: JuiceState;
   identity?: TeamIdentity;
   humanBats: boolean;
@@ -253,6 +272,7 @@ function newSeatState(human: boolean): SeatState {
     score: 0,
     lineupIdx: 0,
     fatigue: newFatigue(),
+    heaterThrown: false,
     juice: newJuice(),
     humanBats: human,
     humanPitches: human,
@@ -675,6 +695,77 @@ export class GameScene extends Phaser.Scene {
     this.scoreboard.umpCall('OW!', COLORS.red);
     floatingText(this, PLATE_VIEW.ZONE.CX, PLATE_VIEW.ZONE.CY - 120, '🛡️ FREE BASE!', COLORS.gold, 26);
     return true;
+  }
+
+  /**
+   * Is the pitch about to leave the mound Jay's Heater? One a half inning; it
+   * costs him a second pitch's worth of stamina and the park hears about it.
+   * `kind` is null where pitches have no kind (kid mode).
+   */
+  private takeHeater(kind: PitchKind | null): boolean {
+    const seat = this.fieldingSeat();
+    if (!throwsHeater(seat.pitcher!, kind, seat.heaterThrown)) return false;
+    seat.heaterThrown = true;
+    if (this.features.fatigue) seat.fatigue = drainPitch(seat.fatigue, kind);
+    floatingText(this, PLATE_VIEW.ZONE.CX, PLATE_VIEW.ZONE.CY - 150, '🔥 THE HEATER!', COLORS.red, 28);
+    return true;
+  }
+
+  /** Musa's wobbler has left his hand, and this is how it came out. */
+  private flagWobbler(w: 'works' | 'flat' | null): void {
+    if (w === null) return;
+    floatingText(
+      this,
+      PLATE_VIEW.ZONE.CX,
+      PLATE_VIEW.ZONE.CY - 150,
+      w === 'works' ? '🌀 IT WORKED!' : '🎈 FLOATER…',
+      w === 'works' ? COLORS.gold : COLORS.white,
+      24
+    );
+  }
+
+  /**
+   * Yaz swings with her eyes closed: partway in, the ball, its ring and its
+   * trail are gone, and the swing is from memory. A no-op for everyone else.
+   */
+  private blindfold(travelMs: number): void {
+    const until = ballVisibleUntil(this.batter);
+    const ball = this.ball;
+    if (until >= 1 || !ball) return;
+    this.time.delayedCall(travelMs * until, () => {
+      if (this.ball !== ball || this.phase !== 'pitching') return;
+      ball.setVisible(false);
+      this.ringShrink?.setVisible(false);
+      floatingText(this, PLATE_VIEW.ZONE.CX, PLATE_VIEW.ZONE.CY - 120, '🙈', COLORS.white, 34);
+    });
+  }
+
+  /** A fielder as the live-play sim sees her: her own legs, glove, arm and habits. */
+  private fielderFor<T extends { charId: string }>(a: T) {
+    const c = getCharacter(a.charId);
+    return {
+      ...a,
+      speed: chaseSpeedFor(c),
+      glove: c.stats.fielding,
+      arm: c.stats.pitching,
+      wrongBase: wrongBaseChance(c),
+      sure: sureHands(c),
+      reach: reachMultFor(c),
+      cannon: cannonFor(c),
+    };
+  }
+
+  /** A Cannon just let go from the outfield grass. */
+  private flagFenceThrow(): void {
+    this.pinUI(floatingText(this, GAME_WIDTH / 2, HUD.STRIP.TOP - 60, '💪 FROM THE FENCE!', COLORS.gold, 28));
+  }
+
+  /** The tag came down and Ollie was not under it: back on his bag, safe. */
+  private slipTheTag(from: 1 | 2, token: Phaser.GameObjects.Container, runner: Character): void {
+    const p = project(basePos(from));
+    this.tweens.add({ targets: token, x: p.x, y: p.y - 6, duration: 220 });
+    audio.whiff();
+    this.flashAnnounce(`CAN'T TAG ${runner.name.split(' ')[0].toUpperCase()}!\nBack safe!`, COLORS.gold, FLOW.BANNER_HOLD_MS);
   }
 
   /** Roya just threw it somewhere nobody asked for. */
@@ -1745,6 +1836,7 @@ export class GameScene extends Phaser.Scene {
     this.enterHalf(); // stale-timer hygiene BEFORE anything schedules anew
     this.setView('wide'); // between-halves beat: see the whole yard
     this.halfState = newHalfInning();
+    this.seats.forEach((seat) => (seat.heaterThrown = false)); // one Heater a half
     this.clearRunners();
     this.buildDefense();
     this.refreshHud();
@@ -1998,7 +2090,8 @@ export class GameScene extends Phaser.Scene {
       this.features.fatigue &&
       fielding.plan &&
       !this.seatIsRemote(fielding) &&
-      cpuWantsRelief(fielding.fatigue)
+      cpuWantsRelief(fielding.fatigue) &&
+      !refusesRelief(fielding.pitcher!) // Jay will not come out
     ) {
       const tiredArm = fielding.pitcher!;
       const best = fielding.team
@@ -2137,7 +2230,14 @@ export class GameScene extends Phaser.Scene {
     // makes contact. Everything downstream (ring + ball tweens) reads `travel`.
     // Through the one resolver, never the raw constants — the defensive half
     // read them directly and silently missed the tee case for months.
-    const travel = getPitchBaseMs(this.mode, 'batting', this.tee) * travelMultFor(this.fieldingSeat().pitcher!);
+    const kidArm = this.fieldingSeat().pitcher!;
+    const kidWobbler = rollWobbler(kidArm, null, () => Math.random());
+    this.flagWobbler(kidWobbler);
+    const travel =
+      getPitchBaseMs(this.mode, 'batting', this.tee) *
+      travelMultFor(kidArm) *
+      (this.takeHeater(null) ? heaterTravelMult() : 1) *
+      wobblerTravelMult(kidWobbler);
     this.pitchTravelMs = travel;
     // Sometimes the AI throws a WILD one — telegraphed in red, visibly off the
     // plate. Don't swing at those! Taking it earns a ball (4 = walk).
@@ -2201,6 +2301,7 @@ export class GameScene extends Phaser.Scene {
     if (this.spectator) this.scheduleSpectatorSwing(travel, wild);
 
     this.startBallTrail();
+    this.blindfold(travel);
   }
 
   /** A faint fading trail behind the inbound ball. */
@@ -2209,7 +2310,7 @@ export class GameScene extends Phaser.Scene {
       delay: 45,
       loop: true,
       callback: () => {
-        if (!this.ball) return;
+        if (!this.ball || !this.ball.visible) return; // no trail off a ball Yaz cannot see
         const dot = this.add
           .circle(this.ball.x, this.ball.y, 6 * this.ball.scale, COLORS.white, 0.4)
           .setDepth(PLATE_VIEW.DEPTH + 7);
@@ -2334,7 +2435,25 @@ export class GameScene extends Phaser.Scene {
     }
     // Thrown by THIS arm and called against THIS batter's zone, before
     // anything reads `travelMs` or `inZone`.
+    // Musa's wobbler: the one that works flies as the CRAZY pitch, free; the
+    // one that does not floats in. (Null, and no draw, for every other arm.)
+    const wobbler = rollWobbler(moundSeat.pitcher!, plan.kind, () => Math.random());
+    if (wobbler === 'works') {
+      plan = resolvePitchLocation(
+        wobblerKind(wobbler, plan.kind),
+        plan.target,
+        cpuArm,
+        60,
+        getPitchBaseMs(this.mode, 'batting', this.tee),
+        () => Math.random(),
+        scatterMultFor(moundSeat.pitcher!)
+      );
+    } else if (wobbler === 'flat') {
+      plan = { ...plan, travelMs: plan.travelMs * wobblerTravelMult(wobbler) };
+    }
+    this.flagWobbler(wobbler);
     plan = planForBatter(planForPitcher(plan, moundSeat.pitcher!), this.batter);
+    if (this.takeHeater(plan.kind)) plan = heaterPlan(plan);
     this.pitchPlan = plan;
     this.hostCast({ t: 'pitchLaunch', wild: !plan.inZone, travelMs: plan.travelMs, plan });
     this.pitchIsWild = !plan.inZone; // reuses the take-a-ball / capped-chase rules
@@ -2395,6 +2514,7 @@ export class GameScene extends Phaser.Scene {
     });
     // The generic white trail reads wrong under the flame/frost dressings.
     if (plan.kind !== 'fireball' && plan.kind !== 'freezeball') this.startBallTrail();
+    this.blindfold(plan.travelMs);
     if (this.features.battingCursor) this.showSwingCursor();
     if (this.features.steals) this.showStealChips();
     if (this.features.juice) this.showPowerButton();
@@ -2446,6 +2566,8 @@ export class GameScene extends Phaser.Scene {
     // Net guest: its stamina arrives in every HudSnap, and the change itself
     // travels as a `relief` request the host validates.
     if (!this.features.fatigue || !this.fieldingSeat().plan || !isTired(this.fieldingSeat().fatigue)) return;
+    // Jay will not come out. There is no button to press.
+    if (refusesRelief(this.fieldingSeat().pitcher!)) return;
     const { container } = pill(this, HUD.SPEND_COL.X, HUD.SPEND_COL.ROW1_Y, '🥵 NEW PITCHER', {
       fill: COLORS.red,
       fontSize: 17,
@@ -2811,7 +2933,7 @@ export class GameScene extends Phaser.Scene {
       this.resolvePlayerSwingAimed(error, this.cursorPlate());
       return;
     }
-    const band = bandFromError(error);
+    const band = blindSwingBand(this.batter, bandFromError(error));
     this.resolvePlayerSwing(band, false);
   }
 
@@ -2852,7 +2974,7 @@ export class GameScene extends Phaser.Scene {
       timing = { PERFECT: timing.PERFECT + f * 0.5, GOOD: timing.GOOD + f, CONTACT: timing.CONTACT + f };
     }
     const { swing, band } = resolveContactAimed({
-      band: bandFromError(errorMs, timing),
+      band: blindSwingBand(this.batter, bandFromError(errorMs, timing)),
       errorMs,
       cursor,
       plan,
@@ -3067,8 +3189,12 @@ export class GameScene extends Phaser.Scene {
           },
           () => Math.random()
         );
-        this.halfState = applySteal(this.halfState, from, safe).state;
-        this.animateSteal(from, token, safe);
+        if (!safe && neverTagged(runner)) {
+          this.slipTheTag(from, token, runner);
+        } else {
+          this.halfState = applySteal(this.halfState, from, safe).state;
+          this.animateSteal(from, token, safe);
+        }
       } else if (token) {
         // Dead ball — sneak back to the bag.
         const p = project(basePos(from));
@@ -3373,10 +3499,16 @@ export class GameScene extends Phaser.Scene {
   /** Contact! Hand the play to the sim and switch input modes. */
   private beginLivePlay(mode: 'defense' | 'offense', launch: Launch): void {
     const batterChar = mode === 'offense' ? this.batter : this.cpuBatter;
-    const baseRunners: Array<{ base: 1 | 2 | 3; charId: string; speed: number }> = [];
+    const baseRunners: Array<{ base: 1 | 2 | 3; charId: string; speed: number; untaggable?: boolean }> = [];
     for (const [base, token] of this.runners) {
       const id = token.getData('id') as string;
-      baseRunners.push({ base: base as 1 | 2 | 3, charId: id, speed: getCharacter(id).stats.speed });
+      const kid = getCharacter(id);
+      baseRunners.push({
+        base: base as 1 | 2 | 3,
+        charId: id,
+        speed: kid.stats.speed,
+        ...(neverTagged(kid) ? { untaggable: true } : {}),
+      });
     }
 
     // Armed juice spends modify THIS play's params only.
@@ -3402,13 +3534,14 @@ export class GameScene extends Phaser.Scene {
     this.livePlay = startLivePlay({
       mode,
       launch,
-      batter: { charId: batterChar.id, speed: batterChar.stats.speed },
+      batter: {
+        charId: batterChar.id,
+        speed: batterChar.stats.speed,
+        ...(neverTagged(batterChar) ? { untaggable: true } : {}),
+      },
       baseRunners,
-      // Each kid fields with their own legs, glove, and arm.
-      defense: this.fieldAssignment.map((a) => {
-        const c = getCharacter(a.charId);
-        return { ...a, speed: c.stats.speed, glove: c.stats.fielding, arm: c.stats.pitching, wrongBase: wrongBaseChance(c) };
-      }),
+      // Each kid fields with their own legs, glove, arm and habits.
+      defense: this.fieldAssignment.map((a) => this.fielderFor(a)),
       outs: this.halfState.outs,
       params,
       geo: this.geo,
@@ -3643,6 +3776,9 @@ export class GameScene extends Phaser.Scene {
         case 'wrongBase':
           this.flagWrongBase();
           break;
+        case 'fenceThrow':
+          this.flagFenceThrow();
+          break;
         case 'out':
           this.playHighlights.outs += 1;
           break;
@@ -3876,14 +4012,17 @@ export class GameScene extends Phaser.Scene {
       return;
     }
     const runner = getCharacter(token.getData('id') as string);
-    const out = rollPickoff(
-      {
-        runnerSpeed: runner.stats.speed,
-        pitcherArm: this.fieldingSeat().pitcher!.stats.pitching,
-        leaning: this.stealIntent?.from === base,
-      },
-      () => Math.random()
-    );
+    // Ollie has never been tagged out, and a pickoff is a tag: no roll for him.
+    const out =
+      !neverTagged(runner) &&
+      rollPickoff(
+        {
+          runnerSpeed: runner.stats.speed,
+          pitcherArm: this.fieldingSeat().pitcher!.stats.pitching,
+          leaning: this.stealIntent?.from === base,
+        },
+        () => Math.random()
+      );
     this.halfState = applyPickoff(this.halfState, base, out);
     screenShake(this, 3);
     if (out) {
@@ -4093,9 +4232,18 @@ export class GameScene extends Phaser.Scene {
     // to be CPU_PITCH_TRAVEL_MS hardcoded in both places, which ignored `tee` —
     // so a tee-ball game lobbed at 1500ms when you batted and fired a 278ms
     // laser when you pitched, in the tier that is meant to be the easiest.
-    const travel = getPitchBaseMs(this.mode, 'pitching', this.tee) * travelMultFor(this.fieldingSeat().pitcher!);
+    const arm = this.fieldingSeat().pitcher!;
+    const heater = this.takeHeater(null);
+    const wobbler = rollWobbler(arm, null, () => Math.random());
+    this.flagWobbler(wobbler);
+    const faced = againstWobbler(swingLate(plan, lateSwingChance(arm, heater), () => Math.random()), wobbler);
+    const travel =
+      getPitchBaseMs(this.mode, 'pitching', this.tee) *
+      travelMultFor(arm) *
+      (heater ? heaterTravelMult() : 1) *
+      wobblerTravelMult(wobbler);
     this.hostCast({ t: 'pitchLaunch', wild: band === 'wild', travelMs: travel });
-    this.time.delayedCall(ANIM.WINDUP_MS, () => this.launchCpuPitch(band, plan, travel));
+    this.time.delayedCall(ANIM.WINDUP_MS, () => this.launchCpuPitch(band, faced, travel));
   }
 
   private lastPitchKind?: PitchKind;
@@ -4149,11 +4297,16 @@ export class GameScene extends Phaser.Scene {
     const armStat = this.features.fatigue
       ? effectivePitching(fseat.pitcher!.stats.pitching, fseat.fatigue)
       : fseat.pitcher!.stats.pitching;
+    // Musa's wobbler works or it does not; Jay's first fastball of the half
+    // is the Heater. Both are null/false, with no draw, for every other arm.
+    const wobbler = rollWobbler(fseat.pitcher!, kind, () => Math.random());
+    this.flagWobbler(wobbler);
+    const heater = this.takeHeater(kind);
     // Scattered by this arm, then called against THIS batter's zone.
-    const plan = planForBatter(
+    const thrown = planForBatter(
       planForPitcher(
         resolvePitchLocation(
-          kind,
+          wobblerKind(wobbler, kind),
           target,
           armStat,
           err,
@@ -4165,16 +4318,25 @@ export class GameScene extends Phaser.Scene {
       ),
       this.cpuBatter
     );
+    const flown = heater ? heaterPlan(thrown) : thrown;
+    const plan = { ...flown, travelMs: flown.travelMs * wobblerTravelMult(wobbler) };
     // Net: the REMOTE batter decides — the CPU-batter plan is a placeholder
     // and settleCpuPitch routes to the remote swing instead of consuming it.
     const cpuPlan = this.seatIsRemote(this.battingSeat())
       ? { isBall: !plan.inZone, cpuSwings: false, cpuBand: 'miss' as SwingBand, description: '' }
-      : resolveCpuPitchLocated(
-          plan,
-          band,
-          rampedCpuBatter(this.cpuBatter, this.ramp),
-          () => Math.random(),
-          batterMustChase(fseat.pitcher!, plan.kind)
+      : againstWobbler(
+          swingLate(
+            resolveCpuPitchLocated(
+              plan,
+              band,
+              rampedCpuBatter(this.cpuBatter, this.ramp),
+              () => Math.random(),
+              batterMustChase(fseat.pitcher!, plan.kind)
+            ),
+            lateSwingChance(fseat.pitcher!, heater),
+            () => Math.random()
+          ),
+          wobbler
         );
     this.netMoundPlan = plan;
     this.netSwing = undefined; // a fresh pitch invalidates any stale swing
@@ -4541,6 +4703,7 @@ export class GameScene extends Phaser.Scene {
             if (e.t === 'bonk') this.callIt('bonk', {});
             else if (e.t === 'error') this.callIt(e.kind === 'wild' ? 'errorWild' : 'errorDrop', {});
             else if (e.t === 'wrongBase') this.flagWrongBase();
+            else if (e.t === 'fenceThrow') this.flagFenceThrow();
           }
         }
         break;
@@ -4787,10 +4950,7 @@ export class GameScene extends Phaser.Scene {
       launch: m.launch,
       batter: m.batter,
       baseRunners: m.baseRunners,
-      defense: m.assignment.map((a) => {
-        const c = getCharacter(a.charId);
-        return { ...a, speed: c.stats.speed, glove: c.stats.fielding, arm: c.stats.pitching, wrongBase: wrongBaseChance(c) };
-      }),
+      defense: m.assignment.map((a) => this.fielderFor(a)),
       outs: m.outs,
       params: this.liveParams,
       geo: this.geo,
@@ -4934,8 +5094,12 @@ export class GameScene extends Phaser.Scene {
         },
         () => Math.random()
       );
-      this.halfState = applySteal(this.halfState, from!, safe).state;
-      this.animateSteal(from!, token!, safe, true);
+      if (!safe && neverTagged(runner)) {
+        this.slipTheTag(from!, token!, runner);
+      } else {
+        this.halfState = applySteal(this.halfState, from!, safe).state;
+        this.animateSteal(from!, token!, safe, true);
+      }
       // A caught-stealing third out ends the half; the at-bat carries over conceptually.
       if (isHalfOver(this.halfState)) {
         this.refreshHud();

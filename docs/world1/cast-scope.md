@@ -145,12 +145,34 @@ Clutch's 0.95); the Archetypes document it cites for the rest has never been in
 this repo. They are first guesses, all in `config.QUIRKS`, for the maintainer
 to correct. v2 has none of these behaviours yet.
 
-Still unbuilt in v1: Heater and Jay refusing relief, Roz's velocity, Musa's
-40%, Brick House (Sonny) and Greta's hands, Ollie never being tagged, the two
-fence arms (Rudy, Amir), Yaz's closed eyes, the sibling bonus and Ezra's
+A third batch closed the list of kids: Jay's Heater (his first fastball of
+each half inning, or his first pitch in kid mode, arriving in 72% of the time
+at double the stamina, a CPU batter always a band late on it) and nobody
+relieving him, CPU or human; Roz's every pitch arriving in 86% of the time
+with a CPU batter late on three in ten; Musa's one-card menu, where each pitch
+works 40% of the time (the sheet's number: it flies as the CRAZY pitch, free)
+and otherwise floats in a quarter slower; Sonny and Greta skipping the drop
+and bobble roll outright, Sonny with 1.6 times the reach; Ollie immune to the
+rundown tag, to being caught stealing (he is back on his bag) and to the
+pickoff; Rudy's and Amir's throws at 1.5 times the speed, never wild, and
+straight to a bag from beyond relay depth, Amir also chasing with a speed of
+10; and Yaz's ball disappearing halfway in with her contact up one band, the
+CPU playing her as a lottery instead.
+
+Known thin spots in that batch, none of them hidden by a test: Greta's sure
+hands and Sonny's are invisible in kid mode, where nobody drops anything;
+the lineup's auto-assign does not know Sonny is a catcher or Amir a centre
+fielder (`lineup.ts` is shared with v2 and was left alone), so they play
+where their stats put them; Musa's one card still reads SLOW; Yaz's blindfold
+and band bump are not applied to a net guest's swing; and a single Cannon in
+centre moved outs per play from 1.247 to 1.269 over 1,444 seeded plays, which
+is a small edge for a kid whose tagline is about it.
+
+Still unbuilt in v1: the sibling bonus and Ezra's
 Friday. Ezra's Loop is a menu and a chase rule, not yet a pitch with its own
 flight; Bao's Rainbow has its arc only in classic (kid mode's pitch is drawn
-straight, just slower).
+straight, just slower). Brick House is reach and sure hands on a fielder, not
+the catcher blocking model item 7 below asks for.
 
 What did not exist in either sim when this page was written, in rough order of
 size (kept as the scoping record; see above for what v1 has since built):

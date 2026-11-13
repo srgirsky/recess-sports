@@ -209,7 +209,16 @@ export type Quirk =
   | 'always_bunts' // Rafi: bunts every single pitch. He has been begged.
   | 'one_curve' // Lu: one perfect curve. It is all she throws.
   | 'the_loop' // Ezra: never a fastball, and a curve batters always swing at.
-  | 'rainbow'; // Bao: his pitch loops so high it counts as weather.
+  | 'rainbow' // Bao: his pitch loops so high it counts as weather.
+  | 'heater' // Jay: one maximum pitch an inning, and he will not come out.
+  | 'velocity' // Roz: throws harder than Jay. Never mentions it.
+  | 'forty_percent' // Musa: one wobbler. It works 40% of the time. No plan B.
+  | 'brick_house' // Sonny: anything within reach gets smothered.
+  | 'sure_hands' // Greta: has never dropped anything in her life.
+  | 'never_tagged' // Ollie: has never been tagged out.
+  | 'fence_arm' // Rudy: throws runners out from the fence.
+  | 'plays_alone' // Amir: centre field alone. Does not need help.
+  | 'eyes_closed'; // Yaz: swings with her eyes closed. Insists it helps.
 
 /**
  * The ten archetypes of the World 1 cast sheet (`docs/world1/kids-roster-v0.7.md`).
