@@ -161,9 +161,7 @@ CPU playing her as a lottery instead.
 
 Known thin spots in that batch, none of them hidden by a test: Greta's sure
 hands and Sonny's are invisible in kid mode, where nobody drops anything;
-the lineup's auto-assign does not know Sonny is a catcher or Amir a centre
-fielder (`lineup.ts` is shared with v2 and was left alone), so they play
-where their stats put them; Yaz's blindfold
+Yaz's blindfold
 and band bump are not applied to a net guest's swing; and a single Cannon in
 centre moved outs per play from 1.247 to 1.269 over 1,444 seeded plays, which
 is a small edge for a kid whose tagline is about it.
@@ -183,8 +181,11 @@ already used, and Musa's one pitch card reads WOBBLER.
 Still open in v1: Ezra's Loop is a menu and a chase rule, not yet a pitch
 with its own flight; Bao's Rainbow has its arc only in classic (kid mode's
 pitch is drawn straight, just slower); Brick House is reach and sure hands on
-a fielder, not the catcher blocking model item 7 below asks for; and the
-lineup's auto-assign still places nobody by story.
+a fielder, not the catcher blocking model item 7 below asks for. The
+classic lineup screen's AUTO now stands Sonny at catcher, Amir in centre and
+Rudy on the outfield grass (`quirks.storyLineup`, a pass over `autoAssign`'s
+plan that leaves `lineup.ts` and so v2 alone); kid mode, which has no lineup
+screen, still fields by draft order.
 
 What did not exist in either sim when this page was written, in rough order of
 size (kept as the scoping record; see above for what v1 has since built):
