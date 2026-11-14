@@ -977,7 +977,7 @@ function zoomIdle(spec: ClipSpec): AnimationClip {
 }
 
 /**
- * Zoom's push rims, mirrored from `sculpt-zoom-source.py` (WHEEL_CENTER_Z,
+ * Zoom's push rims, mirrored from `sculpt-dev-source.py` (WHEEL_CENTER_Z,
  * RIM_R, WHEEL_X + 0.048, WHEEL_CAMBER) through the exporter's Z-up -> Y-up
  * swap. `seatedPropulsion.test.ts` parses the sculpt so the two cannot drift.
  */

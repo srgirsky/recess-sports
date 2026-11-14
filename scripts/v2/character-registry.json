@@ -27,14 +27,14 @@
     },
     "wheelchair_ace": {
       "name": "Dev Raghunathan",
-      "slug": "zoom",
-      "source": "zoom-pilot.blend",
+      "slug": "dev",
+      "source": "dev-pilot.blend",
       "traits": [
-        "compact sport chair",
-        "cambered wheels",
-        "bright push rims",
-        "swept spiky crown",
-        "forward athletic posture"
+        "cambered racing chair",
+        "orange push rims",
+        "teal tee",
+        "big tousled black crown",
+        "teal and orange sneakers"
       ]
     },
     "big_lou": {

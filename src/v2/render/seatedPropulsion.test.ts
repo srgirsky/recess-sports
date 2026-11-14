@@ -42,7 +42,7 @@ function onRim(side: -1 | 1, palm: Vector3): { gap: number; deg: number } {
 
 describe('Zoom propels his chair by its push rims', () => {
   it('mirrors the sculpted rim, so the targets are where the geometry is', () => {
-    const py = readFileSync(new URL('../../../scripts/v2/blender/sculpt-zoom-source.py', import.meta.url), 'utf8');
+    const py = readFileSync(new URL('../../../scripts/v2/blender/sculpt-dev-source.py', import.meta.url), 'utf8');
     const read = (name: string) => Number(py.match(new RegExp(`^${name} = ([0-9.]+)`, 'm'))![1]);
     expect(ZOOM_RIM.centerY).toBe(read('WHEEL_CENTER_Z'));
     expect(ZOOM_RIM.radius).toBe(read('RIM_R'));

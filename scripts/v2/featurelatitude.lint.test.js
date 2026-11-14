@@ -455,12 +455,16 @@ const TURNAROUND = {
   // reviewed by eye. Bounded traces on zoom-turnaround.png (crown row 71,
   // neck row 265): brows centred ~180, eyes centred ~210, the smile at the
   // analyser's own 83.5.
+  // Dev Raghunathan took this slot in the World 1 re-cast; the targets are
+  // his. The spec refuses brow and eye (his fringe merges with both), so they
+  // are bounded dark-row traces on dev-turnaround.png (crown row 216, neck
+  // row 439): brows rows 322-338, eyes rows 346-370, the smile at row 392.
   wheelchair_ace: {
-    slug: 'zoom',
-    brow: 56.2,
-    eye: 71.6,
-    mouth: 83.5,
-    span: { crownZ: 3.95, neckZ: 2.60 },
+    slug: 'dev',
+    brow: 51.1,
+    eye: 63.7,
+    mouth: 78.9,
+    span: { crownZ: 4.0, neckZ: 2.52 },
     tolerance: 2.5,
   },
   // Bounded traces on theo-turnaround.png (cap crown row 129, neck row

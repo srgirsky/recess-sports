@@ -58,7 +58,7 @@ sculpt library. A build change (slim → wide, short → tallest) is a rebuild.
 | Mars Delacruz (T1) | `calls_shot` | the ability; re-sculpted against her own sheet (slug `mars`), November 2026 | oversized bat still to build | sculpted |
 | Jay Park (T1) | `smokey` | boy, pitching 9, wiry | add glasses, leg-kick windup clip | partial |
 | Sonny Fifita (T1) | `tank` | re-sculpted against his own sheet (slug `sonny`): the big body with a hip-length tee, and the backwards cap, chest protector and shin guards modelled on the hair slot, November 2026. The previous kid's script and sheet stay in the tree as the worked exemplar | soft voice | sculpted |
-| Dev Raghunathan (T1) | `wheelchair_ace` | chair, pitching 10 | racing chair, Wobble replaces unhittable | strong |
+| Dev Raghunathan (T1) | `wheelchair_ace` | re-sculpted against his own sheet (slug `dev`): bigger head and hair, stockier body, teal tee, orange push rims (moved off the team slot; the wheel hubs carry the team colour now), November 2026. The chair's geometry is the slot's own | Wobble replaces unhittable | sculpted |
 | Zaya Fontaine (T1) | `rocket` | girl, ponytail, speed 9 | shrink to small and coiled | partial |
 | Ezra Bloom (T1) | `bend_it` | boy, the curve | tall and slouchy, bun → short, drop glasses, tzitzit | partial |
 | Ollie Nowak | `turbo` | small boy, speed 10 | name and lines | strong |
