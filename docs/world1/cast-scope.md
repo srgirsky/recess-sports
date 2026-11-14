@@ -185,7 +185,8 @@ a fielder, not the catcher blocking model item 7 below asks for. The
 classic lineup screen's AUTO now stands Sonny at catcher, Amir in centre and
 Rudy on the outfield grass (`quirks.storyLineup`, a pass over `autoAssign`'s
 plan that leaves `lineup.ts` and so v2 alone); kid mode, which has no lineup
-screen, still fields by draft order.
+screen and fields in draft order, makes the same three trades on that order
+(`quirks.storyPosts`).
 
 What did not exist in either sim when this page was written, in rough order of
 size (kept as the scoping record; see above for what v1 has since built):

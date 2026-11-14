@@ -145,6 +145,7 @@ import {
   wobblerTravelMult,
   zoneScaleFor,
   type Moment,
+  storyPosts,
 } from '../systems/quirks';
 import { type Alignment } from '../systems/alignment';
 import {
@@ -3496,7 +3497,9 @@ export class GameScene extends Phaser.Scene {
         })),
       ];
     } else {
-      const others = defendingIds.filter((id) => id !== pitcher.id);
+      // Draft order, with the kids whose story names a position standing in it
+      // (Sonny catches; `quirks.storyPosts`). The same order for any other nine.
+      const others = storyPosts(POSITION_ORDER, defendingIds.filter((id) => id !== pitcher.id));
       this.fieldAssignment = [
         { position: 'P' as PositionId, charId: pitcher.id },
         ...POSITION_ORDER.map((position, i) => ({ position, charId: others[i % others.length] })),
