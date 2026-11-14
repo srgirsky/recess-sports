@@ -34,7 +34,6 @@
 
 import { MOUND_DIST, type Vec3 } from './field';
 import { PITCH } from './params';
-import { clamp } from './units';
 import { FLIGHT_HZ, cloneState, stepFlight, type BallState, type Guard } from './flight';
 
 /** The four kinds every pitcher has. `choosePitch` draws from exactly these. */
@@ -203,33 +202,51 @@ export function releasePitch(opts: {
   //
   // The inner solve finds the elevation that hits the aim height at a given
   // speed; the outer one adjusts the speed until the flight lasts as long as it
-  // should. Both are secant iterations — there is no closed form once drag and
+  // should. Both are bisections — there is no closed form once drag and
   // Magnus are in.
   const azRad = Math.atan2(opts.aimLateralFt - from.x, 0 - from.z);
 
   const timeAt = (speed: number) => {
     const elev = solveElevation(from, speed, azRad, spin, opts.aimHeightFt);
-    // Unreachable: report a flight LONGER than any target, so the secant reads
-    // it as "too slow" and pushes the speed up rather than stalling.
+    // Unreachable: report a flight LONGER than any target, so the bisection
+    // below reads it as "too slow" — which it is.
     if (elev === null) return { elev: 0.6, sec: PITCH.MAX_FLIGHT_SEC };
     const flown = flyToPlate({ p: { ...from }, v: velocityAt(elev, azRad, speed), w: { ...spin } });
     return { elev, sec: flown.travelSec };
   };
 
-  let s0 = 30;
-  let s1 = 55;
-  let f0 = timeAt(s0).sec - wantSec;
-  let f1 = timeAt(s1).sec - wantSec;
+  // ★ A BRACKETED BISECTION, NOT A SECANT, and the difference is the cliff.
+  // On the branch a pitcher throws, flight time falls monotonically as speed
+  // rises — until, going DOWN, the speed stops reaching the plate at all
+  // (~39 ft/s over 46 ft, whatever the spin). `timeAt` reports that as the
+  // longest possible flight, which makes "too slow" one monotone predicate
+  // across the cliff: every unreachable speed is too slow, and so is every
+  // reachable one that takes longer than `wantSec`.
+  //
+  // The secant this replaces read the same cliff as a 5-second flight and
+  // extrapolated a slope through it. Six steps later it stopped wherever it
+  // was: a stat-5 fastball asked for 1.28 s came out at 1.01 s while a stat-7
+  // one came out at 1.19 s, so a weaker arm threw the quicker pitch
+  // (`sim.throwSpeed.comparedWithThePitch`, `sim.specialPitches`).
+  //
+  // A bisection cannot do that. When the target is reachable it lands on it;
+  // when it is not — a weak arm's changeup wants a flight no low-branch
+  // release has — it converges on the cliff from the reachable side and
+  // throws the SLOWEST pitch there is, which is what "as slow as he can"
+  // means. `hi` is reachable at every step, so the answer always is.
+  let lo: number = PITCH.SOLVE_SPEED_LO_FTS;
+  let hi: number = PITCH.SOLVE_SPEED_HI_FTS;
   for (let i = 0; i < PITCH.AIM_ITERATIONS; i++) {
-    const d = f1 - f0;
-    if (d === 0) break;
-    const next = clamp(s1 - f1 * ((s1 - s0) / d), 15, 200);
-    s0 = s1;
-    f0 = f1;
-    s1 = next;
-    f1 = timeAt(s1).sec - wantSec;
-    if (Math.abs(f1) < PITCH.AIM_TOL_SEC) break;
+    const mid = (lo + hi) / 2;
+    const f = timeAt(mid).sec - wantSec;
+    if (f > 0) lo = mid;
+    else hi = mid;
+    if (Math.abs(f) < PITCH.AIM_TOL_SEC) {
+      hi = mid;
+      break;
+    }
   }
+  const s1 = hi;
 
   const final = timeAt(s1);
   return { p: { ...from }, v: velocityAt(final.elev, azRad, s1), w: spin };

@@ -417,12 +417,21 @@ export const PITCH = {
   ARM_MULT_MIN: 0.86,
   ARM_MULT_MAX: 1.18,
   /**
-   * Secant steps used to solve the release elevation that actually delivers the
-   * ball to the aim point. Three is enough: the crossing miss is near-linear in
-   * elevation over this range. See `releasePitch` for why a solve is needed at
-   * all (aiming straight at the target arrives 26ft underground).
+   * Bisection steps over release SPEED in `releasePitch`'s outer solve (the
+   * wanted flight time). Twelve halvings of the bracket below resolve
+   * 0.012 ft/s; the loop leaves early once the flight is within
+   * `AIM_TOL_SEC`. It was six secant steps until 2026-11-13 — see
+   * `releasePitch` for what those did at the reachability cliff.
    */
-  AIM_ITERATIONS: 6,
+  AIM_ITERATIONS: 12,
+  /**
+   * The bracket `releasePitch` bisects release speed over, ft/s. The floor is
+   * below the slowest speed that reaches the plate at all (~39) and the
+   * ceiling above the fastest pitch anything asks for (the fireball from the
+   * best arm is ~57); twelve halvings of it resolve 0.012 ft/s.
+   */
+  SOLVE_SPEED_LO_FTS: 30,
+  SOLVE_SPEED_HI_FTS: 80,
   /** Close enough on flight time, seconds. */
   AIM_TOL_SEC: 0.005,
   /**
