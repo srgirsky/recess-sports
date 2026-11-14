@@ -464,7 +464,7 @@ describe('★ the flow is a generator, and draining it changes nothing', () => {
    * ★ RECAPTURED 2026-11-13 FOR THE RELEASE SOLVE (`pitch.ts` `releasePitch`).
    * The outer solve was a six-step secant that read "this speed cannot reach
    * the plate" as a five-second flight and extrapolated through it; it is
-   * now a bracketed bisection. Every pitch a pitching-1-to-5 arm throws is
+   * now solved inside a bracket. Every pitch a pitching-1-to-5 arm throws is
    * therefore a different pitch — a stat-5 fastball was arriving in 1.01 s
    * against the 1.28 s it was asked for, quicker than a stat-7's — so all
    * thirty-three games moved, in `pa`, `h` and `k` alike. This IS a change
@@ -487,7 +487,7 @@ describe('★ the flow is a generator, and draining it changes nothing', () => {
     // from here exactly as the first three do.
     'tin_can:a': '8-1 i6 pa63 h25 k14 r9 s6',
     'tin_can:b': '3-5 i6 pa53 h28 k11 r8 s11',
-    'tin_can:c': '0-2 i6 pa50 h24 k15 r2 s9',
+    'tin_can:c': '1-2 i6 pa45 h18 k13 r3 s7',
     'cement:a': '5-3 i6 pa57 h23 k15 r8 s9',
     'cement:b': '2-5 i6 pa51 h24 k11 r7 s10',
     'cement:c': '1-1 i7 pa57 h22 k16 r2 s4',
@@ -499,9 +499,9 @@ describe('★ the flow is a generator, and draining it changes nothing', () => {
     'playground:c': '3-0 i6 pa51 h19 k18 r3 s7',
     'eckman:a': '3-2 i6 pa54 h22 k10 r5 s10',
     'eckman:b': '0-4 i6 pa49 h22 k10 r4 s8',
-    'eckman:c': '2-1 i6 pa57 h27 k16 r3 s12',
+    'eckman:c': '2-0 i6 pa57 h28 k15 r2 s9',
     'dirt_yards:a': '4-2 i6 pa56 h27 k11 r6 s14',
-    'dirt_yards:b': '0-6 i6 pa52 h24 k12 r6 s11',
+    'dirt_yards:b': '1-6 i6 pa51 h21 k9 r7 s9',
     'dirt_yards:c': '2-0 i6 pa54 h25 k15 r2 s9',
     'big_city:a': '5-2 i6 pa60 h28 k11 r7 s12',
     'big_city:b': '1-5 i6 pa53 h28 k11 r6 s9',
@@ -546,8 +546,8 @@ describe('★ the flow is a generator, and draining it changes nothing', () => {
   // 1283789542 -> 116246726 when the runner began picking his pitch
   // (2026-10-30), and 116246726 -> 1691509118 with the World 1 re-cast
   // (2026-11-03) — a roster change, not a sim change; see GOLDEN.
-  // 2025622013 -> 1388968354 with the release solve (2026-11-13); see GOLDEN.
-  const CHECKSUM_30 = 1388968354;
+  // 2025622013 -> 1761971867 with the release solve (2026-11-13); see GOLDEN.
+  const CHECKSUM_30 = 1761971867;
   // Keep the original thirty-game ratchet on the venues it was born with.
   // New venues get explicit birth fingerprints above; adding content must not
   // silently rewrite the baseline that catches drift in the existing game.
