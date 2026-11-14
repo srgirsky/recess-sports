@@ -200,7 +200,10 @@ describe('★ a special is a spend', () => {
 const AWAY = ROSTER.slice(0, 9).map((c) => c.id);
 const HOME = ROSTER.slice(9, 18).map((c) => c.id);
 function spec(over: Partial<GameSpec> = {}): GameSpec {
-  return { away: { name: 'Rockets', ids: AWAY }, home: { name: 'Comets', ids: HOME }, lookup: getCharacter, ...over };
+  // `stories: false`: this file is about what a SPEND buys, and a kid whose
+  // story is itself a free special (Jay's Heater, Musa's wobbler) is a second
+  // source of the thing being counted.
+  return { away: { name: 'Rockets', ids: AWAY }, home: { name: 'Comets', ids: HOME }, lookup: getCharacter, stories: false, ...over };
 }
 const fp = (g: GameResult) =>
   `${g.awayScore}-${g.homeScore} i${g.innings} pa${g.tally.plateAppearances} h${g.tally.hits} k${g.tally.strikeouts} r${g.tally.runs} s${g.tally.stealAttempts} log${g.log.length}`;

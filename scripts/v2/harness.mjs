@@ -39,6 +39,7 @@ const { simulateGame } = await import(sim('game.ts'));
 const { newTotals, observe, observeGame, rates, EV_BIN_MPH, LA_BIN_DEG, LAUNCH_CUTS } =
   await import(sim('harness.ts'));
 const { makeRng } = await import(sim('rng.ts'));
+const { parseFeatures } = await import(sim('features.ts'));
 const { VENUE_GEOMETRY } = await import(sim('field.ts'));
 const { ROSTER, getCharacter } = await import(join(repo, 'src', 'data', 'characters.ts'));
 
@@ -98,6 +99,11 @@ while (t.plateAppearances < TARGET_PA) {
       lookup: getCharacter,
       geo: VENUE_GEOMETRY[VENUES[games % VENUES.length]],
       onEvent: (e) => observe(t, e),
+      // `HARNESS_FEATURES=juice npm run sim:harness` measures the game with a
+      // held feature on; `HARNESS_STORIES=0` measures it without the cast's
+      // story behaviours. Unset — every recorded run — both are omitted.
+      features: process.env.HARNESS_FEATURES ? parseFeatures(process.env.HARNESS_FEATURES) : undefined,
+      stories: process.env.HARNESS_STORIES === '0' ? false : undefined,
     },
     makeRng(`pr8:${seed}:${games}`)
   );

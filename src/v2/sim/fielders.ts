@@ -93,6 +93,10 @@ export interface FielderState {
    * unless `beginPlay` was told the fielding side spent, and `x + 0` is exact.
    */
   reachBonusFt: number;
+  /** Never drops one (`quirks.ts` `storyFielder`). Unset for everyone else. */
+  sure?: boolean;
+  /** Some of this kid's throws go to a bag nobody chose (`quirks.ts`). Unset for everyone else. */
+  strays?: boolean;
 }
 
 export function makeFielder(

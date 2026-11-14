@@ -75,6 +75,8 @@ export interface SwingSpec {
   power?: boolean;
   /** A BUNT (`BAT.BUNT_*`): the bat held out and met, not swung. Only a person bunts. */
   bunt?: boolean;
+  /** A glancing-contact window other than the standard one (`quirks.ts` `foulBack`). */
+  foulTip?: { below: number; chance: number };
 }
 
 export type SwingResult =
@@ -149,7 +151,11 @@ export function resolveSwing(spec: SwingSpec, rng: Rng): SwingResult {
 
   // A glancing edge: enough of the bat to touch it, not enough to drive it.
   const r = rng.fork('foulTip');
-  if (quality < 0.18 && r() < 0.45) return { kind: 'foulTip' };
+  // The pair is the caller's only for a kid whose story is the foul ball
+  // (`quirks.ts` `foulBack`); absent, the two literals are compared as ever.
+  if (spec.foulTip ? quality < spec.foulTip.below && r() < spec.foulTip.chance : quality < 0.18 && r() < 0.45) {
+    return { kind: 'foulTip' };
+  }
 
   // 1. Bat speed. Off-square contact costs speed at the point of impact and
   //    moves the ball off the sweet spot, which costs e_A too.

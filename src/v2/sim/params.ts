@@ -1133,6 +1133,71 @@ export const JUICE = {
 } as const;
 
 /**
+ * The story behaviours (`GameSpec.stories`, `sim/quirks.ts`): what the cast
+ * sheet says a kid does, as the handful of numbers the physical model does not
+ * already hold.
+ *
+ * ★ NONE OF THESE IS MEASURED, AND ONLY TWO ARE SOURCED. `CLUTCH_POWER` is the
+ * sheet's 0.95 on the 1-10 scale and `WOBBLER_WORKS` is its 40%. The rest are
+ * first guesses for the maintainer to correct; the Archetypes document the
+ * sheet cites for them has never been in this repo. They are deliberately NOT
+ * read from `config.QUIRKS`: v1's values were sized against a pixel plate and
+ * a banded swing, and several of them (a travel-time multiplier, a ball
+ * chance) describe outcomes this model derives instead of stating.
+ */
+export const STORY = {
+  /** Kwame's and Dev's execution error, as a multiple of their own arm's. The crazy ball is 2.0. */
+  SCATTER_MULT: { wild_arm: 2.0, wobble: 1.5 },
+  /** The fraction of the standard strike zone Winnie presents, each way. */
+  SMALL_ZONE: 0.6,
+  /** A Clutch kid's power stat in her moment (the sheet's 0.95). */
+  CLUTCH_POWER: 9.5,
+  /** How often Musa's one pitch works (the sheet's 40%). */
+  WOBBLER_WORKS: 0.4,
+  /**
+   * Roz's release speed, as a multiple of each kind's own. The fireball is
+   * 1.25 on a fastball, for scale.
+   */
+  VELOCITY_SPEED_MULT: 1.12,
+  /**
+   * Mars's perfectly timed ball. The exit speed is the slowest round number
+   * that clears every venue's fence at this angle across the whole spray it
+   * may take (swept: 100 leaves one park standing, 110 none); `quirks.test.ts`
+   * asserts the clearing, not the number.
+   */
+  MOONSHOT: { EXIT_FTS: 112, ANGLE_DEG: 30, SPIN_RPM: 1800, SPRAY_MAX_DEG: 35, WINDOW_FRAC: 0.012 },
+  /**
+   * Josie's foul-backs: how square contact must be before it stops being a
+   * candidate tick, and how often a candidate is one. Everyone else's pair is
+   * `contact.ts`'s 0.18 and 0.45.
+   */
+  FOUL_BACK: { BELOW: 0.45, CHANCE: 0.6 },
+  /** Hattie's one spot: a flare that comes down about ninety feet out, just right of second. */
+  SAME_SPOT: { EXIT_FTS: 62, ANGLE_DEG: 22, SPRAY_DEG: 40, SPIN_RPM: 1200 },
+  /**
+   * How far inside the zone's edge a taken ball must cross to hit Sam, ft. He
+   * crowds the plate: a ball this far in has nowhere else to go.
+   */
+  LEAN_IN_FT: 0.6,
+  /** What siblings drafted onto the same nine each gain, at every stat (capped at 10). */
+  SIBLING_BONUS: 1,
+  /** Feet added to Sonny's reach: the golden glove's bonus, worn all game. */
+  BRICK_HOUSE_REACH_FT: 1.0,
+  /**
+   * Rudy's and Amir's arm in the field, on the 1-10 scale. The top of the
+   * scale and not past it: `throwSpeedFts` is anchored on a published band,
+   * and an arm stronger than its ceiling would be a number with no source.
+   */
+  CANNON_ARM: 10,
+  /** How often a throw of Roya's goes to a bag nobody chose. */
+  WRONG_BASE: 0.35,
+  /** Yaz, eyes closed: the contact stat she reads the ball with, and the power she hits it with. */
+  BLIND: { CONTACT: 3, POWER: 10 },
+  /** The fraction of a pitch's flight a person batting as Yaz gets to watch. */
+  BLIND_SEEN_FRAC: 0.5,
+} as const;
+
+/**
  * The game above the plate appearance.
  *
  * Everything here is a RULE rather than a measurement, which is why the block is

@@ -49,6 +49,7 @@ judging the art direction). Useful query flags:
 | `?perf=low\|mid\|high` | override the auto-detected device tier |
 | `?proxy=1` | force primitive proxy characters everywhere |
 | `?features=<list>` | switch **held** features on for a playtest: `all`, or a comma list of `stamina`, `juice`, `specialPitches`, `shifts`. All off otherwise — see "Playtesting with kids". `stamina` (a tiring pitcher), `juice` (the meter, its tray and three spends; keys `Q`/`W`/`E`) and `specialPitches` (three more pitch cards bought off that meter — needs `juice` too; keys `5`/`6`/`7`) and `shifts` (where the fielders start; the CPU pull-shifts its sluggers and a SHIFT chip cycles yours) are all ported |
+| `?stories=0` | play the 3D game WITHOUT the cast's story behaviours (they are on for everyone; this is a review switch — `docs/world1/cast-scope.md`) |
 | `?skill=<level>` | seed the skill level: `tball`, `rookie`, `normal` (default) or `allstar` — the same four chips as the team screen, which remembers the choice |
 | `?log=1` | record the session and show the `⬇ LOG` download (counts only) |
 
