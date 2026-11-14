@@ -154,6 +154,9 @@ export type PlayEvent =
   // A relay leg. Deliberately NOT an overloaded `throw` with an optional base:
   // every `throw` event carries a bag, and a relay has none.
   | { t: 'relay'; fielder: string; to: string }
+  // A throw that went to a bag nobody chose (`quirks.ts` `strayBase`), beside
+  // the `throw` it also raised. Only ever emitted with the story on.
+  | { t: 'stray'; fielder: string; toBase: 1 | 2 | 3 | 4 }
   | { t: 'out'; base: 1 | 2 | 3 | 4; runner: string }
   | { t: 'safe'; base: 1 | 2 | 3; runner: string }
   | { t: 'score'; runner: string }
@@ -1041,9 +1044,13 @@ function maybeThrow(s: PlayState, inputs: PlayInputs = {}): void {
     const reaches = (b: 1 | 2 | 3 | 4) => throwFlightSec(carrier.p, basePos(b), carrier.arm) !== null;
     return carrier.strays && reaches(base) ? strayBase(base, s.rng.stray, reaches) : base;
   };
+  const strayed = (asked: 1 | 2 | 3 | 4, base: 1 | 2 | 3 | 4): void => {
+    if (base !== asked && s.throw) s.events.push({ t: 'stray', fielder: carrier.charId, toBase: base });
+  };
   if (inputs.throwTo) {
     const base = aim(inputs.throwTo.base);
     release(s, { kind: 'base', base }, basePos(base));
+    strayed(inputs.throwTo.base, base);
     return;
   }
   const plan = plannedThrow(s);
@@ -1055,6 +1062,7 @@ function maybeThrow(s: PlayState, inputs: PlayInputs = {}): void {
   }
   const base = aim(plan.target.base);
   release(s, { kind: 'base', base }, basePos(base));
+  strayed(plan.target.base, base);
 }
 
 /** Read-only choice used by release and by the view during the transfer.

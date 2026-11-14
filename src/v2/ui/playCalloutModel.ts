@@ -36,6 +36,9 @@ const STORY_LABELS: Record<StoryBeat, { label: string; detail: string | null }> 
   moonshot: { label: '🌙 MOONSHOT!', detail: null },
   hitByPitch: { label: '😵 OW!', detail: 'FREE BASE' },
   slippedTag: { label: '💨 NO TAG!', detail: null },
+  wrongBase: { label: '🤷 WRONG BASE!', detail: null },
+  greenLight: { label: '🟢 GREEN LIGHT!', detail: null },
+  family: { label: '👫 FAMILY!', detail: null },
 };
 
 /**

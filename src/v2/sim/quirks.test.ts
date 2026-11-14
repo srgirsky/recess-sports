@@ -744,6 +744,87 @@ describe('★ the story does not break the game it is told in', () => {
   });
 });
 
+describe('★ every beat the view can name is one the game really says', () => {
+  const beatsOf = (awayIds: string[], seed: string, on: boolean, humanSide?: 'away' | 'home') => {
+    const home = ROSTER.filter((c) => !awayIds.includes(c.id)).slice(0, 9).map((c) => c.id);
+    const out: Array<Extract<SimEvent, { t: 'story' }>> = [];
+    simulateGame(
+      {
+        away: { name: 'A', ids: awayIds },
+        home: { name: 'H', ids: home },
+        lookup: getCharacter,
+        humanSide,
+        features: on ? { ...DEFAULT_FEATURES, storyKids: true } : undefined,
+        onEvent: (e) => {
+          if (e.t === 'story') out.push(e);
+        },
+      },
+      makeRng(seed)
+    );
+    return out;
+  };
+  // A nine holding every kid whose beat is said from the batting or fielding
+  // side, both sets of siblings among them.
+  const CAST = ['moonshot', 'heater', 'forty_percent', 'clutch_runners', 'hit_by_pitch', 'never_tagged', 'wrong_base', 'green_light'].map((q) => kidWith(q as Quirk).id);
+  const NINE = [...CAST, PLAIN[0].id];
+  const FAMILY = [...SIBLINGS.flat(), ...PLAIN.slice(0, 5).map((c) => c.id)];
+  // Musa only throws his wobbler from the mound, so he gets a nine of his own
+  // with no better arm on it.
+  const musa = kidWith('forty_percent');
+  const MUSA_NINE = [
+    musa.id,
+    ...ROSTER.filter((c) => c.id !== musa.id && c.stats.pitching < musa.stats.pitching)
+      .sort((x, y) => x.stats.pitching - y.stats.pitching)
+      .slice(0, 8)
+      .map((c) => c.id),
+  ];
+  const SEEDS = Array.from({ length: 10 }, (_, i) => `beat${i}`);
+
+  it('★ says nothing at all with the flag off', () => {
+    for (const seed of SEEDS.slice(0, 4)) {
+      expect(beatsOf(NINE, seed, false)).toEqual([]);
+      expect(beatsOf(FAMILY, seed, false)).toEqual([]);
+    }
+  });
+
+  it('★ names each beat for the kid whose story it is', () => {
+    expect(MUSA_NINE.length, 'eight arms weaker than Musa').toBe(9);
+    const seen = new Map<string, Set<string>>();
+    const note = (events: Array<Extract<SimEvent, { t: 'story' }>>) => {
+      for (const e of events) {
+        if (!seen.has(e.beat)) seen.set(e.beat, new Set());
+        seen.get(e.beat)!.add(e.kidId);
+      }
+    };
+    for (const seed of SEEDS) {
+      note(beatsOf(NINE, seed, true));
+      note(beatsOf(NINE, seed, true, 'away'));
+      note(beatsOf(FAMILY, seed, true));
+      note(beatsOf(MUSA_NINE, seed, true));
+    }
+    const owner: Record<string, Quirk[]> = {
+      moonshot: ['moonshot'],
+      heater: ['heater'],
+      wobbler: ['forty_percent'],
+      clutch: ['clutch_runners', 'clutch_behind', 'clutch_risp'],
+      hitByPitch: ['hit_by_pitch'],
+      wrongBase: ['wrong_base'],
+      greenLight: ['green_light'],
+    };
+    for (const [beat, quirks] of Object.entries(owner)) {
+      const kids = seen.get(beat);
+      expect(kids, `${beat} was never said in ${SEEDS.length * 3} games`).toBeDefined();
+      for (const id of kids!) expect(quirks, `${beat} said for ${id}`).toContain(getCharacter(id).quirk);
+    }
+    expect(seen.get('family')).toEqual(new Set(SIBLINGS.flat()));
+  }, 240_000);
+
+  it('★ a sibling is named once a game, not once an at-bat', () => {
+    const family = beatsOf(FAMILY, 'once', true).filter((e) => e.beat === 'family');
+    expect(family.length).toBe(SIBLINGS.flat().length);
+  });
+});
+
 describe('★ the port is not inert', () => {
   const ids = (qs: Quirk[], fill: number) => [...qs.map((q) => kidWith(q).id), ...PLAIN.slice(0, fill).map((c) => c.id)];
   const AWAY = ROSTER.filter((c) => c.quirk).slice(0, 9).map((c) => c.id);

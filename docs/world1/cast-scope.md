@@ -242,12 +242,13 @@ What the VIEW shows of it (also behind the flag): the pitch picker carries
 only the cards on the arm's menu (one for Lu, three for Ezra, Musa's renamed
 WOBBLER); the zone box drawn at the plate shrinks with Winnie's zone; a person
 batting as Yaz loses the ball, its shadow and the timing ring halfway in; and
-six moments are called over the field from a new `story` sim event (HEATER,
-WOBBLER, CLUTCH, MOONSHOT, OW! FREE BASE, NO TAG).
+nine moments are called over the field from a new `story` sim event (HEATER,
+WOBBLER, CLUTCH, MOONSHOT, OW! FREE BASE, NO TAG, WRONG BASE, GREEN LIGHT,
+FAMILY).
 
-Not in v2 yet: no callout for Roya's stray throw, Zaya going on her own or
-the sibling bonus; Bao's four cards are four names for one flight; and none of
-the seven signature looks is on the v2 proxy or the sculpts.
+Not in v2 yet: Bao's four cards are four names for one flight; the draft card
+names no behaviour; and none of the seven signature looks is on the v2 proxy
+or the sculpts.
 
 One thing the work turned up that was not about the cast: the release solve
 did not hit its flight-time target for the base fastball below pitching 6, so

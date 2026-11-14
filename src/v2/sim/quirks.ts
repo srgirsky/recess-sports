@@ -415,6 +415,18 @@ export function familyLookup(
   return (id) => boosted.get(id) ?? lookup(id);
 }
 
+/** Every kid playing beside a brother or sister in this game. */
+export function siblingsTogether(teams: ReadonlyArray<readonly string[]>): Set<string> {
+  const out = new Set<string>();
+  for (const [a, b] of SIBLINGS) {
+    if (teams.some((t) => t.includes(a) && t.includes(b))) {
+      out.add(a);
+      out.add(b);
+    }
+  }
+  return out;
+}
+
 /** Where a kid's story says they stand, most particular claim first. */
 const STORY_POSITIONS: ReadonlyArray<{ quirk: Quirk; spots: readonly PositionId[] }> = [
   { quirk: 'brick_house', spots: ['C'] }, // Sonny is the catcher. He is wearing the gear.
@@ -457,7 +469,16 @@ export function storyDefence(plan: DefencePlan, lookup: (id: string) => Characte
  * (`ui/playCalloutModel.ts`). A beat is a fact the sim already settled —
  * nothing reads one back.
  */
-export type StoryBeat = 'heater' | 'wobbler' | 'clutch' | 'moonshot' | 'hitByPitch' | 'slippedTag';
+export type StoryBeat =
+  | 'heater'
+  | 'wobbler'
+  | 'clutch'
+  | 'moonshot'
+  | 'hitByPitch'
+  | 'slippedTag'
+  | 'wrongBase'
+  | 'greenLight'
+  | 'family';
 
 /** Was this batted ball Mars's perfect swing? */
 export function wasMoonshot(batter: Character, launch: LaunchSpec): boolean {

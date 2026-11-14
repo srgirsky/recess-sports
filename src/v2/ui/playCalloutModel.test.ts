@@ -56,7 +56,7 @@ describe('play callouts', () => {
 });
 
 describe('a story beat is named, icon first', () => {
-  const BEATS = ['heater', 'wobbler', 'clutch', 'moonshot', 'hitByPitch', 'slippedTag'] as const;
+  const BEATS = ['heater', 'wobbler', 'clutch', 'moonshot', 'hitByPitch', 'slippedTag', 'wrongBase', 'greenLight', 'family'] as const;
 
   it.each(BEATS)('★ %s has a callout a child can read', (beat) => {
     const c = playCalloutFor({ t: 'story', kidId: 'x', beat });

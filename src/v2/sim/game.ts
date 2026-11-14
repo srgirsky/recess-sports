@@ -64,6 +64,7 @@ import {
   hasGreenLight,
   hitByPitch,
   jumpCapSec,
+  siblingsTogether,
   slipsTheTag,
   storyDefence,
   throwsHeater,
@@ -563,7 +564,7 @@ function* playAtBatLive(
      * as this HALF began (this half's runs are added per pitch) — or null with
      * the flag off, when no kid's quirk is read (`quirks.ts`).
      */
-    story: { lead: number } | null;
+    story: { lead: number; siblings: Set<string>; called: Set<string> } | null;
     /** The person's level and which of the two roles they hold this PA. Null: nobody. */
     assist: { skill: Skill; bats: boolean; pitches: boolean } | null;
   },
@@ -838,6 +839,11 @@ function* playAtBatLive(
     if (args.story !== null) {
       // The story's beats, named as they happen. A Clutch kid's moment is
       // called once, on the first pitch she sees in it.
+      // A kid batting beside a brother or sister is named once a game.
+      if (args.story.siblings.has(args.batter.id) && !args.story.called.has(args.batter.id)) {
+        args.story.called.add(args.batter.id);
+        onEvent?.({ t: 'story', kidId: args.batter.id, beat: 'family' });
+      }
       if (!clutchCalled && spec.story && clutchFiring(args.batter, spec.story)) {
         clutchCalled = true;
         onEvent?.({ t: 'story', kidId: args.batter.id, beat: 'clutch' });
@@ -877,6 +883,10 @@ function* playAtBatLive(
       args.story !== null && !thrownOver
     );
     thrownOver = false;
+    // Zaya went on her own, on a bench that otherwise waits for the order.
+    if (going && args.story !== null && !going.human && !cpuRunners && hasGreenLight(going.spec.runner)) {
+      onEvent?.({ t: 'story', kidId: going.spec.runner.id, beat: 'greenLight' });
+    }
     frame.steal = going
       ? { runnerId: going.spec.runner.id, from: going.from, to: going.spec.to, runnerSec: runnerSecTo(going.spec) }
       : null;
@@ -1036,7 +1046,8 @@ function* playAtBatLive(
       rng.fork(`play${pitches}`),
       frame,
       out,
-      args.assist
+      args.assist,
+      onEvent
     );
     const outcome = out.outcome!;
     const scored = out.scored;
@@ -1328,7 +1339,8 @@ function* runPlayLive(
   frame: LiveFrame,
   out: { outcome: PlayOutcome | null; scored: string[] },
   /** The person's role this half, or null when no side is a person's. */
-  assist: { bats: boolean; pitches: boolean } | null
+  assist: { bats: boolean; pitches: boolean } | null,
+  onEvent?: (e: SimEvent) => void
 ): Generator<LiveFrame, void, PlayInputs> {
   const s = beginPlay(spec, rng);
   const dt = 1 / 60;
@@ -1339,7 +1351,11 @@ function* runPlayLive(
   let inputs: PlayInputs = {};
   while (s.phase === 'live' && guard++ < Math.ceil(PLAY.MAX_PLAY_SEC / dt) + 8) {
     stepPlay(s, dt, inputs);
-    for (const e of s.events) if (e.t === 'score') out.scored.push(e.runner);
+    for (const e of s.events) {
+      if (e.t === 'score') out.scored.push(e.runner);
+      // Roya's throw went somewhere: named the tick it leaves her hand.
+      else if (e.t === 'stray') onEvent?.({ t: 'story', kidId: e.fielder, beat: 'wrongBase' });
+    }
     // ★ WHAT THE CALLER PASSED TO `.next()`. The generator's third type
     // parameter has been `void` since PR 13 and is what makes a live driver
     // able to steer without a second implementation of the flow existing.
@@ -1399,6 +1415,8 @@ export function* simulateGameLive(spec: GameSpec, rng: Rng): Generator<LiveFrame
   // and three kids stand where their story says.
   const story = spec.features?.storyKids === true;
   const lookup = story ? familyLookup(spec.lookup, [spec.away.ids, spec.home.ids]) : spec.lookup;
+  const siblings = story ? siblingsTogether([spec.away.ids, spec.home.ids]) : new Set<string>();
+  const familyCalled = new Set<string>();
   const mk = (t: TeamSpec): Side => ({
     spec: t,
     plan: story ? storyDefence(planDefence(t.ids, lookup, t.order), lookup) : planDefence(t.ids, lookup, t.order),
@@ -1493,7 +1511,7 @@ export function* simulateGameLive(spec: GameSpec, rng: Rng): Generator<LiveFrame
           // where `juice` is non-null; alone the flag changes nothing.
           specials: spec.features?.specialPitches ?? false,
           shifts: spec.features?.shifts ?? false,
-          story: story ? { lead: bat.score - field.score } : null,
+          story: story ? { lead: bat.score - field.score, siblings, called: familyCalled } : null,
           assist: spec.humanSide
             ? {
                 skill: spec.skill ?? 'normal',

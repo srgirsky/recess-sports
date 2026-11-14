@@ -121,7 +121,7 @@ export function cuesForEvent(e: SimEvent): Cue[] {
   if (e.t === 'spend') return ['cheer'];
   // A story beat is a crowd moment, except the one that hurts: a ball into a
   // kid is the mitt's sound, not a cheer.
-  if (e.t === 'story') return e.beat === 'hitByPitch' ? ['pop'] : ['cheer'];
+  if (e.t === 'story') return e.beat === 'hitByPitch' || e.beat === 'wrongBase' ? ['pop'] : ['cheer'];
 
   // A stolen base: the crowd for a bag taken, the mitt and the call for a
   // runner cut down. Ten of these a game were silent before the event existed.
