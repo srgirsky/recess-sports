@@ -925,106 +925,6 @@
       "class": "no-defect-note",
       "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: REVISED - recorded scores"
     },
-    "zippy:5d3f4c3a4bca": {
-      "char": "zippy",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED IN CURRENT SAMPLED EVIDENCE: the prior bat/pigtail blocker at bat_st"
-    },
-    "zippy:38972a5791a7": {
-      "char": "zippy",
-      "class": "stance",
-      "excerpt": "SHARED MOTION POLISH, REOBSERVED: bunt-2-2.png at t=0.67 has the handle-side"
-    },
-    "zippy:04683eda987f": {
-      "char": "zippy",
-      "class": "stance",
-      "excerpt": "CURRENT MEASURED RESIDUAL: ankle daylight remains OFF, 0.00 concept versus 2"
-    },
-    "zippy:fb00eba6b71e": {
-      "char": "zippy",
-      "class": "evidence",
-      "excerpt": "SCOPE LIMIT: no new Zippy-specific hand-migration blocker found across the t"
-    },
-    "zippy:823221f5c764": {
-      "char": "zippy",
-      "class": "butt-joins",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED (worst remaining,"
-    },
-    "zippy:ab80fd35036b": {
-      "char": "zippy",
-      "class": "hair-nyquist",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED (reduced but stil"
-    },
-    "zippy:34e485b3676f": {
-      "char": "zippy",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CLEARED (verified fixed b"
-    },
-    "zippy:e7cbb740e64a": {
-      "char": "zippy",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CLEARED (verified): no sk"
-    },
-    "zippy:045de27163d3": {
-      "char": "zippy",
-      "class": "hair-nyquist",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED (re-run this roun"
-    },
-    "zippy:59529d94f5d5": {
-      "char": "zippy",
-      "class": "proportions",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED: forearms remain "
-    },
-    "zippy:f4d47ea58362": {
-      "char": "zippy",
-      "class": "sheared-edges",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: NEW minor, examined at 8x"
-    },
-    "zippy:4cde6353e6f5": {
-      "char": "zippy",
-      "class": "interpenetration",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: NEW minor: the headband r"
-    },
-    "zippy:84a048ea6477": {
-      "char": "zippy",
-      "class": "other",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: NEW trivial: a single pin"
-    },
-    "zippy:6725ea98a9e9": {
-      "char": "zippy",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: NON-DEFECT (recorded, kee"
-    },
-    "zippy:a9febc2612d8": {
-      "char": "zippy",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CLEARED (re-verified, do "
-    },
-    "zippy:871994fa8d71": {
-      "char": "zippy",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CLEARED (re-verified, do "
-    },
-    "zippy:22da5c68188c": {
-      "char": "zippy",
-      "class": "material-light",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED cosmetic non-fix "
-    },
-    "zippy:bef9b78a31f9": {
-      "char": "zippy",
-      "class": "evidence",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED as recorded (not "
-    },
-    "zippy:445401bdb299": {
-      "char": "zippy",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: INSTRUMENT CAVEAT (for th"
-    },
-    "zippy:14ef739121a9": {
-      "char": "zippy",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: MEASURED, not a sculpt fi"
-    },
     "diva:2cc928e18d0a": {
       "char": "diva",
       "class": "no-defect-note",
@@ -2784,6 +2684,66 @@
       "char": "calls_shot",
       "class": "face-atlas",
       "excerpt": "Eyes are almond with pointed corners and a dull off-white sclera (187,188,16"
+    },
+    "zippy:87e551983d72": {
+      "char": "zippy",
+      "class": "other",
+      "excerpt": "HIJAB: The neck pinch makes a light-bulb. The wrap narrows hard under the ch"
+    },
+    "zippy:079f97eb9c02": {
+      "char": "zippy",
+      "class": "other",
+      "excerpt": "HIJAB: Neck gathers still read as stacked horizontal rings (3 ridges), i.e. "
+    },
+    "zippy:95ea05b61b0d": {
+      "char": "zippy",
+      "class": "other",
+      "excerpt": "HIJAB: Crown lip in three-quarter and profile. From the front the crown is n"
+    },
+    "zippy:fe1166de6b74": {
+      "char": "zippy",
+      "class": "other",
+      "excerpt": "HIJAB: Skin-coloured dot on the forehead band, her left side, about 5px, in "
+    },
+    "zippy:81a7dd3a78cc": {
+      "char": "zippy",
+      "class": "other",
+      "excerpt": "HIJAB: A sliver of bare skin remains between the band's outer end and the cl"
+    },
+    "zippy:2c3d56d009bc": {
+      "char": "zippy",
+      "class": "material-light",
+      "excerpt": "HIJAB: Cloth has no drape. The surface is a uniform glossy shell; the sheet "
+    },
+    "zippy:313e59c01f58": {
+      "char": "zippy",
+      "class": "other",
+      "excerpt": "HIJAB: The band's lower edge is a faceted trapezoid from the front (straight"
+    },
+    "zippy:74aec81cacfa": {
+      "char": "zippy",
+      "class": "decal-not-form",
+      "excerpt": "BODY: Shoes. Each toe has a large cream cap with jagged navy triangular wedg"
+    },
+    "zippy:c4de8d0d09a8": {
+      "char": "zippy",
+      "class": "material-light",
+      "excerpt": "BODY: Face is a different girl from the sheet. Skin renders orange-brown whe"
+    },
+    "zippy:762e73d5d4c5": {
+      "char": "zippy",
+      "class": "hems-cuffs",
+      "excerpt": "BODY: Shorts are a navy ring with a cream bottom hem; the dolphin cut (white"
+    },
+    "zippy:85d4bf9b3752": {
+      "char": "zippy",
+      "class": "proportions",
+      "excerpt": "BODY: Limbs are thin near-parallel tubes; the sheet's arms and legs are thic"
+    },
+    "zippy:5b56e9b7ba84": {
+      "char": "zippy",
+      "class": "hems-cuffs",
+      "excerpt": "BODY: Tee has roughly nine narrow stripes where the sheet has about five wid"
     }
   }
 }

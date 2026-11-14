@@ -78,7 +78,7 @@ const GOVERNED = [
   { id: 'chip', script: 'sculpt-chip-source.py' },
   { id: 'bend_it', script: 'sculpt-bendy-bao-source.py' },
   { id: 'flash', script: 'sculpt-flash-gordon-jr-source.py' },
-  { id: 'zippy', script: 'sculpt-zippy-source.py' },
+  { id: 'zippy', script: 'sculpt-fatou-source.py' },
   { id: 'diva', script: 'sculpt-dazzle-source.py' },
   { id: 'noodle', script: 'sculpt-noodle-source.py' },
   { id: 'turbo', script: 'sculpt-turbo-source.py' },
