@@ -213,7 +213,7 @@ export const FACE_SPECS = {
     // fitted to browY/eyeY put both features ~1.7% of head height high once the
     // mouth was corrected. Measured on the board: brow 34.9% and eye 54.9%
     // against the turnaround's 36.7% and 56.5%, at ~0.85% of head per cell.
-    eyeY: 54,
+    eyeY: 58,
     // Thick and even, tapering less: his brows are the boldest mark on a face
     // with no hair to frame it.
     // Thinner and longer, and LEVEL. The concept draws a thin gently-arched

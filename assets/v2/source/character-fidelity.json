@@ -306,59 +306,66 @@
   },
   "tank": {
    "status": "needs-polish",
-   "evidence": "tank-fidelity-review.png",
+   "evidence": "sonny-fidelity-review.png",
    "categories": {
     "frontProfileSilhouette": {
      "label": "front/profile silhouette",
      "score": 3,
-     "note": "Runtime hero/run/swing: the bald round head, purple tee and dark shorts read as Tank, but the tee hangs nearly to the crotch so only a short band of shorts shows, where the concept's boxy tee stops at the hip over clearly visible knee-length shorts. Board bind stance is wide (ankle daylight 24.1 vs 0.00, OFF tol 12), and the profile tee is a smooth bell with butt-joined sleeves."
+     "note": "Three-quarter and side views are the strongest: sonny-runtime-hero.png (figure x425-600, y165-680) has a real forward belly with the chest plate riding on it and the backwards brim behind the nape (x465-482, y232-250). The front is still not the sheet. In sonny-runtime-face-grin.png (figure x385-680, y165-660) the outline is head, visible neck step, smooth purple barrel, and two thin conical arms held clear of the body in an A, tapering to points at (390, 480) and (672, 480). The sheet's front outline is broad sloped shoulders, upper arms as thick as the thighs resting against the torso, big mitt hands, and gear breaking the outline at shoulders and knees. Nothing breaks the delivered outline: there are no shoulder caps at all in this build and the knee caps are hidden behind the shorts hem from the front. sonny-front-apose-review.png confirms the shape: a head on a barrel with stick arms. Recognisable as a round kid, not as this kid."
     },
     "headBodyProportions": {
      "label": "head/body proportions",
      "score": 3,
-     "note": "Head height 26.2% vs 27.6% and head w:h 1.10 vs 1.12 are in tolerance; visible face right of centre is OFF (49.4 vs 40.8, tol 6). Joints read connected in run and swing; heavy build reads but the short legs under a long tee make him look shorter-legged than the drawing."
+     "note": "The instrument passes the head (height 31.2% concept vs 29.8% delivered; width:height 1.14 vs 1.13). What it cannot see is still wrong. Head shape: the sheet's head is a wide jowly pear with cheeks wider than the cranium and no neck; the delivered head (grin capture x435-570, y180-390) is a flat-sided box with rounded corners and no cheek mass, on a distinct purple neck collar (grin x480-545, y385-410; hero x505-560, y315-345). Arms: roughly half the sheet's thickness, tapering continuously from sleeve to a tiny hand with three spike fingers (run capture x560-580, y385-410; grin x385-400, y470-485). Legs are short and stocky, which is right, but bare thigh shows between shorts and guard in the swing (x445-520, y560-640) where the sheet's shorts reach the knee cap. Heavy in the middle, slight in the limbs."
     },
     "hairMass": {
      "label": "hair mass",
-     "score": null,
-     "note": "Not applicable: Tank is bald."
+     "score": 3,
+     "note": "The cap is dark, present and backwards; the brim shows behind the head in the hero (x465-482, y232-250) and clearly in the run (x437-470, y222-240). That key read lands in side and three-quarter views. Defects: (1) the hem is a dead-straight horizontal cut across the forehead (grin x447-563, y208-212) that flares out past the skull like an upturned bowl, with a lip overhanging the temple in the hero (x612-628, y195-215) and the run (x570-595, y150-170); the sheet's cap hugs the head and dips behind the ears. (2) The dome outline is visibly polygonal in every capture (hero x480-620, y165-200). (3) It rides high, leaving a tall bare forehead above the brows. (4) The brim is a thin flat blade, and in the hero it is only a small stub. From the front, with the brim hidden, it reads as a bowl haircut or helmet liner, not a cap."
     },
     "clothingConstruction": {
      "label": "clothing construction",
-     "score": 3,
-     "note": "Tee has a crew collar roll, rolled sleeve cuffs and a hem band (hero crop 420,500 @4x); shorts have a hem; socks have a team-mask roll top (TEAM_MASK D8D2C6 on SOCK_TOP_Z rows — extent judged, not colour). But the shoe's navy side panel renders as stair-stepped vertex-colour jaggies (hero hem crop @4x), and the purple sleeve shade is a value band only."
+     "score": 2,
+     "note": "Tee, shorts and shoe volumes are sound. The gear is still well short of the sheet. Chest protector: now a single bib on the belly (grin x460-600, y460-600 in the capture; cream band widest at top and bottom) with ridges rendered as soft blurred stripes, no segment breaks, and NO shoulder caps at all, where the sheet's broad piped shoulder pads are half the gear's character. Two small dark ticks at the top corners (grin x473-482, y460-475 and x585-595, y460-475; hero x545-560, y385-405) are all that suggests a harness; they read as stray spikes, and no capture shows the back, so the Y-harness and waist strap are unverified. The plate behaves better in motion than before: in sonny-runtime-swing.png the arms pass in front of it without visible penetration, and in the run it stays on the belly, though its lower edge still stands slightly proud (run x545-610, y390-425). Shin guards: from the front they are plain dark bands (grin x460-590, y555-600) with no piping, segments or straps, and the knee caps are hidden. In the run and swing the knee caps appear as dark faceted balls (run x595-625, y515-555 and x455-490, y575-605; swing x505-545, y575-625 and x555-590, y605-650) that are not joined to the shin plate; bare orange leg shows between ball and plate on the swing's far leg, so they read as balls stuck on the knees. The shin plate is a front half-shell whose side shows a pale olive-cream face (hero x475-500, y590-620; swing x485-520, y635-685) so each guard reads two-tone, half pale sleeve, half slate. Shoes: correct cream and chunky, but carry navy slashes and triangular notches on the toes (grin x447-460, y655-672 and x580-592, y655-672; hero x545-580, y598-608; run x645-690, y567-575) that look like UV bleed, giving a hoof-like toe in the front view; no laces, no second tan tone. Shorts lack the cream side stripe. Hands show a jagged pointed flap at swing contact (swing x510-530, y425-435). No see-through holes found; a thin pale sliver runs down the inside of the ear in the hero (x485-492, y262-300), likely a highlight, not verified as a gap."
     },
     "faceExpressionRead": {
      "label": "face/expression read",
-     "score": 4,
-     "note": "Brows, half-lidded eyes and mouth read clearly; angry and grin are strong at card distance, tongue is small. The nose (nose_push) is a faint highlight from the front (face-grin crop 445,150 @4x) and the face carries diagonal flat-shaded bands across forehead and cheeks that read as faceting, so not a 5."
+     "score": 3,
+     "note": "The calm half-lidded look is the sheet's signature and the neutral face keeps it (hero x540-640, y255-320). The four expressions separate at hero size: grin is a closed toothy crescent, cheer an open mouth, tongue an open mouth with a small pink tongue, angry a V brow with a downturned mouth. Tongue vs cheer is the weakest pair; the tongue is a few pixels wide. Against the sheet: brows are thin black arcs where the sheet has thick soft brown brows; there is no cheek volume or smile crease and the nose is a faint highlight ridge rather than a broad button; eyes are small for the face and the features sit in a small cluster on a large blank box. In the front captures the face is noticeably darker than the ears and forehead edge (grin x450-560, y240-390), so the features sit in murk. Skin is a saturated orange, not the sheet's warm brown. On-model for the game, generic for Sonny."
     },
     "heroAndFieldScale": {
      "label": "hero + 40px read",
      "score": 3,
-     "note": "Hero close-up reads as Tank (bald dome + purple + scowl). At 40 px the board strip is a purple block with a skin dot; it survives but the long tee erases the tee/shorts split that is half of his concept read."
+     "note": "Downsampled to 44px tall (hero, grin, run, swing crops): dark cap, brown head, purple body, a dark cream-edged rectangle on the chest, dark lower legs, pale shoes. The chest plate survives and is what says catcher; that is the win. The backwards brim survives only in the run as a one-pixel spur; elsewhere the cap reads as dark hair. Shin guards read as dark socks; knee caps vanish. Big: round from the side, but from the front the thin A-pose arms and neck make him read as an average kid in a bib, not the biggest kid on the field. Verdict: purple kid with a chest protector, plausibly a catcher, not clearly the big one. sonny-fidelity-review.png is now current (it shows this gear build), and its own 3/3/n-a/3/4/3 self-scores are about right except face (I give 3) and clothing (I give 2)."
     }
    },
    "measuredFidelity": {
     "command": "npm run measure:fidelity -- tank",
-    "ranAt": "2026-10-03",
-    "board": "tank-fidelity-review.png",
-    "result": "Measured fidelity — tank\nconcept front view 316x686px   delivered 474x561px\nshoe tones read off the concept: #e3d4c3 and #444c53\n\nmetric                                    concept    delivered  delta     status\n------------------------------------------------------------------------------------\nhead height as % of figure height         27.6       26.2       -1.35     ok\nhead width : head height                  1.12       1.10       -0.01     ok\nthe shoe band's dominant tone, % of the band82.1       84.7       +2.66     ok\nthe shoe band's second tone, % of the band16.3       15.2       -1.07     ok\nthe shoe band's mean saturation (grey cannot pass)21.5       24.8       +3.25     ok\ndaylight between the ankles               0.00       24.1       +24.1     OFF (tol 12)\nvisible face left of centre, % of head width48.3       50.0       +1.66     ok\nvisible face right of centre, % of head width40.8       49.4       +8.62     OFF (tol 6)\nface left/right asymmetry                 0.00       0.62                 ok\n------------------------------------------------------------------------------------\n\n2 metrics outside tolerance.",
+    "ranAt": "2026-11-14",
+    "board": "sonny-fidelity-review.png",
+    "result": "npm run measure:fidelity -- tank (reports as 'sonny'; concept front view 324x621px, delivered 474x561px; shoe tones read off the concept #faede1 and #dbb493): head height as % of figure 31.2 concept vs 29.8 delivered (-1.47, ok); head width:height 1.14 vs 1.13 (-0.01, ok); shoe band dominant tone 46.1% vs 56.6% (+10.5, OFF, tol 8); shoe band second tone 49.7% vs 43.4% (-6.29, ok); shoe band mean saturation 26.2 vs 21.9 (-4.23, OFF, tol 4); daylight between the ankles 0.00 vs 7.46 (+7.46, ok); visible face left of centre 33.0% vs 29.3% of head width (-3.78, ok); right 32.1% vs 29.3% (-2.87, ok); left/right asymmetry 0.00 vs 0.00 (ok). 2 metrics outside tolerance, both the shoe band, unchanged from the previous build. The instrument measures no body width, arm thickness or gear, which is where the visible misses are.",
     "note": "Evidence and board re-captured fresh for the round-31 critic; hairMass abstains (bald)."
    },
    "polishFindings": [
-    "Plate stance (.art-review/shade-real vs shade-null tank-bat_stance@30.png, crop 370,200 200x200 @4x): the underarm shade clearly separates the near purple sleeve's underside from the tee body (3086 px changed, bbox 422,244-502,307) — the strongest improvement of the round, but it is a dark value band with a hard edge at the sleeve hem, not a form.",
-    "Tee length vs concept (runtime-hero, board front): hem sits near the crotch and the shorts show as a short dark band; the turnaround's tee stops at the hip with knee-length shorts clearly visible. This is the largest silhouette gap and also costs the 40 px read.",
-    "Shoe side panel (runtime-hero crop 420,500 200x150 @4x): the navy stripe on the cream upper renders as a stair-stepped, zig-zag vertex-colour boundary — reads as a broken pattern rather than a panel; needs denser rows or a geometric seam at the colour edge.",
-    "Face shading (runtime-face-grin crop 445,150 170x160 @4x): broad diagonal light/dark bands cross forehead, nose and cheeks — flat-shaded facet steps on the skull — and the nose reads only as a faint highlight between the eyes from the front. Visible face right of centre measures OFF (49.4 vs 40.8).",
-    "Bind-pose ankle daylight OFF (24.1 vs 0.00, tol 12): per rubric 6b.4, look at the stance — the concept stands feet nearly together; do not widen the tolerance.",
-    "Catcher squat (.art-review/catch-now2/catcher_squat-tank.png vs catch-before; PITCH crop 250,100 120x140 @3x, side crop 190,340 @3x): partly fixed. Before, the tee fell as one purple tube from the chest to the ground over both knees. Now the hem rides up onto the thigh and the shoe and the dark shorts show under it. But a purple tongue of cloth still hangs between the thigh and the shoe in the PITCH view, and from the side the tee still covers the seat down to the heel. The bare hand shows behind the back as a straight arm held out horizontally with an open palm, not tucked. From PITCH the palm pokes out past the back silhouette at the right. No outline hulls in this capture."
+    "GEAR: Shoulder caps are absent. The sheet's broad cream-piped pads over each shoulder are gone; only two small dark ticks remain at the plate's top corners (sonny-runtime-face-grin.png x473-482 and x585-595, y460-475; hero x545-560, y385-405). Build wide curved pads that overlap the shoulder line and break the front silhouette, joined to the plate.",
+    "GEAR: Knee caps are loose faceted balls, not part of the guard: hidden behind the shorts in the front idle (grin x460-590, y555-600), and in motion they sit apart from the shin plate with bare leg between (sonny-runtime-swing.png x505-590, y575-650; run x595-625, y515-555 and x455-490, y575-605). Make piped oval caps wider than the leg, overlapping the top of the shin plate, visible below the shorts hem in idle.",
+    "GEAR: Shin guard is a front half-shell with a pale olive-cream side face (hero x475-500, y590-620; swing x485-520, y635-685), so each guard reads half pale sleeve, half slate, and from the front it is a plain dark band. Wrap it further round the calf in slate, add thin cream piping, segment lines and the two rear straps.",
+    "BODY: Arms are about half the sheet's thickness and taper to points with three spike fingers (grin x385-450 and x610-680, y330-485; run x560-580, y385-410); hand mesh shows a jagged flap at contact (swing x510-530, y425-435). Thicken upper arm and forearm to near thigh width, build round mitt hands, broaden the shoulders, and rest the idle arms nearer the body.",
+    "BODY: Head is a flat-sided box with no cheeks on a visible neck collar (grin x435-570, y180-410); the sheet has a wide jowly pear head with no neck. Add cheek and jowl mass below the eye line, bury the neck, lower the tee collar.",
+    "GEAR: Cap hem is a dead-straight cut flaring past the skull like a bowl (grin x447-563, y208-212; hero lip x612-628, y195-215), rides high, and the dome is faceted; from the front it reads as a bowl haircut. Pull the hem in, curve it down behind the ears, lower it toward the brows, smooth the dome, thicken and curve the brim.",
+    "GEAR: Shoes carry navy slashes and triangular notches on the toes (grin x447-460 and x580-592, y655-672; hero x545-580, y598-608; run x645-690, y567-575) and fail measure:fidelity on dominant tone (+10.5, tol 8) and saturation (-4.23, tol 4). Clean the UV bleed, add the tan sole/panel tone and lace detail.",
+    "GEAR: Chest plate is a single bib with blurred shading stripes for ridges and an uneven cream band (wide top and bottom); the sheet has thin even piping round a segmented, deeply ridged pad that wraps the flanks. Lower edge still stands slightly proud in the run (x545-610, y390-425).",
+    "FACE: Brows are thin black arcs; the sheet's thick soft brown brows are a signature. Thicken and warm them, widen the nose into a button, enlarge the eyes, and add cheek/smile-crease shading.",
+    "FACE: Front-lit face is darker than its own ears and edge (grin x450-560, y240-390) and skin is saturated orange against the sheet's warm brown; check face atlas tint vs body albedo under game light.",
+    "FACE: Tongue expression is close to cheer at hero size; the tongue is only a few pixels wide (sonny-runtime-face-tongue.png mouth about x520-545, y330-345). Enlarge it past the lower lip.",
+    "GEAR: Shorts lack the cream side stripe and stop short of the knee, leaving bare thigh above the guard in the swing (x445-520, y560-640).",
+    "GEAR: Back harness (Y-strap, waist strap) appears in no runtime capture and remains unverified; capture a back view."
    ],
-   "scoredBoardSha256": "373fd63a9a29109f34ca5ca475be008e9427c0b352db8117fac7038088be63d2",
-   "heroEvidence": "tank-runtime-hero.png",
+   "scoredBoardSha256": "0e9ebf721e6f8cd901a290113c033e50569735dc9c1a2e6342c5bfc656e9d4d8",
+   "heroEvidence": "sonny-runtime-hero.png",
    "animationEvidence": [
-    "tank-runtime-run.png",
-    "tank-runtime-swing.png"
+    "sonny-runtime-run.png",
+    "sonny-runtime-swing.png"
    ]
   },
   "mimi_mash": {

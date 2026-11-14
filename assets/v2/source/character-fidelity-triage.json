@@ -2460,36 +2460,6 @@
       "class": "stance",
       "excerpt": "Catcher squat, bare hand (.art-review/catch-now2/catcher_squat-moose.png vs catc"
     },
-    "tank:7dafdabb615b": {
-      "char": "tank",
-      "class": "no-defect-note",
-      "excerpt": "Plate stance (.art-review/shade-real vs shade-null tank-bat_stance@30.png, crop "
-    },
-    "tank:97b71903d4d5": {
-      "char": "tank",
-      "class": "proportions",
-      "excerpt": "Tee length vs concept (runtime-hero, board front): hem sits near the crotch and "
-    },
-    "tank:a23b10f7a7fa": {
-      "char": "tank",
-      "class": "sheared-edges",
-      "excerpt": "Shoe side panel (runtime-hero crop 420,500 200x150 @4x): the navy stripe on the "
-    },
-    "tank:5ac88e48584f": {
-      "char": "tank",
-      "class": "material-light",
-      "excerpt": "Face shading (runtime-face-grin crop 445,150 170x160 @4x): broad diagonal light/"
-    },
-    "tank:e0c00411cd88": {
-      "char": "tank",
-      "class": "stance",
-      "excerpt": "Bind-pose ankle daylight OFF (24.1 vs 0.00, tol 12): per rubric 6b.4, look at th"
-    },
-    "tank:4affc1df35e3": {
-      "char": "tank",
-      "class": "stance",
-      "excerpt": "Catcher squat (.art-review/catch-now2/catcher_squat-tank.png vs catch-before; PI"
-    },
     "grizz:0e9f2185a478": {
       "char": "grizz",
       "class": "hair-nyquist",
@@ -2739,6 +2709,71 @@
       "char": "big_lou",
       "class": "face-atlas",
       "excerpt": "FACE: Profile is still a flat vertical plane (guri-profile-review.png, guri-"
+    },
+    "tank:a091780c0664": {
+      "char": "tank",
+      "class": "other",
+      "excerpt": "GEAR: Shoulder caps are absent. The sheet's broad cream-piped pads over each"
+    },
+    "tank:9c4d0004098b": {
+      "char": "tank",
+      "class": "proportions",
+      "excerpt": "GEAR: Knee caps are loose faceted balls, not part of the guard: hidden behin"
+    },
+    "tank:e3d0320152bc": {
+      "char": "tank",
+      "class": "other",
+      "excerpt": "GEAR: Shin guard is a front half-shell with a pale olive-cream side face (he"
+    },
+    "tank:950df05885f3": {
+      "char": "tank",
+      "class": "proportions",
+      "excerpt": "BODY: Arms are about half the sheet's thickness and taper to points with thr"
+    },
+    "tank:c9b003cc0500": {
+      "char": "tank",
+      "class": "proportions",
+      "excerpt": "BODY: Head is a flat-sided box with no cheeks on a visible neck collar (grin"
+    },
+    "tank:2c74fff6a517": {
+      "char": "tank",
+      "class": "other",
+      "excerpt": "GEAR: Cap hem is a dead-straight cut flaring past the skull like a bowl (gri"
+    },
+    "tank:62a79065e0c9": {
+      "char": "tank",
+      "class": "other",
+      "excerpt": "GEAR: Shoes carry navy slashes and triangular notches on the toes (grin x447"
+    },
+    "tank:39f581df118d": {
+      "char": "tank",
+      "class": "other",
+      "excerpt": "GEAR: Chest plate is a single bib with blurred shading stripes for ridges an"
+    },
+    "tank:e276dae07073": {
+      "char": "tank",
+      "class": "face-atlas",
+      "excerpt": "FACE: Brows are thin black arcs; the sheet's thick soft brown brows are a si"
+    },
+    "tank:48b7a85afc88": {
+      "char": "tank",
+      "class": "face-atlas",
+      "excerpt": "FACE: Front-lit face is darker than its own ears and edge (grin x450-560, y2"
+    },
+    "tank:4260ae7f2be2": {
+      "char": "tank",
+      "class": "face-atlas",
+      "excerpt": "FACE: Tongue expression is close to cheer at hero size; the tongue is only a"
+    },
+    "tank:6916bc191877": {
+      "char": "tank",
+      "class": "other",
+      "excerpt": "GEAR: Shorts lack the cream side stripe and stop short of the knee, leaving "
+    },
+    "tank:8db662a4ed32": {
+      "char": "tank",
+      "class": "evidence",
+      "excerpt": "GEAR: Back harness (Y-strap, waist strap) appears in no runtime capture and "
     }
   }
 }
