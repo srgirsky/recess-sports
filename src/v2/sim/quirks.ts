@@ -23,7 +23,7 @@
 //      makes (`wobblerKind`) is taken off its own labelled fork, so nobody
 //      else's stream can see it.
 //
-// What is here so far — the mound and the plate:
+// What each kid does:
 //
 //   one_curve      Lu        the curve is her whole menu
 //   the_loop       Ezra      no fastball; a CPU batter always goes after his curve
@@ -35,9 +35,28 @@
 //   never_swings   Winnie    takes every pitch, behind the smallest zone around
 //   always_bunts   Rafi      every swing of his is a bunt
 //   clutch_*       Nora, Marcus, Yui   a slugger's bat, in their moment only
+//   moonshot       Mars      a perfectly timed ball leaves every park
+//   foul_back      Josie     anything short of square is likelier ticked foul
+//   same_spot      Hattie    every ball she puts in play is the same flare
+//   eyes_closed    Yaz       offers at everything, reads nothing, hits it HARD
 //
-// The rest of the sheet (the runners, the fielders, Mars, Sam, Josie, Hattie,
-// Yaz, Jay) is not built in this tree yet; `docs/world1/cast-scope.md` has the
+//   green_light    Zaya      goes when SHE judges it, order or no order, and
+//                            is never late off the pitcher's first move
+//   never_tagged   Ollie     the tag misses: no caught-stealing, no pickoff
+//
+//   brick_house    Sonny     never drops one, and reaches a foot further
+//   sure_hands     Greta     never drops one
+//   fence_arm      Rudy      the strongest arm the scale has, wherever she stands
+//   plays_alone    Amir      the same arm
+//   wrong_base     Roya      a third of her throws go to a bag nobody chose
+//
+//   hit_by_pitch   Sam       never protects; a ball he takes far enough inside hits him
+//   heater         Jay       his first fastball of each half inning is the fireball
+//
+// And two rules about a TEAM: siblings drafted together are each a little
+// better (`familyLookup`), and three kids stand where their story says
+// (`storyDefence`). Not built here: Amir's range (see `storyFielder`) and
+// Jay refusing relief (this game has no relief to refuse); `docs/world1/cast-scope.md` has the
 // list. The numbers are `params.STORY`, and almost none of them is sourced.
 // ---------------------------------------------------------------------------
 
@@ -52,6 +71,11 @@ import {
   type PitchKind,
 } from './pitch';
 import type { Rng } from './rng';
+import type { LaunchSpec } from './launch';
+import type { FielderState } from './fielders';
+import type { DefencePlan } from './lineup';
+import type { PositionId } from './field';
+import { zoneBandFt, zoneHalfWidthFt } from './athletes';
 
 const has = (kid: Character, q: Quirk): boolean => kid.quirk === q;
 
@@ -109,11 +133,20 @@ const VELOCITY: Delivery = {
  * for more speed moves the miss around without shortening the flight. The
  * fastball solves cleanly at every multiplier up to the fireball's.
  */
-export function deliveryFor(pitcher: Character, kind: PitchKind): Delivery | undefined {
+export function deliveryFor(pitcher: Character, kind: PitchKind, heaterReady = false): Delivery | undefined {
   if (isSpecialPitch(kind)) return undefined;
+  if (heaterReady && throwsHeater(pitcher) && kind === 'fastball') return HEATER;
   if (has(pitcher, 'rainbow')) return RAINBOW;
   if (has(pitcher, 'velocity') && kind === 'fastball') return VELOCITY;
   return undefined;
+}
+
+/** Jay's Heater is the fireball's flight, free: one a half inning (`Moment.heaterReady`). */
+const HEATER: Delivery = { def: SPECIAL_PITCHES.fireball, tag: 'heater' };
+
+/** Does this arm have a Heater in it? The half inning's owner tracks whether it is spent. */
+export function throwsHeater(pitcher: Character): boolean {
+  return has(pitcher, 'heater');
 }
 
 /** How many times his own arm's error this kid's release misses by. */
@@ -169,6 +202,8 @@ export interface Moment {
   bases: readonly [boolean, boolean, boolean];
   /** The batting side's runs minus the other side's, as this pitch is thrown. */
   lead: number;
+  /** The pitcher has not thrown his Heater this half inning (`throwsHeater`). */
+  heaterReady?: boolean;
 }
 
 /** Is this the moment this Clutch kid shows up for? False for everyone else. */
@@ -194,4 +229,209 @@ export function clutchFiring(batter: Character, m: Moment): boolean {
 export function batterInMoment(batter: Character, m: Moment): Character {
   if (!clutchFiring(batter, m)) return batter;
   return { ...batter, stats: { ...batter.stats, power: Math.max(batter.stats.power, STORY.CLUTCH_POWER) } };
+}
+
+/**
+ * Yaz swings with her eyes closed. She offers at everything, reads the ball
+ * like the worst eye on the roster, and what she does meet she meets with the
+ * biggest bat on it. Both halves ride the stats the plate model already
+ * reads — her judgement and timing off `contact`, her bat speed off `power` —
+ * so nothing about a swing is decided here.
+ */
+export function swingsBlind(batter: Character): boolean {
+  return has(batter, 'eyes_closed');
+}
+
+/** The kid as she swings with her eyes shut. The same object for everyone else. */
+export function blindBatter(batter: Character): Character {
+  if (!has(batter, 'eyes_closed')) return batter;
+  return {
+    ...batter,
+    stats: {
+      ...batter.stats,
+      contact: STORY.BLIND.CONTACT,
+      power: Math.max(batter.stats.power, STORY.BLIND.POWER),
+    },
+  };
+}
+
+/**
+ * Josie's foul-back window, or undefined for a kid whose glancing contact is
+ * judged by `contact.ts`'s own pair.
+ */
+export function foulBack(batter: Character): { below: number; chance: number } | undefined {
+  return has(batter, 'foul_back') ? { below: STORY.FOUL_BACK.BELOW, chance: STORY.FOUL_BACK.CHANCE } : undefined;
+}
+
+/**
+ * The batted ball as this kid's story sends it. `perfect` is whether the swing
+ * sat inside the perfect timing window.
+ *
+ * These two are the only places the story states where a ball GOES rather
+ * than how it was hit, because that is what each sheet line says: Hattie's
+ * lands in the same place every time, and Mars's perfect swing is gone
+ * whatever was thrown. Everything after the launch — the flight, the fence,
+ * whether anybody catches it — is still the play's.
+ */
+export function storyLaunch(batter: Character, launch: LaunchSpec, perfect: boolean): LaunchSpec {
+  if (has(batter, 'same_spot')) {
+    const s = STORY.SAME_SPOT;
+    return { ...launch, exitVelocityFts: s.EXIT_FTS, launchAngleDeg: s.ANGLE_DEG, sprayDeg: s.SPRAY_DEG, spinRpm: s.SPIN_RPM };
+  }
+  if (has(batter, 'moonshot') && perfect) {
+    const m = STORY.MOONSHOT;
+    const spray = launch.sprayDeg > m.SPRAY_MAX_DEG ? m.SPRAY_MAX_DEG : launch.sprayDeg < -m.SPRAY_MAX_DEG ? -m.SPRAY_MAX_DEG : launch.sprayDeg;
+    return { ...launch, exitVelocityFts: m.EXIT_FTS, launchAngleDeg: m.ANGLE_DEG, sprayDeg: spray, spinRpm: m.SPIN_RPM };
+  }
+  return launch;
+}
+
+// --- The bases --------------------------------------------------------------
+
+/** Zaya steals when she feels like it: her own judgement runs even for a person's bench. */
+export function hasGreenLight(runner: Character): boolean {
+  return has(runner, 'green_light');
+}
+
+/**
+ * The latest this runner ever leaves, seconds after the pitcher's first move —
+ * or undefined for a kid whose jump is whatever he drew. Zaya's is zero: she
+ * may still be early, never late. A cap on the race's own error term, so her
+ * edge is in the race and not on its result.
+ */
+export function jumpCapSec(runner: Character): number | undefined {
+  return has(runner, 'green_light') ? 0 : undefined;
+}
+
+/** Ollie has never been tagged out. A race he loses at a bag, he wins anyway. */
+export function slipsTheTag(runner: Character): boolean {
+  return has(runner, 'never_tagged');
+}
+
+// --- The field --------------------------------------------------------------
+
+/**
+ * Dress one fielder in his story, at the start of a play. A kid without a
+ * fielding story is not touched at all.
+ *
+ * Applied where the juice spends are — on the play's own copy, after
+ * `makeFielder` — so `makeFielder` stays the one place a stat becomes a
+ * fielder. Amir's "covers the ground himself" is deliberately NOT here: his
+ * legs in the field are his legs on the bases (`purity.lint.test.js` § one kid
+ * speed), and a second speed for one of them is the drift that lint exists to
+ * stop.
+ */
+export function storyFielder(f: FielderState, kid: Character): void {
+  if (has(kid, 'brick_house')) {
+    f.sure = true;
+    f.reachBonusFt += STORY.BRICK_HOUSE_REACH_FT;
+  } else if (has(kid, 'sure_hands')) {
+    f.sure = true;
+  } else if (has(kid, 'fence_arm') || has(kid, 'plays_alone')) {
+    f.arm = Math.max(f.arm, STORY.CANNON_ARM);
+  } else if (has(kid, 'wrong_base')) {
+    f.strays = true;
+  }
+}
+
+/**
+ * Roya's throw: the bag she was asked for, or — some of the time — the next
+ * one round that her arm can reach. `reaches` is the play's own range test.
+ * Call it only for a fielder who `strays`, with a fork nothing else reads.
+ */
+export function strayBase(base: 1 | 2 | 3 | 4, rng: Rng, reaches: (b: 1 | 2 | 3 | 4) => boolean): 1 | 2 | 3 | 4 {
+  if (!(rng() < STORY.WRONG_BASE)) return base;
+  for (let i = 1; i <= 3; i++) {
+    const other = ((((base - 1 + i) % 4) + 1) as 1 | 2 | 3 | 4);
+    if (reaches(other)) return other;
+  }
+  return base;
+}
+
+/** Sam does not protect the plate: with two strikes he still offers only at what he reads as one. */
+export function neverProtects(batter: Character): boolean {
+  return has(batter, 'hit_by_pitch');
+}
+
+/**
+ * Did a ball this batter TOOK hit him? Sam leans in over the plate, so a ball
+ * crossing far enough inside — on a right-handed batter's side, which is the
+ * third-base side, negative x — between his knees and his shoulders has
+ * nowhere to go but him. Where the ball crossed is the trajectory's own fact;
+ * nothing is rolled.
+ */
+export function hitByPitch(batter: Character, crossing: { x: number; y: number }): boolean {
+  if (!has(batter, 'hit_by_pitch')) return false;
+  const [lo, hi] = zoneBandFt();
+  return crossing.x < -(zoneHalfWidthFt() + STORY.LEAN_IN_FT) && crossing.y >= lo && crossing.y <= hi + (hi - lo) / 2;
+}
+
+// --- The team ---------------------------------------------------------------
+
+/** The cast sheet's two sets of siblings, by roster id. */
+export const SIBLINGS: ReadonlyArray<readonly [string, string]> = [
+  ['diva', 'flash'], // Roz & Rudy Achterberg
+  ['peaches', 'bend_it'], // Hattie & Ezra Bloom
+];
+
+/**
+ * The same lookup, with siblings who were drafted onto the same nine each one
+ * better at every stat. Applied to the CHARACTER, before any stat becomes a
+ * physical quantity, so a sister's legs are the same legs on the bases and in
+ * the field and the one-kid-speed rule is not touched. Every other kid comes
+ * back as the object the roster holds.
+ */
+export function familyLookup(
+  lookup: (id: string) => Character,
+  teams: ReadonlyArray<readonly string[]>
+): (id: string) => Character {
+  const boosted = new Map<string, Character>();
+  const up = (n: number) => Math.min(10, n + STORY.SIBLING_BONUS);
+  for (const [a, b] of SIBLINGS) {
+    if (!teams.some((t) => t.includes(a) && t.includes(b))) continue;
+    for (const id of [a, b]) {
+      const kid = lookup(id);
+      const s = kid.stats;
+      boosted.set(id, {
+        ...kid,
+        stats: { contact: up(s.contact), power: up(s.power), speed: up(s.speed), pitching: up(s.pitching), fielding: up(s.fielding) },
+      });
+    }
+  }
+  if (boosted.size === 0) return lookup;
+  return (id) => boosted.get(id) ?? lookup(id);
+}
+
+/** Where a kid's story says they stand, most particular claim first. */
+const STORY_POSITIONS: ReadonlyArray<{ quirk: Quirk; spots: readonly PositionId[] }> = [
+  { quirk: 'brick_house', spots: ['C'] }, // Sonny is the catcher. He is wearing the gear.
+  { quirk: 'plays_alone', spots: ['CF'] }, // Amir plays centre field alone.
+  { quirk: 'fence_arm', spots: ['RF', 'LF', 'CF'] }, // Rudy throws them out from the fence.
+];
+
+/**
+ * The same defence, with the kids whose story names a position standing in
+ * it. Each trades places with whoever was there; the pitcher is never moved.
+ * A plan with none of these kids out of place is the object it was.
+ */
+export function storyDefence(plan: DefencePlan, lookup: (id: string) => Character): DefencePlan {
+  let positions = plan.positions;
+  const settled = new Set<string>();
+  for (const { quirk, spots } of STORY_POSITIONS) {
+    for (const id of Object.keys(plan.positions)) {
+      if (!has(lookup(id), quirk) || id === plan.pitcherId) continue;
+      if (spots.includes(positions[id])) {
+        settled.add(id);
+        continue;
+      }
+      for (const spot of spots) {
+        const holder = Object.keys(positions).find((k) => positions[k] === spot);
+        if (!holder || settled.has(holder) || holder === plan.pitcherId) continue;
+        positions = { ...positions, [id]: spot, [holder]: positions[id] };
+        settled.add(id);
+        break;
+      }
+    }
+  }
+  return positions === plan.positions ? plan : { ...plan, positions };
 }

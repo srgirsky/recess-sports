@@ -1133,6 +1133,40 @@ export const STORY = {
    * range the release solve is known to land: the fireball is 1.25.
    */
   VELOCITY_SPEED_MULT: 1.12,
+  /**
+   * Mars's perfectly timed ball. The exit speed is the slowest round number
+   * that clears every venue's fence at this angle across the whole spray it
+   * may take (swept: 100 leaves one park standing, 110 none); `quirks.test.ts`
+   * asserts the clearing, not the number.
+   */
+  MOONSHOT: { EXIT_FTS: 112, ANGLE_DEG: 30, SPIN_RPM: 1800, SPRAY_MAX_DEG: 35 },
+  /**
+   * Josie's foul-backs: how square contact must be before it stops being a
+   * candidate tick, and how often a candidate is one. Everyone else's pair is
+   * `contact.ts`'s 0.18 and 0.45.
+   */
+  FOUL_BACK: { BELOW: 0.45, CHANCE: 0.6 },
+  /** Hattie's one spot: a flare that comes down about ninety feet out, just right of second. */
+  SAME_SPOT: { EXIT_FTS: 62, ANGLE_DEG: 22, SPRAY_DEG: 12, SPIN_RPM: 1200 },
+  /**
+   * How far inside the zone's edge a taken ball must cross to hit Sam, ft. He
+   * crowds the plate: a ball this far in has nowhere else to go.
+   */
+  LEAN_IN_FT: 0.35,
+  /** What siblings drafted onto the same nine each gain, at every stat (capped at 10). */
+  SIBLING_BONUS: 1,
+  /** Feet added to Sonny's reach: the golden glove's bonus, worn all game. */
+  BRICK_HOUSE_REACH_FT: 1.0,
+  /**
+   * Rudy's and Amir's arm in the field, on the 1-10 scale. The top of the
+   * scale and not past it: `throwSpeedFts` is anchored on a published band,
+   * and an arm stronger than its ceiling would be a number with no source.
+   */
+  CANNON_ARM: 10,
+  /** How often a throw of Roya's goes to a bag nobody chose. */
+  WRONG_BASE: 0.35,
+  /** Yaz, eyes closed: the contact stat she reads the ball with, and the power she hits it with. */
+  BLIND: { CONTACT: 1, POWER: 10 },
 } as const;
 
 /**

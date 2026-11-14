@@ -115,8 +115,8 @@ save those for the end.
 
 ### Story behaviours (`?features=storyKids`)
 
-Draft so the kids in question are on the field: Lu, Ezra, Musa, Kwame, Dev,
-Bao or Roz pitching; Winnie, Rafi, Nora, Marcus or Yui batting.
+Draft so the kids in question are on the field. The easiest to see: Lu, Bao
+or Musa pitching; Winnie, Rafi, Hattie, Mars or Yaz batting; Zaya on base.
 
 - Did they notice a kid doing something the others do not, and could they say
   what (the slow one, the one who never swings, the one who only bunts)?

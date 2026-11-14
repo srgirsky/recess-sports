@@ -156,15 +156,17 @@ numbers are guesses: the cast sheet cites an Archetypes document
 this repo has never held. What is still unbuilt is listed in
 `docs/world1/cast-scope.md`.
 
-**The same behaviours, begun in the 3D game.** November 2026: twelve of the
-kids (seven arms, five bats) play to their stories in v2 behind
+**The same behaviours, in the 3D game's sim.** November 2026: all twenty-five
+kids, the sibling bonus and the story positions play in v2 behind
 `features.storyKids`, off by default. v2 could not import v1's module (it is
 not one of the sim's five) and should not have copied it: v1 states outcomes
 (a travel-time multiplier, a band bump, a ball chance) and v2 derives them, so
 `src/v2/sim/quirks.ts` changes only what the plate model takes as input: the
 menu an arm picks from, the definition a pitch flies with, the size of the
 release error, whether a batter offers, the zone he is called against, his
-power this pitch. It sits behind a flag because almost every number is a guess
+power this pitch, and later a fielder's hands, reach and arm and a runner's
+jump. Two kids are the exception because their sheet line is about where the
+ball goes: Hattie's lands in one place and Mars's perfect swing is gone. It sits behind a flag because almost every number is a guess
 and turning them on moves every measured plate record; the scope page has the
 per-kid table and what is still missing.
 

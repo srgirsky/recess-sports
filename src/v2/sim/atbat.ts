@@ -41,7 +41,7 @@
 // ---------------------------------------------------------------------------
 
 import type { Character } from '../../data/types';
-import { ATBAT, resolvePlate, type PlateParams } from './params';
+import { ATBAT, BAT, resolvePlate, type PlateParams } from './params';
 import {
   pitchScatterFt,
   plateJudgementFt,
@@ -67,12 +67,17 @@ import type { BallState } from './flight';
 import {
   alwaysBunts,
   batterInMoment,
+  blindBatter,
   deliveryFor,
+  foulBack,
   mustChase,
+  neverProtects,
   neverSwings,
   pitchMenu,
   pitchOnMenu,
   scatterMult as storyScatterMult,
+  storyLaunch,
+  swingsBlind,
   throwsWobbler,
   wobblerKind,
   zoneScale,
@@ -345,7 +350,7 @@ export function throwPitch(spec: PitchSpec, rng: Rng, human?: PitchPlan): PitchI
     pitchingStat: spec.pitcher.stats.pitching,
     aimHeightFt: plan.aimHeightFt,
     aimLateralFt: plan.aimLateralFt,
-    delivery: spec.story ? deliveryFor(spec.pitcher, plan.kind) : undefined,
+    delivery: spec.story ? deliveryFor(spec.pitcher, plan.kind, spec.story.heaterReady === true) : undefined,
   });
   const miss = rng.fork('execute');
   // ★ A SPECIAL IS A PARAMETER SET, AND THIS IS ITS ONLY OTHER KNOB. The
@@ -392,7 +397,7 @@ export function resolvePitch(
   // value — the same batter object, `false`, a scale of exactly 1 — unless the
   // flag is on AND this kid carries the quirk it reads.
   const story = spec.story;
-  const batter = story ? batterInMoment(spec.batter, story) : spec.batter;
+  const batter = story ? blindBatter(batterInMoment(spec.batter, story)) : spec.batter;
   const bunts = story !== undefined && alwaysBunts(spec.batter);
   const taken = (): PitchResult => {
     const kind = isStrike(crossing, undefined, story ? zoneScale(spec.batter) : 1) ? 'calledStrike' : 'ball';
@@ -418,13 +423,19 @@ export function resolvePitch(
         // one offer, one physics, the rule this closure exists for.
         power: boost?.power ?? false,
         bunt,
+        foulTip: story ? foulBack(spec.batter) : undefined,
       },
       rng.fork('swing')
     );
     const base = { crossing, pitch: pitchKind, travelSec, release: released, timingErrorSec };
     if (swing.kind === 'miss') return { kind: 'swingingStrike', ...base };
     if (swing.kind === 'foulTip') return { kind: 'foulTip', ...base };
-    return { kind: 'inPlay', launch: swing.launch, plateSpeedFts, ...base };
+    // A bunt is a bunt whoever squares: the story's two launches are swings.
+    const launch =
+      story && !bunt
+        ? storyLaunch(spec.batter, swing.launch, Math.abs(timingErrorSec) <= BAT.PERFECT_WINDOW_FRAC * travelSec)
+        : swing.launch;
+    return { kind: 'inPlay', launch, plateSpeedFts, ...base };
   };
 
   if (human) {
@@ -472,9 +483,12 @@ function cpuSwingDecision(
   const { crossing, travelSec } = inFlight;
   // Winnie's bat never moves, so the frame's preview must not say it will.
   if (spec.story && neverSwings(spec.batter)) return null;
-  // The read. One error, in space and in time.
+  // The read. One error, in space and in time. (Yaz reads with her eyes shut:
+  // the same two draws, sized by the worst eye there is.)
+  const blind = spec.story !== undefined && swingsBlind(spec.batter);
+  const reader = blind ? blindBatter(spec.batter) : spec.batter;
   const eye = rng.fork('judge');
-  const judgeFt = plateJudgementFt(spec.batter.stats.contact);
+  const judgeFt = plateJudgementFt(reader.stats.contact);
   const judged: Crossing = {
     x: crossing.x + eye.bell() * judgeFt,
     y: crossing.y + eye.bell() * judgeFt,
@@ -484,16 +498,19 @@ function cpuSwingDecision(
   // he READS as a strike, so every misread with two strikes is a called third —
   // which turns a poor-contact kid into a strikeout machine instead of the
   // foul-ball machine a six-year-old actually is.
-  const protectFt = spec.count.strikes >= ATBAT.STRIKES_PER_K - 1 ? plate.twoStrikeProtectFt : 0;
+  // (Sam does not protect: he would rather wear one — `quirks.ts`.)
+  const protects = !(spec.story !== undefined && neverProtects(spec.batter));
+  const protectFt = protects && spec.count.strikes >= ATBAT.STRIKES_PER_K - 1 ? plate.twoStrikeProtectFt : 0;
   // Ezra's Loop looks like a ball and is not: he offers whatever he read.
   const swings =
     distOutsideZone(judged, undefined) <= protectFt ||
+    blind ||
     (spec.story !== undefined && mustChase(spec.pitcher, inFlight.kind));
   if (!swings) return null;
 
   // He offered. The same read decides how well.
   const timingErrorSec =
-    eye.bell() * swingTimingSigmaFrac(spec.batter.stats.contact) * travelSec;
+    eye.bell() * swingTimingSigmaFrac(reader.stats.contact) * travelSec;
   // Reading the ball LOW means swinging under it, which lifts it.
   return {
     timingErrorSec,

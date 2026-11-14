@@ -29,7 +29,7 @@
 // ---------------------------------------------------------------------------
 
 import type { Character } from '../../data/types';
-import { GAME, PLAY, RUN } from './params';
+import { ATBAT, GAME, PLAY, RUN } from './params';
 import {
   choosePitch,
   cpuSwingAtSec,
@@ -58,6 +58,7 @@ import type { PitchKind } from './pitch';
 import { flyToPlate, releasePitch } from './pitch';
 import { resolvePlate, type PlateOverrides, type PlateParams } from './params';
 import type { Features } from './features';
+import { familyLookup, hasGreenLight, hitByPitch, jumpCapSec, slipsTheTag, storyDefence, throwsHeater } from './quirks';
 import { drainPitch, effectivePitching, newStamina } from './stamina';
 import type { StaminaState } from './stamina';
 import { addJuice, cpuPickSpecialPitch, cpuWantsSpend, isSpecialSpend, newJuice, spend, spendSide } from './juice';
@@ -694,13 +695,16 @@ function* playAtBatLive(
         { defence: args.defence, lookup: args.lookup, pitcher: args.pitcher },
         windupInput.steal === true && !args.assist?.pitches,
         cpuRunners && !thrownOver,
-        rng.fork(`steal${pitches}`)
+        rng.fork(`steal${pitches}`),
+        args.story !== null && !thrownOver
       );
       const leaning = going !== null && going.from === base;
-      const race = pickoffRace(
+      const raced = pickoffRace(
         { runner, pitcher: args.pitcher, base, leaning },
         rng.fork(`pick${pitches}.${pickoffs}`)
       );
+      // The throw beat Ollie back and the tag did not (`quirks.ts`).
+      const race = args.story && raced.out && slipsTheTag(runner) ? { ...raced, out: false } : raced;
       thrownOver = true;
       if (race.out) {
         // v1's `applyPickoff`: the runner leaves his bag and an out is made;
@@ -793,6 +797,7 @@ function* playAtBatLive(
         ? {
             bases: [half.occupants[0] !== null, half.occupants[1] !== null, half.occupants[2] !== null],
             lead: args.story.lead + half.score,
+            heaterReady: !half.heaterThrown,
           }
         : undefined,
     };
@@ -802,11 +807,14 @@ function* playAtBatLive(
       decidePitch(windupInput.pitch, spec, pitchRng) ??
       (args.assist?.bats ? assistPitchPlan(args.assist.skill, spec, pitchRng) : undefined);
     const inFlight = throwPitch(spec, pitchRng, chosen);
+    // Jay's Heater is one a half inning: his first fastball of it (`quirks.ts`).
+    const heater = args.story !== null && !half.heaterThrown && inFlight.kind === 'fastball' && throwsHeater(pitcher);
+    if (heater) half.heaterThrown = true;
     if (stamina) {
       // Drained on the throw, before the swing: the pitch just thrown was the
       // tired arm's, the NEXT one is a little more so — and a special costs
       // the arm triple (`STAMINA.DRAIN_SPECIAL`), as in v1.
-      drainPitch(stamina, isSpecialPitch(inFlight.kind));
+      drainPitch(stamina, isSpecialPitch(inFlight.kind) || heater);
       frame.stamina = stamina.stamina;
     }
     // ★ THE RUNNER DECIDES BEFORE THE THROW, AND THE FRAME SAYS SO. A steal
@@ -830,7 +838,8 @@ function* playAtBatLive(
       { defence: args.defence, lookup: args.lookup, pitcher },
       windupInput.steal === true && !args.assist?.pitches,
       cpuRunners && !thrownOver,
-      rng.fork(`steal${pitches}`)
+      rng.fork(`steal${pitches}`),
+      args.story !== null && !thrownOver
     );
     thrownOver = false;
     frame.steal = going
@@ -875,7 +884,8 @@ function* playAtBatLive(
           going,
           result.travelSec,
           args.assist?.bats ? undefined : pitchInput.throwDown,
-          rng.fork(`steal${pitches}`)
+          rng.fork(`steal${pitches}`),
+          args.story !== null
         )
       : null;
     frame.steal = null;
@@ -916,6 +926,15 @@ function* playAtBatLive(
     }
 
     if (result.kind !== 'inPlay') {
+      // ★ SAM WEARS ONE (`quirks.ts` `hitByPitch`). A hit batter takes first and
+      // moves only the runners he forces, which is exactly a walk — so the
+      // count is set one ball short of one and the ball just taken is folded
+      // as it would have been. The rules layer both games share grows no new
+      // case, and v1 does the same (`systems/quirks.ts` `countWhenHit`).
+      if (args.story !== null && result.kind === 'ball' && hitByPitch(args.batter, result.crossing)) {
+        half.state = { ...half.state, count: { ...half.state.count, balls: ATBAT.BALLS_PER_WALK - 1 } };
+        log.push(`${args.batter.name} is hit by the pitch`);
+      }
       const folded = applyAtBat(half.state, asAtBatResult(result)!);
       half.state = folded.state;
       half.score += folded.runsScored;
@@ -971,6 +990,7 @@ function* playAtBatLive(
         boost: juice ? { turboLegs: armed.turboLegs, goldenGlove: armed.goldenGlove } : undefined,
         // Undefined with the flag off: every fielder on his table post.
         shift: args.shifts ? shift : undefined,
+        story: args.story !== null ? true : undefined,
       },
       rng.fork(`play${pitches}`),
       frame,
@@ -1138,22 +1158,32 @@ function decideSteal(
   },
   ordered: boolean,
   cpuMay: boolean,
-  stealRng: Rng
+  stealRng: Rng,
+  /**
+   * `features.storyKids`, and nobody was just thrown at: Zaya may go on her
+   * own judgement where `cpuMay` says a person's runners wait for the order.
+   */
+  story = false
 ): StealDecision | null {
   const catcher = catcherOf(args.defence, args.lookup);
   if (!catcher) return null;
-  if (!ordered && !cpuMay) return null;
+  if (!ordered && !cpuMay && !story) return null;
   for (const from of [2, 1] as const) {
     const who = half.occupants[from - 1];
     if (!who || half.occupants[from]) continue;
     const runner = args.lookup(who);
+    if (!ordered && !cpuMay && !hasGreenLight(runner)) continue;
     const to = (from + 1) as StealTarget;
     const expected = fastballFlightSec(args.pitcher.stats.pitching);
     const spec: StealSpec = { runner, catcher, pitcher: args.pitcher, to, pitchTravelSec: expected };
+    if (story) {
+      const cap = jumpCapSec(runner);
+      if (cap !== undefined) spec.jumpCapSec = cap;
+    }
     const sit = {
       outs: half.state.outs,
       nextBagOccupied: half.occupants[from] !== null,
-      jumpSec: ordered ? undefined : jumpSecOf(runner, stealRng),
+      jumpSec: ordered ? undefined : jumpSecOf(runner, stealRng, spec.jumpCapSec),
     };
     if (!ordered && !cpuWantsSteal(spec, sit)) continue;
     return { spec, from, human: ordered };
@@ -1177,21 +1207,28 @@ function resolveSteal(
   going: StealDecision,
   pitchTravelSec: number,
   throwDown: { atSec: number } | undefined,
-  rng: Rng
+  rng: Rng,
+  story = false
 ): { safe: boolean; line: string; race: StealResult } {
   const readSec = throwDown ? Math.max(0, throwDown.atSec - pitchTravelSec) : undefined;
   const race = stealRace({ ...going.spec, pitchTravelSec, readSec }, rng);
   const { from } = going;
+  const { runner, to } = going.spec;
+  // Ollie has never been tagged: the throw beat him and the tag did not.
+  const slipped = story && !race.safe && slipsTheTag(runner);
+  const safe = race.safe || slipped;
   const who = half.occupants[from - 1];
-  const folded = applySteal(half.state, from, race.safe);
+  const folded = applySteal(half.state, from, safe);
   half.state = folded.state;
   half.occupants[from - 1] = null;
-  if (race.safe) half.occupants[from] = who;
-  const { runner, to } = going.spec;
+  if (safe) half.occupants[from] = who;
+  const bag = to === 2 ? 'second' : 'third';
   return {
-    safe: race.safe,
+    safe,
     race,
-    line: `${runner.name} ${race.safe ? 'STEALS' : 'is caught stealing at'} ${to === 2 ? 'second' : 'third'}`,
+    line: slipped
+      ? `${runner.name} slips the tag at ${bag}`
+      : `${runner.name} ${safe ? 'STEALS' : 'is caught stealing at'} ${bag}`,
   };
 }
 
@@ -1293,6 +1330,8 @@ interface HalfState {
    * the next inning, as the rule has it.
    */
   cut?: boolean;
+  /** Jay has thrown this half inning's Heater (`features.storyKids`). */
+  heaterThrown?: boolean;
 }
 
 /**
@@ -1311,9 +1350,16 @@ interface HalfState {
 export function* simulateGameLive(spec: GameSpec, rng: Rng): Generator<LiveFrame, GameResult, PlayInputs> {
   const geo = spec.geo ?? DEFAULT_GEOMETRY;
   const regulation = spec.regulationInnings ?? GAME.REGULATION_INNINGS;
+  // ★ THE STORY FLAG, ASKED ONCE (`quirks.ts`). With it off `lookup` IS
+  // `spec.lookup`, the plan is `planDefence`'s, and every site below hands
+  // the plate and the play `null`/`undefined` — which is how the pinned
+  // games hold. With it on, siblings sharing a nine are each a little better
+  // and three kids stand where their story says.
+  const story = spec.features?.storyKids === true;
+  const lookup = story ? familyLookup(spec.lookup, [spec.away.ids, spec.home.ids]) : spec.lookup;
   const mk = (t: TeamSpec): Side => ({
     spec: t,
-    plan: planDefence(t.ids, spec.lookup, t.order),
+    plan: story ? storyDefence(planDefence(t.ids, lookup, t.order), lookup) : planDefence(t.ids, lookup, t.order),
     lineupIdx: 0,
     score: 0,
     stamina: newStamina(),
@@ -1371,13 +1417,13 @@ export function* simulateGameLive(spec: GameSpec, rng: Rng): Generator<LiveFrame
     log.push(`${half === 'top' ? 'Top' : 'Bot'} ${inning} — ${bat.spec.name}`);
 
     while (!isHalfOver(hs.state)) {
-      const batter = spec.lookup(bat.plan.order[bat.lineupIdx % bat.plan.order.length]);
+      const batter = lookup(bat.plan.order[bat.lineupIdx % bat.plan.order.length]);
       yield* playAtBatLive(
         {
           batter,
-          pitcher: spec.lookup(field.plan.pitcherId),
+          pitcher: lookup(field.plan.pitcherId),
           defence: field.plan.positions,
-          lookup: spec.lookup,
+          lookup,
           geo,
           half: hs,
           tally,
@@ -1405,7 +1451,7 @@ export function* simulateGameLive(spec: GameSpec, rng: Rng): Generator<LiveFrame
           // where `juice` is non-null; alone the flag changes nothing.
           specials: spec.features?.specialPitches ?? false,
           shifts: spec.features?.shifts ?? false,
-          story: spec.features?.storyKids ? { lead: bat.score - field.score } : null,
+          story: story ? { lead: bat.score - field.score } : null,
           assist: spec.humanSide
             ? {
                 skill: spec.skill ?? 'normal',

@@ -57,6 +57,7 @@
 import type { Character } from '../../data/types';
 import { DEFENSE, JUICE, PLAY, resolvePlate, type PlateOverrides, type PlateParams } from './params';
 import type { Features } from './features';
+import { storyFielder, strayBase } from './quirks';
 import { shiftedPost, type Shift } from './shifts';
 import type { SpendKind } from './juice';
 import { reachFt, sprintTimeForFt } from './athletes';
@@ -281,7 +282,7 @@ export interface PlayState {
    */
   traceAtSec: number;
   events: PlayEvent[];
-  rng: { drop: Rng; wild: Rng };
+  rng: { drop: Rng; wild: Rng; stray: Rng };
   /** Resolved retune constants for this play. */
   tune: PlateParams;
   /**
@@ -356,6 +357,8 @@ export interface PlaySpec {
    * `makeFielder`, which is what the one-kid-speed lint asserts.
    */
   boost?: { turboLegs?: boolean; goldenGlove?: boolean };
+  /** `features.storyKids`: dress the fielders in their stories (`quirks.ts`). Omitted: nobody's is read. */
+  story?: boolean;
 }
 
 // --- Setup ------------------------------------------------------------------
@@ -375,6 +378,8 @@ export function beginPlay(spec: PlaySpec, rng: Rng): PlayState {
   // fact about this play rather than a second constant for a kid's legs.
   if (spec.boost?.turboLegs) for (const r of runners) r.topFts *= JUICE.TURBO_SPEED_MULT;
   if (spec.boost?.goldenGlove) for (const f of fielders) f.reachBonusFt = JUICE.GLOVE_REACH_BONUS_FT;
+  // The story, at the same site and for the same reason (`quirks.ts`).
+  if (spec.story) for (const f of fielders) storyFielder(f, spec.lookup(f.charId));
   // A shift moves where each fielder STARTS and returns to; nothing else.
   if (spec.shift && spec.shift !== 'normal') {
     for (const f of fielders) {
@@ -418,7 +423,7 @@ export function beginPlay(spec: PlaySpec, rng: Rng): PlayState {
     lastReadSec: 0,
     traceAtSec: 0,
     events: [],
-    rng: { drop: rng.fork('drop'), wild: rng.fork('wild') },
+    rng: { drop: rng.fork('drop'), wild: rng.fork('wild'), stray: rng.fork('stray') },
     tune,
     sureHands: spec.boost?.goldenGlove ?? false,
     batterId: spec.batter.id,
@@ -835,7 +840,7 @@ function tryGrab(s: PlayState): void {
   // in for the geometry `canReach` now has.
   const isFly = s.landedAtSec === null && s.ballPhase === 'flight';
   // The roll is drawn whether or not the glove is golden — see `sureHands`.
-  const stuck = tryCatch(f, isFly ? 'fly' : 'grounder', s.rng.drop, s.tune.dropBase) || s.sureHands;
+  const stuck = tryCatch(f, isFly ? 'fly' : 'grounder', s.rng.drop, s.tune.dropBase) || s.sureHands || f.sure === true;
   if (!stuck) {
     fumble(f, s.elapsedSec);
     s.ball = settleBallAt(s.ball, s.geo);
@@ -1026,14 +1031,30 @@ function maybeThrow(s: PlayState, inputs: PlayInputs = {}): void {
   // Out of range still means out of range — `release` returns without throwing
   // — so a player cannot will a ball across the diamond, and the relay stays a
   // consequence of the arm rather than a mechanic he can override.
+  // ★ ROYA THROWS IT SOMEWHERE (`quirks.ts`). Whoever chose the bag — a
+  // person's tap or the CPU's plan — a fielder who `strays` may send it to
+  // another one her arm reaches. Rolled only when the chosen throw would
+  // itself leave her hand, so a throw she cannot make is not re-rolled every
+  // tick while she holds the ball.
+  const carrier = s.fielders[s.heldBy];
+  const aim = (base: 1 | 2 | 3 | 4): 1 | 2 | 3 | 4 => {
+    const reaches = (b: 1 | 2 | 3 | 4) => throwFlightSec(carrier.p, basePos(b), carrier.arm) !== null;
+    return carrier.strays && reaches(base) ? strayBase(base, s.rng.stray, reaches) : base;
+  };
   if (inputs.throwTo) {
-    release(s, { kind: 'base', base: inputs.throwTo.base }, basePos(inputs.throwTo.base));
+    const base = aim(inputs.throwTo.base);
+    release(s, { kind: 'base', base }, basePos(base));
     return;
   }
   const plan = plannedThrow(s);
   if (!plan) return;
-  if (plan.target.kind === 'fielder') s.relayLegs += 1;
-  release(s, plan.target, plan.at);
+  if (plan.target.kind === 'fielder') {
+    s.relayLegs += 1;
+    release(s, plan.target, plan.at);
+    return;
+  }
+  const base = aim(plan.target.base);
+  release(s, { kind: 'base', base }, basePos(base));
 }
 
 /** Read-only choice used by release and by the view during the transfer.

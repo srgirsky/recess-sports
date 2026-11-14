@@ -193,7 +193,7 @@ rather than as v1's outcome tweaks; the numbers are `params.STORY`. It is off
 by default (`features.storyKids`, recorded `never-held` in
 `docs/playtests/holds.json`) and reachable at `/?features=storyKids`, so the
 pinned games and every measured plate record are untouched until the
-maintainer turns it on. The first twelve kids, the mound and the plate:
+maintainer turns it on. All twenty-five quirk kids and both team rules:
 
 | Kid | In v2 |
 |---|---|
@@ -203,16 +203,35 @@ maintainer turns it on. The first twelve kids, the mound and the plate:
 | Kwame, Dev | the release misses by 2.0 and 1.5 times the arm's own error |
 | Bao | every pitch is the floater's flight: as slow as the release solve can throw, heavy backspin |
 | Roz | her FASTBALL leaves the hand 12% faster; the other three are untouched, because the release solve already saturates on them |
+| Jay | his first fastball of each half inning flies as the fireball; with stamina on it drains like a special |
 | Winnie | never offers, CPU or person, behind a zone 60% the size each way |
 | Rafi | every swing is a bunt, CPU or person |
 | Nora, Marcus, Yui | power 9.5 in their moment, through the bat-speed model |
+| Mars | a swing inside the perfect timing window leaves at 112 ft/s and 30 degrees, which clears every venue |
+| Josie | contact below 0.45 square is ticked foul 60% of the time (everyone else: below 0.18, 45%) |
+| Hattie | every ball in play is the same flare, down about ninety feet out just right of second |
+| Yaz | offers at everything, reads it with a contact of 1, hits it with a power of 10 |
+| Sam | never protects with two strikes; a ball he takes more than 0.35 ft inside the zone's edge, between knees and shoulders, hits him and is folded as a walk |
+| Zaya | steals on her own judgement even on a person's bench, and her jump is never late |
+| Ollie | a steal race or pickoff he loses, he wins anyway |
+| Sonny, Greta | never drop or bobble; Sonny reaches a foot further |
+| Rudy, Amir | arm 10 in the field |
+| Roya | 35% of her throws go to the next bag round that her arm reaches |
+| siblings | Roz with Rudy, Hattie with Ezra: +1 at every stat, capped at 10, legs included |
+| positions | Sonny catches, Amir plays centre, Rudy stands in the outfield; the pitcher is never moved |
 
-Not in v2 yet: Mars, Sam, Josie, Hattie, Yaz, Jay (whose Heater needs stamina,
-itself held), the runners (Zaya, Ollie), the fielders (Sonny, Greta, Rudy,
-Amir, Roya), the sibling bonus and the story positions. Nor does the view know
-any of it: the pitch picker still shows four cards for Lu, the drawn zone is
-the full one for Winnie, and nothing is called out. And none of the seven
-signature looks is on the v2 proxy or the sculpts.
+Departures from v1, each for a reason in `quirks.ts`: Roz is fastball-only;
+Ollie is safe at the bag he was stealing rather than back on the one he left
+(every consumer of the steal event reads "not safe" as an out); Amir has the
+arm but not the range, because a second speed for one kid's legs is what the
+one-kid-speed lint exists to stop; Rudy and Amir get the top of the arm scale
+rather than 1.5 times it, because the throw-speed band is a published one;
+and Jay cannot refuse relief in a game that has none.
+
+Not in v2 yet: the VIEW knows none of it. The pitch picker still shows four
+cards for Lu, the drawn zone is the full one for Winnie, Yaz's ball does not
+vanish, and nothing is called out. And none of the seven signature looks is
+on the v2 proxy or the sculpts.
 
 One thing the work turned up that is not about the cast: the release solve
 does not hit its flight-time target for the base fastball below pitching 6
