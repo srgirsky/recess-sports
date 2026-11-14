@@ -161,8 +161,7 @@ CPU playing her as a lottery instead.
 
 Known thin spots in that batch, none of them hidden by a test: Greta's sure
 hands and Sonny's are invisible in kid mode, where nobody drops anything;
-Yaz's blindfold
-and band bump are not applied to a net guest's swing; and a single Cannon in
+and a single Cannon in
 centre moved outs per play from 1.247 to 1.269 over 1,444 seeded plays, which
 is a small edge for a kid whose tagline is about it.
 
