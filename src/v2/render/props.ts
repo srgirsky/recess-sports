@@ -25,11 +25,20 @@
 
 import { CylinderGeometry, Group, LatheGeometry, Mesh, SphereGeometry, Vector2, type Object3D } from 'three';
 import { makeToonMaterial } from './materials/toon';
+import type { Signature } from '../../data/types';
 
 /** Youth bat, knob to tip, in reference feet (a real 26" bat is 2.17ft). */
 export const BAT_LENGTH_FT = 2.2;
 /** Barrel contact point measured from the upper palm anchor. */
 export const BAT_SWEET_SPOT_FT = BAT_LENGTH_FT * .75;
+
+/**
+ * Mars's bat (`VisualParams.signature: 'bigBat'`, the cast sheet's "visibly
+ * too big for anyone"): longer than it is fatter, so it reads as a bat for a
+ * bigger kid rather than a club. A LOOK only — the sim's bat is the roster's
+ * (`sim/contact.ts`), and nothing reads this.
+ */
+export const BIG_BAT_SCALE = { length: 1.3, girth: 1.18 } as const;
 
 /** The bone every kid's bat parents to — mandatory in the skeleton contract. */
 export const BAT_ANCHOR_BONE = 'Prop_BatGrip';
@@ -80,12 +89,19 @@ function sharedParts() {
  * which owns its visibility. Null when the rig has no anchor bone — a fixture
  * skeleton, never a contract-legal kid — so a caller can wire unconditionally.
  */
-export function attachBatProp(view: { bones: readonly { name: string; add(o: Object3D): unknown }[] }): Object3D | null {
+export function attachBatProp(
+  view: { bones: readonly { name: string; add(o: Object3D): unknown }[] },
+  /** `bigBat`: Mars's, visibly too big for anyone (`BIG_BAT_SCALE`). */
+  signature?: Signature
+): Object3D | null {
   const anchor = view.bones.find((b) => b.name === BAT_ANCHOR_BONE);
   if (!anchor) return null;
   const { geometry, material } = sharedParts();
   const bat = new Mesh(geometry, material);
   bat.name = BAT_PROP_NAME;
+  // The bat's origin IS the grip, so a scale grows it away from the hands and
+  // the handle stays in them. The shared geometry is untouched.
+  if (signature === 'bigBat') bat.scale.set(BIG_BAT_SCALE.girth, BIG_BAT_SCALE.length, BIG_BAT_SCALE.girth);
   bat.castShadow = true;
   bat.visible = false;
   anchor.add(bat);

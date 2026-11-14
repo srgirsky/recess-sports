@@ -1380,7 +1380,7 @@ export class GameView {
       clips: this.deliveredClips,
       performanceClips: this.performanceClips.get(character.id),
       fallback: this.clipLibrary,
-      bat: attachBatProp(view) ?? undefined,
+      bat: attachBatProp(view, character.visual.signature) ?? undefined,
       glove: attachGloveProp(view) ?? undefined,
       actor: {
         id: character.id,
