@@ -156,6 +156,16 @@ export const SPECIAL_PITCH_KINDS: ReadonlyArray<SpecialPitchKind> = Object.freez
   'freezeball',
 ] as const);
 
+/**
+ * One arm's own version of a pitch: the definition it actually flies with, and
+ * a tag that names it in `releaseAtSpot`'s memo. The KIND a pitch reports is
+ * unchanged — this is how it is thrown, not what it is called.
+ */
+export interface Delivery {
+  def: PitchDef;
+  tag: string;
+}
+
 export function isSpecialPitch(kind: PitchKind): kind is SpecialPitchKind {
   return kind in SPECIAL_PITCHES;
 }
@@ -178,8 +188,10 @@ export function releasePitch(opts: {
   pitchingStat: number;
   aimHeightFt: number;
   aimLateralFt: number;
+  /** This arm's own version of the kind (`quirks.ts` `deliveryFor`). Omitted: the kind's. */
+  delivery?: Delivery;
 }): BallState {
-  const def = pitchDef(opts.kind);
+  const def = opts.delivery?.def ?? pitchDef(opts.kind);
   const from: Vec3 = { x: 0, y: PITCH.RELEASE_HEIGHT_FT, z: MOUND_DIST };
 
   const w = (def.spinRpm * 2 * Math.PI) / 60;
@@ -289,8 +301,13 @@ export function releaseAtSpot(opts: {
   pitchingStat: number;
   aimHeightFt: number;
   aimLateralFt: number;
+  delivery?: Delivery;
 }): ReleasePlan {
-  const key = `${opts.kind}|${opts.pitchingStat}|${opts.aimHeightFt}|${opts.aimLateralFt}`;
+  // A delivery's `tag` joins the key, and an ordinary pitch's key is the string
+  // it always was — so the memo stays bounded (a fixed handful of tags) and no
+  // entry an ordinary arm made can be handed to a kid who throws it his own way.
+  const base = `${opts.kind}|${opts.pitchingStat}|${opts.aimHeightFt}|${opts.aimLateralFt}`;
+  const key = opts.delivery ? `${base}|${opts.delivery.tag}` : base;
   const hit = releaseCache.get(key);
   if (hit) return hit;
 

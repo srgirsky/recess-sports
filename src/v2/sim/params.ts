@@ -1107,6 +1107,35 @@ export const JUICE = {
 } as const;
 
 /**
+ * The story behaviours (`features.storyKids`, `sim/quirks.ts`): what the cast
+ * sheet says a kid does, as the handful of numbers the physical model does not
+ * already hold.
+ *
+ * ★ NONE OF THESE IS MEASURED, AND ONLY TWO ARE SOURCED. `CLUTCH_POWER` is the
+ * sheet's 0.95 on the 1-10 scale and `WOBBLER_WORKS` is its 40%. The rest are
+ * first guesses for the maintainer to correct; the Archetypes document the
+ * sheet cites for them has never been in this repo. They are deliberately NOT
+ * read from `config.QUIRKS`: v1's values were sized against a pixel plate and
+ * a banded swing, and several of them (a travel-time multiplier, a ball
+ * chance) describe outcomes this model derives instead of stating.
+ */
+export const STORY = {
+  /** Kwame's and Dev's execution error, as a multiple of their own arm's. The crazy ball is 2.0. */
+  SCATTER_MULT: { wild_arm: 2.0, wobble: 1.5 },
+  /** The fraction of the standard strike zone Winnie presents, each way. */
+  SMALL_ZONE: 0.6,
+  /** A Clutch kid's power stat in her moment (the sheet's 0.95). */
+  CLUTCH_POWER: 9.5,
+  /** How often Musa's one pitch works (the sheet's 40%). */
+  WOBBLER_WORKS: 0.4,
+  /**
+   * Roz's fastball release, as a multiple of the fastball's own. Inside the
+   * range the release solve is known to land: the fireball is 1.25.
+   */
+  VELOCITY_SPEED_MULT: 1.12,
+} as const;
+
+/**
  * The game above the plate appearance.
  *
  * Everything here is a RULE rather than a measurement, which is why the block is

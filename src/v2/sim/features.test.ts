@@ -8,7 +8,7 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_FEATURES, FEATURE_NAMES, enabledFeatures, parseFeatures, type Features } from './features';
 
-const ALL: Features = { stamina: true, juice: true, specialPitches: true, shifts: true };
+const ALL: Features = { stamina: true, juice: true, specialPitches: true, shifts: true, storyKids: true };
 
 describe('the defaults', () => {
   it('★ are all false', () => {
@@ -42,7 +42,8 @@ describe('parseFeatures', () => {
     [' juice , shifts ', { juice: true, shifts: true }],
     ['specialpitches', { specialPitches: true }],
     ['SpecialPitches', { specialPitches: true }],
-    ['stamina,juice,specialPitches,shifts', ALL],
+    ['stamina,juice,specialPitches,shifts,storyKids', ALL],
+    ['storykids', { storyKids: true }],
     ['stamina,all', ALL],
     ['bogus', {}],
     ['bogus,stamina', { stamina: true }],

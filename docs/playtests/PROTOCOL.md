@@ -41,6 +41,7 @@ backgrounded tab freezes the game — the root brief's first gotcha).
 | juice / power-ups | `/?features=juice` |
 | special pitches | `/?features=specialPitches,juice` (they are bought off the juice meter, so the meter comes with them) |
 | defensive shifts | `/?features=shifts` |
+| story behaviours | `/?features=storyKids` |
 
 Any `?features=` turns the session log on by itself. `?log=1` turns it on for
 the baseline, where nothing else would.
@@ -111,6 +112,17 @@ save those for the end.
 - Did they shift for a reason they could say, or at random?
 - When a ball went where the fielders had been, did they connect it to the
   toggle?
+
+### Story behaviours (`?features=storyKids`)
+
+Draft so the kids in question are on the field: Lu, Ezra, Musa, Kwame, Dev,
+Bao or Roz pitching; Winnie, Rafi, Nora, Marcus or Yui batting.
+
+- Did they notice a kid doing something the others do not, and could they say
+  what (the slow one, the one who never swings, the one who only bunts)?
+- When a kid would not do what they asked (Winnie will not swing, Lu throws
+  only the curve), did they read it as the kid or as the game being broken?
+- Did they pick or avoid a kid at the next draft because of it?
 
 ## The two questions a playtest closes
 

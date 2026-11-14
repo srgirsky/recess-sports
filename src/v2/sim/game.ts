@@ -534,6 +534,12 @@ function* playAtBatLive(
     specials: boolean;
     /** `features.shifts`: does the fielding side choose where it stands? */
     shifts: boolean;
+    /**
+     * `features.storyKids`: the batting side's runs minus the fielding side's
+     * as this HALF began (this half's runs are added per pitch) — or null with
+     * the flag off, when no kid's quirk is read (`quirks.ts`).
+     */
+    story: { lead: number } | null;
     /** The person's level and which of the two roles they hold this PA. Null: nobody. */
     assist: { skill: Skill; bats: boolean; pitches: boolean } | null;
   },
@@ -781,6 +787,14 @@ function* playAtBatLive(
       batter: args.assist?.pitches ? assistBatter(args.assist.skill, args.batter) : args.batter,
       count: half.state.count,
       plate: args.plate,
+      // The moment, built only with the flag on: its presence IS the flag as
+      // far as the plate is concerned. Runs this half count toward the lead.
+      story: args.story
+        ? {
+            bases: [half.occupants[0] !== null, half.occupants[1] !== null, half.occupants[2] !== null],
+            lead: args.story.lead + half.score,
+          }
+        : undefined,
     };
     // A special kind is paid for or downgraded HERE, before the throw, so
     // `throwPitch` only ever throws what the meter covered.
@@ -1391,6 +1405,7 @@ export function* simulateGameLive(spec: GameSpec, rng: Rng): Generator<LiveFrame
           // where `juice` is non-null; alone the flag changes nothing.
           specials: spec.features?.specialPitches ?? false,
           shifts: spec.features?.shifts ?? false,
+          story: spec.features?.storyKids ? { lead: bat.score - field.score } : null,
           assist: spec.humanSide
             ? {
                 skill: spec.skill ?? 'normal',

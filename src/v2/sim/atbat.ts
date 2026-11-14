@@ -64,6 +64,20 @@ import { resolveSwing } from './contact';
 import type { LaunchSpec } from './launch';
 import type { Rng } from './rng';
 import type { BallState } from './flight';
+import {
+  alwaysBunts,
+  batterInMoment,
+  deliveryFor,
+  mustChase,
+  neverSwings,
+  pitchMenu,
+  pitchOnMenu,
+  scatterMult as storyScatterMult,
+  throwsWobbler,
+  wobblerKind,
+  zoneScale,
+  type Moment,
+} from './quirks';
 
 /** Where a pitch crossed the plate: lateral offset and height, both ft. */
 export interface Crossing {
@@ -128,6 +142,12 @@ export interface PitchSpec {
   count: { balls: number; strikes: number };
   /** Resolved plate constants. Omit for the shipped values. */
   plate?: PlateParams;
+  /**
+   * The moment the batter steps into — and, by being here at all, the story
+   * flag (`features.storyKids`, `quirks.ts`). Omitted, no kid's quirk is read
+   * and this file does exactly what it did before they had any.
+   */
+  story?: Moment;
 }
 
 // --- The umpire -------------------------------------------------------------
@@ -142,9 +162,13 @@ export interface PitchSpec {
  * that. A curveball that breaks out of the zone is a ball because it broke, not
  * because something decided in advance that it would be.
  */
-export function isStrike(c: Crossing, batterHeightFt?: number): boolean {
+export function isStrike(c: Crossing, batterHeightFt?: number, scale = 1): boolean {
   const [lo, hi] = zoneBandFt(batterHeightFt);
-  return Math.abs(c.x) <= zoneHalfWidthFt() && c.y >= lo && c.y <= hi;
+  // The standard zone is compared as it always was; a scaled one (`quirks.ts`
+  // `zoneScale`) shrinks about the zone's own centre, both ways.
+  if (scale === 1) return Math.abs(c.x) <= zoneHalfWidthFt() && c.y >= lo && c.y <= hi;
+  const mid = (lo + hi) / 2;
+  return Math.abs(c.x) <= zoneHalfWidthFt() * scale && Math.abs(c.y - mid) <= ((hi - lo) / 2) * scale;
 }
 
 /** How far outside the zone this crossing sits, ft. Zero for a strike. */
@@ -186,7 +210,9 @@ export function choosePitch(spec: PitchSpec, rng: Rng): PitchPlan {
   // never sees a fifth key; the CPU reaches a special through `game.ts` and
   // `juice.ts` `cpuPickSpecialPitch`, which replaces the KIND and keeps the
   // spot this function drew.
-  const kinds = Object.keys(PITCHES) as PitchKind[];
+  // With the story on, the list is the ARM'S OWN menu — the same four in the
+  // same order for an ordinary arm, so the pick below is the one it was.
+  const kinds: readonly PitchKind[] = spec.story ? pitchMenu(spec.pitcher) : (Object.keys(PITCHES) as PitchKind[]);
   const kind = rng.pick(kinds);
   const [lo, hi] = zoneBandFt();
   const mid = (lo + hi) / 2;
@@ -290,7 +316,22 @@ export function throwPitch(spec: PitchSpec, rng: Rng, human?: PitchPlan): PitchI
   // Not drawing from `fork('choose')` shifts nothing for anybody: substreams are
   // keyed on (root seed, label), so "a substream that is never drawn from costs
   // nothing and shifts nothing".
-  const plan = human ?? choosePitch(spec, rng.fork('choose'));
+  const asked = human ?? choosePitch(spec, rng.fork('choose'));
+  // ★ THE STORY, ON THE MOUND (`quirks.ts`). A person may ask this arm for a
+  // pitch it does not throw, so the menu is enforced HERE and not in the
+  // picker; Musa's one pitch is rolled off its own fork, which nobody else
+  // reads. For an ordinary arm `kind` is `asked.kind` and nothing was drawn.
+  let kind = asked.kind;
+  let wobbler = false;
+  if (spec.story) {
+    kind = pitchOnMenu(spec.pitcher, kind);
+    if (throwsWobbler(spec.pitcher)) {
+      const out = wobblerKind(kind, rng.fork('wobbler'));
+      wobbler = out !== kind;
+      kind = out;
+    }
+  }
+  const plan = kind === asked.kind ? asked : { ...asked, kind };
 
   // ★ THE SOLVE IS FOR THE SPOT; THE ERROR IS ON THE RELEASE. Perturbing the
   // AIM and re-solving costs 13.6ms a pitch — measured, and forty-nine minutes
@@ -304,6 +345,7 @@ export function throwPitch(spec: PitchSpec, rng: Rng, human?: PitchPlan): PitchI
     pitchingStat: spec.pitcher.stats.pitching,
     aimHeightFt: plan.aimHeightFt,
     aimLateralFt: plan.aimLateralFt,
+    delivery: spec.story ? deliveryFor(spec.pitcher, plan.kind) : undefined,
   });
   const miss = rng.fork('execute');
   // ★ A SPECIAL IS A PARAMETER SET, AND THIS IS ITS ONLY OTHER KNOB. The
@@ -313,7 +355,11 @@ export function throwPitch(spec: PitchSpec, rng: Rng, human?: PitchPlan): PitchI
   // specials multiply by exactly 1, which is exact in IEEE and is why the
   // goldens do not see this line. Whether the kind was PAID FOR is not asked
   // here: `game.ts` downgrades an unaffordable special before the throw.
-  const scatterMult = isSpecialPitch(plan.kind) ? SPECIAL_PITCHES[plan.kind].scatterMult : 1;
+  // A wobbler that worked has the crazy ball's FLIGHT and Musa's own aim: the
+  // wildness is what a spent crazy ball buys, and his was free. Kwame's and
+  // Dev's releases miss by more, on the same two draws.
+  const kindMult = isSpecialPitch(plan.kind) && !wobbler ? SPECIAL_PITCHES[plan.kind].scatterMult : 1;
+  const scatterMult = spec.story ? kindMult * storyScatterMult(spec.pitcher) : kindMult;
   const scatterRad = (pitchScatterFt(spec.pitcher.stats.pitching) * scatterMult) / MOUND_DIST;
   const released = releaseFrom(plan2, miss.bell() * scatterRad, miss.bell() * scatterRad);
 
@@ -342,6 +388,18 @@ export function resolvePitch(
 ): PitchResult {
   const { kind: pitchKind, release: released, crossing, travelSec, plateSpeedFts } = inFlight;
   const plate = spec.plate ?? resolvePlate();
+  // ★ THE STORY, AT THE PLATE (`quirks.ts`). Each of these is the ordinary
+  // value — the same batter object, `false`, a scale of exactly 1 — unless the
+  // flag is on AND this kid carries the quirk it reads.
+  const story = spec.story;
+  const batter = story ? batterInMoment(spec.batter, story) : spec.batter;
+  const bunts = story !== undefined && alwaysBunts(spec.batter);
+  const taken = (): PitchResult => {
+    const kind = isStrike(crossing, undefined, story ? zoneScale(spec.batter) : 1) ? 'calledStrike' : 'ball';
+    return { kind, crossing, pitch: pitchKind, travelSec: travelSec, release: released };
+  };
+  // Winnie does not swing, whoever is holding the controller.
+  if (story && neverSwings(spec.batter)) return taken();
 
   // ★ ONE OFFER, TWO WAYS OF ARRIVING AT IT. The CPU rolls its two error terms
   // and a person supplies them; from there the swing is resolved by exactly the
@@ -352,7 +410,7 @@ export function resolvePitch(
       {
         timingErrorSec,
         undercutFt,
-        batter: spec.batter,
+        batter,
         travelSec,
         pitchSpeedFts: plateSpeedFts,
         plate,
@@ -385,15 +443,12 @@ export function resolvePitch(
     // exists so a poor-contact CPU kid is a foul-ball machine rather than a
     // strikeout machine — a statement about an AI's decision rule, not a rule of
     // baseball. A person decides for himself whether to offer.
-    return offer(human.atSec - travelSec, crossing.y - human.aimHeightFt, human.bunt ?? false);
+    return offer(human.atSec - travelSec, crossing.y - human.aimHeightFt, bunts || (human.bunt ?? false));
   }
 
   const decision = cpuSwingDecision(inFlight, spec, rng, plate);
-  if (!decision) {
-    const kind = isStrike(crossing) ? 'calledStrike' : 'ball';
-    return { kind, crossing, pitch: pitchKind, travelSec: travelSec, release: released };
-  }
-  return offer(decision.timingErrorSec, decision.undercutFt);
+  if (!decision) return taken();
+  return offer(decision.timingErrorSec, decision.undercutFt, bunts);
 }
 
 interface CpuSwingDecision {
@@ -415,6 +470,8 @@ function cpuSwingDecision(
   plate: PlateParams
 ): CpuSwingDecision | null {
   const { crossing, travelSec } = inFlight;
+  // Winnie's bat never moves, so the frame's preview must not say it will.
+  if (spec.story && neverSwings(spec.batter)) return null;
   // The read. One error, in space and in time.
   const eye = rng.fork('judge');
   const judgeFt = plateJudgementFt(spec.batter.stats.contact);
@@ -428,7 +485,10 @@ function cpuSwingDecision(
   // which turns a poor-contact kid into a strikeout machine instead of the
   // foul-ball machine a six-year-old actually is.
   const protectFt = spec.count.strikes >= ATBAT.STRIKES_PER_K - 1 ? plate.twoStrikeProtectFt : 0;
-  const swings = distOutsideZone(judged, undefined) <= protectFt;
+  // Ezra's Loop looks like a ball and is not: he offers whatever he read.
+  const swings =
+    distOutsideZone(judged, undefined) <= protectFt ||
+    (spec.story !== undefined && mustChase(spec.pitcher, inFlight.kind));
   if (!swings) return null;
 
   // He offered. The same read decides how well.

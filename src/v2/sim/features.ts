@@ -24,6 +24,11 @@
 // but inert" is the failure `src/v2/AGENTS.md` § The human names, and a port
 // without that third test is exactly it.
 //
+// ★ `storyKids` IS A FIFTH FLAG OF A DIFFERENT KIND: content, not a system.
+// It was never held by a decision; it is `never-held` in the holds file so the
+// port could land without moving a single measured record, and the maintainer
+// decides how it is turned on. `quirks.test.ts` carries its three cases.
+//
 // Pure and import-free on purpose: the purity lint applies to everything in
 // `src/v2/sim/**`, and a flags module that reached for `location.search` would
 // drag the DOM into the sim. `GameView.newGame` reads `?features=` and passes
@@ -39,6 +44,8 @@ export interface Features {
   specialPitches: boolean;
   /** Defensive shifts: pull, oppo, normal. */
   shifts: boolean;
+  /** The cast sheet's signature behaviours: each kid plays the way their story says. */
+  storyKids: boolean;
 }
 
 /** Every held feature, off. The lint holds this to `docs/playtests/holds.json`. */
@@ -47,6 +54,7 @@ export const DEFAULT_FEATURES: Readonly<Features> = Object.freeze({
   juice: false,
   specialPitches: false,
   shifts: false,
+  storyKids: false,
 });
 
 /** The names `?features=` accepts, in the order they are documented. */
@@ -55,6 +63,7 @@ export const FEATURE_NAMES: ReadonlyArray<keyof Features> = Object.freeze([
   'juice',
   'specialPitches',
   'shifts',
+  'storyKids',
 ] as const);
 
 /**

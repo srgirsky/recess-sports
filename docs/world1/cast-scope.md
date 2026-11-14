@@ -143,7 +143,7 @@ scale with height after all, so Winnie's is a per-kid scale.
 **None of the numbers is measured or sourced.** The sheet gives one (the
 Clutch's 0.95); the Archetypes document it cites for the rest has never been in
 this repo. They are first guesses, all in `config.QUIRKS`, for the maintainer
-to correct. v2 has none of these behaviours yet.
+to correct. (v2's first twelve are below.)
 
 A third batch closed the list of kids: Jay's Heater (his first fastball of
 each half inning, or his first pitch in kid mode, arriving in 72% of the time
@@ -186,6 +186,39 @@ classic lineup screen's AUTO now stands Sonny at catcher, Amir in centre and
 Rudy on the outfield grass (`quirks.storyLineup`, a pass over `autoAssign`'s
 plan that leaves `lineup.ts` and so v2 alone); kid mode, which has no lineup
 screen, still fields by draft order.
+
+**v2, begun November 2026, behind a flag.** `src/v2/sim/quirks.ts` reads the
+same `Character.quirk` and expresses it as inputs to the physical plate model
+rather than as v1's outcome tweaks; the numbers are `params.STORY`. It is off
+by default (`features.storyKids`, recorded `never-held` in
+`docs/playtests/holds.json`) and reachable at `/?features=storyKids`, so the
+pinned games and every measured plate record are untouched until the
+maintainer turns it on. The first twelve kids, the mound and the plate:
+
+| Kid | In v2 |
+|---|---|
+| Lu | the curve is her whole menu, whoever asks for what |
+| Ezra | no fastball; a CPU batter always offers at his curve |
+| Musa | one pitch; 40% of the time it flies as the crazy ball, with his own aim rather than the crazy ball's doubled scatter |
+| Kwame, Dev | the release misses by 2.0 and 1.5 times the arm's own error |
+| Bao | every pitch is the floater's flight: as slow as the release solve can throw, heavy backspin |
+| Roz | her FASTBALL leaves the hand 12% faster; the other three are untouched, because the release solve already saturates on them |
+| Winnie | never offers, CPU or person, behind a zone 60% the size each way |
+| Rafi | every swing is a bunt, CPU or person |
+| Nora, Marcus, Yui | power 9.5 in their moment, through the bat-speed model |
+
+Not in v2 yet: Mars, Sam, Josie, Hattie, Yaz, Jay (whose Heater needs stamina,
+itself held), the runners (Zaya, Ollie), the fielders (Sonny, Greta, Rudy,
+Amir, Roya), the sibling bonus and the story positions. Nor does the view know
+any of it: the pitch picker still shows four cards for Lu, the drawn zone is
+the full one for Winnie, and nothing is called out. And none of the seven
+signature looks is on the v2 proxy or the sculpts.
+
+One thing the work turned up that is not about the cast: the release solve
+does not hit its flight-time target for the base fastball below pitching 6
+(asked for 1.28 to 1.45 s, it throws 1.01 to 1.14 s), so in the shipped game a
+pitching-5 arm's fastball arrives sooner than a pitching-7 arm's. It is the
+same saturation `sim.throwSpeed.comparedWithThePitch` records for the changeup.
 
 What did not exist in either sim when this page was written, in rough order of
 size (kept as the scoping record; see above for what v1 has since built):
