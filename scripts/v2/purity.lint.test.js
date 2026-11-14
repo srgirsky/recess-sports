@@ -424,7 +424,7 @@ describe('★ a kid\'s story is read in one module of the sim', () => {
   // `src/v2/sim/quirks.ts` is the only file that may look at `Character.quirk`,
   // and it expresses a quirk as an INPUT to the plate model. A reducer that
   // tests `.quirk` for itself is a second place a behaviour can be defined, and
-  // one the flag (`features.storyKids`, asked once by `game.ts` and carried as
+  // one the flag (`GameSpec.stories`, asked once by `game.ts` and carried as
   // `PitchSpec.story`) does not reach — so the pinned games would move with
   // the flag off. Broken once before it was trusted: a scratch module in
   // `src/v2/sim/` returning `k.quirk` fails this naming the file.

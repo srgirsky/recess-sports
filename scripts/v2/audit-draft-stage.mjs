@@ -63,7 +63,7 @@ try {
     const errors = [];
     page.on('pageerror', (e) => errors.push(String(e)));
     await page.addInitScript(() => { window.requestAnimationFrame = () => 0; window.cancelAnimationFrame = () => {}; });
-    // `DRAFT_STAGE_QUERY=features=storyKids` audits the stage with a held
+    // `DRAFT_STAGE_QUERY=features=juice` audits the stage with a held
     // feature on; unset — CI — it is the shipped page.
     const query = process.env.DRAFT_STAGE_QUERY ? `?${process.env.DRAFT_STAGE_QUERY}` : '';
     await page.goto(`http://localhost:${port}/v2/${query}`, { waitUntil: 'networkidle' });

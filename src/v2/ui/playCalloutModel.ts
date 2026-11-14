@@ -26,7 +26,7 @@ const SPEND_LABELS: Record<SpendKind, string> = {
 };
 
 /**
- * A kid's story, said over the field (`features.storyKids`). Icon first, two
+ * A kid's story, said over the field (`GameSpec.stories`). Icon first, two
  * words at most: the kid this is for cannot read the sheet the story is from.
  */
 const STORY_LABELS: Record<StoryBeat, { label: string; detail: string | null }> = {

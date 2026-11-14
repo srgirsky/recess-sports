@@ -17,12 +17,11 @@
 // awaiting its sheet, and a test that pinned one would be pinning the guess.
 // ---------------------------------------------------------------------------
 
-import { describe, expect, it, vi } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { getCharacter, ROSTER } from '../../data/characters';
 import type { Character, Quirk } from '../../data/types';
 import { isStrike, pitchAndSwing, resolvePitch, throwPitch, type PitchSpec } from './atbat';
 import { zoneBandFt, zoneHalfWidthFt } from './athletes';
-import { DEFAULT_FEATURES } from './features';
 import { simulateGame, type GameResult, type SimEvent } from './game';
 import { jumpSecOf } from './steal';
 import { PITCH_SPOTS, PITCHES, releaseAtSpot, releaseFrom, flyToPlate, type BasePitchKind } from './pitch';
@@ -58,6 +57,14 @@ import type { LaunchSpec } from './launch';
 // default; CI's runner is about twice as slow and one did not. Nothing here
 // waits on anything — a slow run is a slow machine, never a hang.
 vi.setConfig({ testTimeout: 120_000 });
+
+// ★ AND EVERY TEST THAT PLAYS WHOLE GAMES YIELDS BETWEEN THEM. A game is
+// synchronous, and a dozen back to back is ten seconds or more on CI with the
+// worker's event loop never turning — long enough that vitest's reporter RPC
+// times out with every assertion green ("Timeout calling onTaskUpdate", which
+// is how this file's first two CI runs failed). `game.test.ts` learned the
+// same thing for its thirty-game checksum. `breathe` costs a macrotask.
+const breathe = () => new Promise<void>((r) => setTimeout(r, 0));
 
 const QUIET: Moment = { bases: [false, false, false], lead: 0 };
 const kidWith = (q: Quirk): Character => {
@@ -426,7 +433,7 @@ describe('the bases', () => {
         home: { name: 'Comets', ids: home },
         lookup: getCharacter,
         humanSide,
-        features: on ? { ...DEFAULT_FEATURES, storyKids: true } : undefined,
+        stories: on,
         onEvent: (e) => {
           if (e.t === 'steal') out.push(e);
         },
@@ -453,22 +460,31 @@ describe('the bases', () => {
     for (const kid of PLAIN) expect(jumpCapSec(kid)).toBeUndefined();
   });
 
-  it('★ Zaya goes on her own for a person who never gives the order', () => {
+  const over = async <T,>(seeds: readonly string[], f: (seed: string) => T[]): Promise<T[]> => {
+    const out: T[] = [];
+    for (const seed of seeds) {
+      await breathe();
+      out.push(...f(seed));
+    }
+    return out;
+  };
+
+  it('★ Zaya goes on her own for a person who never gives the order', async () => {
     // A person's runners go only on order, and a drained game gives none.
     const zaya = kidWith('green_light');
     const team = teamWith('green_light');
-    const on = SEEDS.flatMap((s) => steals(team, s, true, 'away')).filter((e) => team.includes(e.runnerId));
-    const off = SEEDS.flatMap((s) => steals(team, s, false, 'away')).filter((e) => team.includes(e.runnerId));
+    const on = (await over(SEEDS, (s) => steals(team, s, true, 'away'))).filter((e) => team.includes(e.runnerId));
+    const off = (await over(SEEDS, (s) => steals(team, s, false, 'away'))).filter((e) => team.includes(e.runnerId));
     expect(off.length, 'the control: nobody on a person\'s bench runs unasked').toBe(0);
     expect(on.length).toBeGreaterThan(0);
     expect(new Set(on.map((e) => e.runnerId))).toEqual(new Set([zaya.id]));
     expect(on.every((e) => !e.human)).toBe(true);
   }, 120_000);
 
-  it('★ Ollie is never caught stealing', () => {
+  it('★ Ollie is never caught stealing', async () => {
     const ollie = kidWith('never_tagged');
     const team = teamWith('never_tagged');
-    const his = SEEDS.flatMap((s) => steals(team, s, true)).filter((e) => e.runnerId === ollie.id);
+    const his = (await over(SEEDS, (s) => steals(team, s, true))).filter((e) => e.runnerId === ollie.id);
     expect(his.length).toBeGreaterThan(0);
     expect(his.filter((e) => !e.safe).length).toBe(0);
     expect(slipsTheTag(ollie)).toBe(true);
@@ -594,14 +610,15 @@ describe('Sam and Jay', () => {
     for (const kid of PLAIN) expect(hitByPitch(kid, { x: -(edge + 1), y: mid })).toBe(false);
   });
 
-  it('★ Sam is hit in real games, and it puts him on first', () => {
+  it('★ Sam is hit in real games, and it puts him on first', async () => {
     const sam = kidWith('hit_by_pitch');
     const away = [sam.id, ...ROSTER.filter((c) => c.id !== sam.id).slice(0, 8).map((c) => c.id)];
     const home = ROSTER.filter((c) => !away.includes(c.id)).slice(0, 9).map((c) => c.id);
     let hits = 0;
     for (let i = 0; i < 12; i++) {
+      await breathe();
       const g = simulateGame(
-        { away: { name: 'A', ids: away }, home: { name: 'H', ids: home }, lookup: getCharacter, features: { ...DEFAULT_FEATURES, storyKids: true } },
+        { away: { name: 'A', ids: away }, home: { name: 'H', ids: home }, lookup: getCharacter},
         makeRng(`hbp${i}`)
       );
       hits += g.log.filter((l) => l.includes('is hit by the pitch')).length;
@@ -671,11 +688,12 @@ describe('★ the story does not break the game it is told in', () => {
   // plate appearances, Winnie walked 84% of the time and Hattie's one spot
   // was an out 92% of the time. Each kid's own test passed. So the gate is on
   // the GAME: thirty rosters rotated through, stories on and off.
-  const rotated = (on: boolean) => {
+  const rotated = async (on: boolean) => {
     let runs = 0;
     const perKid: Record<string, { pa: number; onBase: number; hr: number }> = {};
     const N = 60;
     for (let g = 0; g < N; g++) {
+      await breathe();
       const off = (g * 7) % ROSTER.length;
       const at = (j: number) => ROSTER[(off + j) % ROSTER.length].id;
       let lastHr = false;
@@ -684,7 +702,7 @@ describe('★ the story does not break the game it is told in', () => {
           away: { name: 'A', ids: Array.from({ length: 9 }, (_, j) => at(j)) },
           home: { name: 'B', ids: Array.from({ length: 9 }, (_, j) => at(j + 9)) },
           lookup: getCharacter,
-          features: on ? { ...DEFAULT_FEATURES, storyKids: true } : undefined,
+          stories: on,
           onEvent: (e) => {
             if (e.t === 'contact') lastHr = e.hit === 'HR' && !e.foul;
             if (e.t !== 'pa') return;
@@ -701,8 +719,12 @@ describe('★ the story does not break the game it is told in', () => {
     }
     return { rpg: runs / N, perKid };
   };
-  const on = rotated(true);
-  const off = rotated(false);
+  let on: Awaited<ReturnType<typeof rotated>>;
+  let off: Awaited<ReturnType<typeof rotated>>;
+  beforeAll(async () => {
+    on = await rotated(true);
+    off = await rotated(false);
+  }, 300_000);
 
   it('★ scoring with the stories on stays within a quarter of scoring without', () => {
     expect(on.rpg).toBeGreaterThan(off.rpg * 0.75);
@@ -754,7 +776,7 @@ describe('★ every beat the view can name is one the game really says', () => {
         home: { name: 'H', ids: home },
         lookup: getCharacter,
         humanSide,
-        features: on ? { ...DEFAULT_FEATURES, storyKids: true } : undefined,
+        stories: on,
         onEvent: (e) => {
           if (e.t === 'story') out.push(e);
         },
@@ -780,14 +802,15 @@ describe('★ every beat the view can name is one the game really says', () => {
   ];
   const SEEDS = Array.from({ length: 10 }, (_, i) => `beat${i}`);
 
-  it('★ says nothing at all with the flag off', () => {
+  it('★ says nothing at all with the flag off', async () => {
     for (const seed of SEEDS.slice(0, 4)) {
+      await breathe();
       expect(beatsOf(NINE, seed, false)).toEqual([]);
       expect(beatsOf(FAMILY, seed, false)).toEqual([]);
     }
   });
 
-  it('★ names each beat for the kid whose story it is', () => {
+  it('★ names each beat for the kid whose story it is', async () => {
     expect(MUSA_NINE.length, 'eight arms weaker than Musa').toBe(9);
     const seen = new Map<string, Set<string>>();
     const note = (events: Array<Extract<SimEvent, { t: 'story' }>>) => {
@@ -797,8 +820,10 @@ describe('★ every beat the view can name is one the game really says', () => {
       }
     };
     for (const seed of SEEDS) {
+      await breathe();
       note(beatsOf(NINE, seed, true));
       note(beatsOf(NINE, seed, true, 'away'));
+      await breathe();
       note(beatsOf(FAMILY, seed, true));
       note(beatsOf(MUSA_NINE, seed, true));
     }
@@ -837,7 +862,7 @@ describe('★ the port is not inert', () => {
         away: { name: 'Rockets', ids: AWAY },
         home: { name: 'Comets', ids: HOME },
         lookup: getCharacter,
-        features: on ? { ...DEFAULT_FEATURES, storyKids: true } : undefined,
+        stories: on,
       },
       makeRng(seed)
     );
@@ -848,10 +873,11 @@ describe('★ the port is not inert', () => {
     expect(HOME.length).toBe(9);
   });
 
-  it('★ storyKids: true changes the game, and the game still ends', () => {
+  it('★ the stories change the game, and the game still ends', async () => {
     for (const seed of ['a', 'b', 'c']) {
+      await breathe();
       const on = play(seed, true);
-      expect(fp(on), `${seed}: storyKids on played the identical game`).not.toBe(fp(play(seed, false)));
+      expect(fp(on), `${seed}: the stories on played the identical game`).not.toBe(fp(play(seed, false)));
       expect(on.innings).toBeGreaterThanOrEqual(1);
     }
   }, 60_000);

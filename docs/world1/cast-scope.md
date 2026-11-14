@@ -197,13 +197,14 @@ plan that leaves `lineup.ts` and so v2 alone); kid mode, which has no lineup
 screen and fields in draft order, makes the same three trades on that order
 (`quirks.storyPosts`).
 
-**v2, begun November 2026, behind a flag.** `src/v2/sim/quirks.ts` reads the
+**v2, November 2026.** `src/v2/sim/quirks.ts` reads the
 same `Character.quirk` and expresses it as inputs to the physical plate model
-rather than as v1's outcome tweaks; the numbers are `params.STORY`. It is off
-by default (`features.storyKids`, recorded `never-held` in
-`docs/playtests/holds.json`) and reachable at `/?features=storyKids`, so the
-pinned games and every measured plate record are untouched until the
-maintainer turns it on. All twenty-five quirk kids and both team rules:
+rather than as v1's outcome tweaks; the numbers are `params.STORY`. It landed
+behind a flag and was **switched on for everyone on 2026-11-14**, by the
+maintainer's decision that the stories are who the kids are, not a held
+feature awaiting a playtest (`GameSpec.stories`, on unless a caller passes
+`false`; `/?stories=0` plays without them). The recorded games were re-pinned
+with them on; the base model's own pins are still measured with them off. All twenty-five quirk kids and both team rules:
 
 | Kid | In v2 |
 |---|---|
@@ -248,7 +249,7 @@ one-kid-speed lint exists to stop; Rudy and Amir get the top of the arm scale
 rather than 1.5 times it, because the throw-speed band is a published one;
 and Jay cannot refuse relief in a game that has none.
 
-What the VIEW shows of it (also behind the flag): the pitch picker carries
+What the VIEW shows of it: the pitch picker carries
 only the cards on the arm's menu (one for Lu, three for Ezra, Musa's renamed
 WOBBLER); the zone box drawn at the plate shrinks with Winnie's zone; a person
 batting as Yaz loses the ball, its shadow and the timing ring halfway in; and
@@ -257,8 +258,7 @@ WOBBLER, CLUTCH, MOONSHOT, OW! FREE BASE, NO TAG, WRONG BASE, GREEN LIGHT,
 FAMILY).
 
 The 3D draft card names the behaviour too, in the classic card's own words
-(`src/data/quirkLabels.ts`, shared by both games), and only while the flag is
-on.
+(`src/data/quirkLabels.ts`, shared by both games).
 
 Not in v2 yet: Bao's four cards are four names for one flight; and none of the seven signature looks is on the v2 proxy
 or the sculpts.

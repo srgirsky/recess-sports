@@ -193,7 +193,7 @@ export type SimEvent =
     }
   | {
       /**
-       * A kid's story happening, the instant it does (`features.storyKids`,
+       * A kid's story happening, the instant it does (`GameSpec.stories`,
        * `quirks.ts` `StoryBeat`). Never emitted with the flag off. It restates
        * nothing the other events carry: it is the NAME of the moment, for a
        * view that wants to say it.
@@ -410,6 +410,15 @@ export interface GameSpec {
    */
   features?: Features;
   /**
+   * The cast's story behaviours (`sim/quirks.ts`): each kid plays the way the
+   * cast sheet says. ON unless a caller passes `false` — they are who the
+   * kids are, not an optional system, and were switched on for everyone on
+   * 2026-11-14 by the maintainer's decision rather than a playtest hold
+   * (`docs/world1/cast-scope.md`). `false` exists for a measurement that
+   * wants the game with and without them.
+   */
+  stories?: boolean;
+  /**
    * Which side a PERSON is playing, if any — read only by the juice port,
    * which must not spend that side's meter for them: a human proposes through
    * `PlayInputs.spend` on the windup, and the CPU's roll runs for every OTHER
@@ -560,7 +569,7 @@ function* playAtBatLive(
     /** `features.shifts`: does the fielding side choose where it stands? */
     shifts: boolean;
     /**
-     * `features.storyKids`: the batting side's runs minus the fielding side's
+     * `GameSpec.stories`: the batting side's runs minus the fielding side's
      * as this HALF began (this half's runs are added per pitch) — or null with
      * the flag off, when no kid's quirk is read (`quirks.ts`).
      */
@@ -1212,7 +1221,7 @@ function decideSteal(
   cpuMay: boolean,
   stealRng: Rng,
   /**
-   * `features.storyKids`, and nobody was just thrown at: Zaya may go on her
+   * `GameSpec.stories`, and nobody was just thrown at: Zaya may go on her
    * own judgement where `cpuMay` says a person's runners wait for the order.
    */
   story = false
@@ -1388,7 +1397,7 @@ interface HalfState {
    * the next inning, as the rule has it.
    */
   cut?: boolean;
-  /** Jay has thrown this half inning's Heater (`features.storyKids`). */
+  /** Jay has thrown this half inning's Heater (`GameSpec.stories`). */
   heaterThrown?: boolean;
 }
 
@@ -1408,12 +1417,13 @@ interface HalfState {
 export function* simulateGameLive(spec: GameSpec, rng: Rng): Generator<LiveFrame, GameResult, PlayInputs> {
   const geo = spec.geo ?? DEFAULT_GEOMETRY;
   const regulation = spec.regulationInnings ?? GAME.REGULATION_INNINGS;
-  // ★ THE STORY FLAG, ASKED ONCE (`quirks.ts`). With it off `lookup` IS
-  // `spec.lookup`, the plan is `planDefence`'s, and every site below hands
-  // the plate and the play `null`/`undefined` — which is how the pinned
-  // games hold. With it on, siblings sharing a nine are each a little better
-  // and three kids stand where their story says.
-  const story = spec.features?.storyKids === true;
+  // ★ THE STORIES, ASKED ONCE (`quirks.ts`, `GameSpec.stories`). On unless
+  // the caller says otherwise. With them off `lookup` IS `spec.lookup`, the
+  // plan is `planDefence`'s, and every site below hands the plate and the
+  // play `null`/`undefined` — no kid's quirk is read at all, which is what a
+  // with-and-without measurement needs. With them on, siblings sharing a nine
+  // are each a little better and three kids stand where their story says.
+  const story = spec.stories !== false;
   const lookup = story ? familyLookup(spec.lookup, [spec.away.ids, spec.home.ids]) : spec.lookup;
   const siblings = story ? siblingsTogether([spec.away.ids, spec.home.ids]) : new Set<string>();
   const familyCalled = new Set<string>();

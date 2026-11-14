@@ -13,7 +13,7 @@
 // ★ TWO RULES, AND THE GOLDENS REST ON BOTH.
 //
 //   1. THE FLAG IS ASKED ONCE, BY THE CALLER. Nothing here reads
-//      `features.storyKids`. `game.ts` hands the plate a `Moment` when the flag
+//      `GameSpec.stories`. `game.ts` hands the plate a `Moment` when the flag
 //      is on and nothing when it is off, and `atbat.ts` reaches this module
 //      only when it has one — so with the flag off no line below runs.
 //   2. A KID WITHOUT A QUIRK GETS THE VALUE HE ALWAYS GOT. Every function
@@ -208,7 +208,7 @@ export function alwaysBunts(batter: Character): boolean {
 
 /**
  * The moment a batter steps into. Its PRESENCE on a `PitchSpec` is the story
- * flag: `game.ts` builds one only when `features.storyKids` is on.
+ * flag: `game.ts` builds one only when `GameSpec.stories` is on.
  */
 export interface Moment {
   /** bases[0] = first. */

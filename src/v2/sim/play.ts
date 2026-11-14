@@ -360,7 +360,7 @@ export interface PlaySpec {
    * `makeFielder`, which is what the one-kid-speed lint asserts.
    */
   boost?: { turboLegs?: boolean; goldenGlove?: boolean };
-  /** `features.storyKids`: dress the fielders in their stories (`quirks.ts`). Omitted: nobody's is read. */
+  /** `GameSpec.stories`: dress the fielders in their stories (`quirks.ts`). Omitted: nobody's is read. */
   story?: boolean;
 }
 

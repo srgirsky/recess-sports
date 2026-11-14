@@ -157,8 +157,8 @@ this repo has never held. What is still unbuilt is listed in
 `docs/world1/cast-scope.md`.
 
 **The same behaviours, in the 3D game's sim.** November 2026: all twenty-five
-kids, the sibling bonus and the story positions play in v2 behind
-`features.storyKids`, off by default. v2 could not import v1's module (it is
+kids, the sibling bonus and the story positions play in v2. They landed
+behind a flag and went on for everyone on 2026-11-14 (`GameSpec.stories`). v2 could not import v1's module (it is
 not one of the sim's five) and should not have copied it: v1 states outcomes
 (a travel-time multiplier, a band bump, a ball chance) and v2 derives them, so
 `src/v2/sim/quirks.ts` changes only what the plate model takes as input: the
@@ -166,9 +166,10 @@ menu an arm picks from, the definition a pitch flies with, the size of the
 release error, whether a batter offers, the zone he is called against, his
 power this pitch, and later a fielder's hands, reach and arm and a runner's
 jump. Two kids are the exception because their sheet line is about where the
-ball goes: Hattie's lands in one place and Mars's perfect swing is gone. It sits behind a flag because almost every number is a guess
-and turning them on moves every measured plate record; the scope page has the
-per-kid table and what is still missing.
+ball goes: Hattie's lands in one place and Mars's perfect swing is gone. Almost every number is still a guess, and the first set doubled scoring
+while every kid's own test passed; what holds them now is a gate on the whole
+game's shape, not on the kid. The scope page has the per-kid table and what
+is still missing.
 
 ### Design pillars (ages 4–8)
 

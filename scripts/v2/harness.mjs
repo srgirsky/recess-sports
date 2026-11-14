@@ -99,9 +99,11 @@ while (t.plateAppearances < TARGET_PA) {
       lookup: getCharacter,
       geo: VENUE_GEOMETRY[VENUES[games % VENUES.length]],
       onEvent: (e) => observe(t, e),
-      // `HARNESS_FEATURES=storyKids npm run sim:harness` measures the game
-      // with held features on. Unset — every recorded run — it is omitted.
+      // `HARNESS_FEATURES=juice npm run sim:harness` measures the game with a
+      // held feature on; `HARNESS_STORIES=0` measures it without the cast's
+      // story behaviours. Unset — every recorded run — both are omitted.
       features: process.env.HARNESS_FEATURES ? parseFeatures(process.env.HARNESS_FEATURES) : undefined,
+      stories: process.env.HARNESS_STORIES === '0' ? false : undefined,
     },
     makeRng(`pr8:${seed}:${games}`)
   );

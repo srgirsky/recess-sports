@@ -36,10 +36,9 @@ import { getCharacter } from '../../../data/characters';
 import type { Rng } from '../../sim/rng';
 import type { Character } from '../../../data/types';
 import { quirkLabel } from '../../../data/quirkLabels';
-import { parseFeatures } from '../../sim/features';
 
-/** Read once: `?features=` is the whole configuration of a review URL (`GameView.newGame`). */
-const STORY_ON = typeof location !== 'undefined' && parseFeatures(new URLSearchParams(location.search).get('features')).storyKids;
+/** Read once: the stories are on unless a review URL says `?stories=0` (`GameView.newGame`). */
+const STORY_ON = typeof location === 'undefined' || new URLSearchParams(location.search).get('stories') !== '0';
 import {
   DRAFT_REACT_SEC,
   DRAFT_WALK_OFF_SEC,
@@ -385,7 +384,7 @@ export class DraftScreen implements Screen {
       el('h2', 'draft-preview__name', `${c.emoji ?? '⭐'} ${c.name}`),
       el('p', 'draft-preview__tagline', c.tagline)
     );
-    // The kid's story, named (`features.storyKids`): the same words the classic
+    // The kid's story, named (`GameSpec.stories`): the same words the classic
     // card carries (`data/quirkLabels.ts`), and only while the 3D game is
     // actually playing the stories — a chip for a behaviour that is switched
     // off would be a promise the game does not keep.

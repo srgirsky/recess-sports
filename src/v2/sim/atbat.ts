@@ -151,7 +151,7 @@ export interface PitchSpec {
   plate?: PlateParams;
   /**
    * The moment the batter steps into — and, by being here at all, the story
-   * flag (`features.storyKids`, `quirks.ts`). Omitted, no kid's quirk is read
+   * flag (`GameSpec.stories`, `quirks.ts`). Omitted, no kid's quirk is read
    * and this file does exactly what it did before they had any.
    */
   story?: Moment;

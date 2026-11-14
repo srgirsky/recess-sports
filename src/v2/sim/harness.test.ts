@@ -30,6 +30,14 @@
 //      enough that a retune has to come here and say so.
 // ---------------------------------------------------------------------------
 
+// ★ EVERY GAME IN THIS FILE IS PLAYED WITH `stories: false`. These are the
+// base physical model's assertions and pins — orderings in an injected stat,
+// the batted-ball shape `sim.gameShape` records — and a kid's story is a
+// second variable in exactly the place they control for one: Hattie's ball
+// lands where it lands whatever her power, Winnie never swings whatever her
+// contact. The stories are held to the game's shape by their own gate
+// (`quirks.test.ts` § the story does not break the game it is told in).
+
 import { beforeAll, describe, it, expect } from 'vitest';
 import { simulateGame, type GameSpec } from './game';
 import {
@@ -95,6 +103,7 @@ function run(games: number, tag: string, over: Partial<GameSpec> = {}): HarnessT
         away,
         home,
         lookup: getCharacter,
+        stories: false,
         geo: VENUE_GEOMETRY[VENUES[i % VENUES.length]],
         onEvent: (e) => observe(t, e),
         ...over,
@@ -238,6 +247,7 @@ describe('★ the assertions that need no band', () => {
             away: { name: 'A', ids },
             home: { name: 'B', ids },
             lookup: getCharacter,
+        stories: false,
             onEvent: (e) => observe(t, e),
           },
           makeRng(`pr8:${tag}:${i}`)
@@ -345,6 +355,7 @@ describe('★ the assertions that need no band', () => {
             away: { name: 'A', ids },
             home: { name: 'B', ids },
             lookup: withPower(power),
+        stories: false,
             onEvent: (e) => observe(t, e),
           },
           makeRng(`pr8:power:${i}`)

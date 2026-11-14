@@ -1133,7 +1133,7 @@ export const JUICE = {
 } as const;
 
 /**
- * The story behaviours (`features.storyKids`, `sim/quirks.ts`): what the cast
+ * The story behaviours (`GameSpec.stories`, `sim/quirks.ts`): what the cast
  * sheet says a kid does, as the handful of numbers the physical model does not
  * already hold.
  *
