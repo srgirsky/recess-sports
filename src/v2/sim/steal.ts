@@ -64,6 +64,12 @@ export interface StealSpec {
    * supplied by a person, the shape `HumanSwing` already has.
    */
   readSec?: number;
+  /**
+   * The latest this runner can leave, seconds (`quirks.ts` `jumpCapSec`).
+   * Omitted — every kid without that story, and everyone with the story off —
+   * the jump is the draw.
+   */
+  jumpCapSec?: number;
 }
 
 export interface StealResult {
@@ -166,7 +172,7 @@ export function stealRace(spec: StealSpec, rng: Rng): StealResult {
   const legs = throwLegsSec(spec);
   if (legs === null) return { safe: true, marginSec: Infinity, outOfRange: true, relayed: false };
   const d = spec.pitchTravelSec + readSecOf(spec) + DEFENSE.RELEASE_SEC + legs.fly;
-  const marginSec = d - (runnerSecTo(spec) + jumpSecOf(spec.runner, rng));
+  const marginSec = d - (runnerSecTo(spec) + jumpSecOf(spec.runner, rng, spec.jumpCapSec));
   return { safe: marginSec > 0, marginSec, outOfRange: false, relayed: legs.relayed };
 }
 
@@ -179,8 +185,9 @@ export function stealRace(spec: StealSpec, rng: Rng): StealResult {
  * substream is a function of its label, not of who asked first), so the
  * runner who went on a good read races on that read.
  */
-export function jumpSecOf(runner: Character, rng: Rng): number {
-  return rng.fork('jump').bell() * jumpSigmaSec(runner.stats.speed);
+export function jumpSecOf(runner: Character, rng: Rng, capSec?: number): number {
+  const jump = rng.fork('jump').bell() * jumpSigmaSec(runner.stats.speed);
+  return capSec !== undefined && jump > capSec ? capSec : jump;
 }
 
 /**

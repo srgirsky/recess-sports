@@ -143,7 +143,7 @@ scale with height after all, so Winnie's is a per-kid scale.
 **None of the numbers is measured or sourced.** The sheet gives one (the
 Clutch's 0.95); the Archetypes document it cites for the rest has never been in
 this repo. They are first guesses, all in `config.QUIRKS`, for the maintainer
-to correct. v2 has none of these behaviours yet.
+to correct. (v2's first twelve are below.)
 
 A third batch closed the list of kids: Jay's Heater (his first fastball of
 each half inning, or his first pitch in kid mode, arriving in 72% of the time
@@ -186,6 +186,78 @@ classic lineup screen's AUTO now stands Sonny at catcher, Amir in centre and
 Rudy on the outfield grass (`quirks.storyLineup`, a pass over `autoAssign`'s
 plan that leaves `lineup.ts` and so v2 alone); kid mode, which has no lineup
 screen, still fields by draft order.
+
+**v2, begun November 2026, behind a flag.** `src/v2/sim/quirks.ts` reads the
+same `Character.quirk` and expresses it as inputs to the physical plate model
+rather than as v1's outcome tweaks; the numbers are `params.STORY`. It is off
+by default (`features.storyKids`, recorded `never-held` in
+`docs/playtests/holds.json`) and reachable at `/?features=storyKids`, so the
+pinned games and every measured plate record are untouched until the
+maintainer turns it on. All twenty-five quirk kids and both team rules:
+
+| Kid | In v2 |
+|---|---|
+| Lu | the curve is her whole menu, whoever asks for what, and she aims it through its break so it lands on the spot |
+| Ezra | no fastball; his curve is aimed through its break, and a CPU batter always offers at it |
+| Musa | one pitch; 40% of the time it flies as the crazy ball, aimed through its break with his own scatter rather than the crazy ball's doubled one |
+| Kwame, Dev | the release misses by 2.0 and 1.5 times the arm's own error |
+| Bao | every pitch is the floater's flight: as slow as the release solve can throw, heavy backspin |
+| Roz | everything she throws leaves the hand 12% faster |
+| Jay | his first fastball of each half inning flies as the fireball; with stamina on it drains like a special |
+| Winnie | never offers, CPU or person, behind a zone 60% the size each way |
+| Rafi | every swing is a bunt, CPU or person |
+| Nora, Marcus, Yui | power 9.5 in their moment, through the bat-speed model |
+| Mars | a swing dead on (within 1.2% of the flight) leaves at 112 ft/s and 30 degrees, which clears every venue; about one plate appearance in eight |
+| Josie | contact below 0.45 square is ticked foul 60% of the time (everyone else: below 0.18, 45%) |
+| Hattie | every ball in play is the same flare toward the right-field line (62 ft/s, 22 degrees up, 40 degrees right), a hit about two times in three |
+| Yaz | offers at everything, reads it with a contact of 3, hits it with a power of 10 |
+| Sam | never protects with two strikes; a ball he takes more than 0.6 ft inside the zone's edge, between knees and shoulders, hits him and is folded as a walk |
+| Zaya | steals on her own judgement even on a person's bench, and her jump is never late |
+| Ollie | a steal race or pickoff he loses, he wins anyway |
+| Sonny, Greta | never drop or bobble; Sonny reaches a foot further |
+| Rudy, Amir | arm 10 in the field |
+| Roya | 35% of her throws go to the next bag round that her arm reaches |
+| siblings | Roz with Rudy, Hattie with Ezra: +1 at every stat, capped at 10, legs included |
+| positions | Sonny catches, Amir plays centre, Rudy stands in the outfield; the pitcher is never moved |
+
+**The numbers were tuned once against the whole game, 2026-11-13.** At their
+first values the harness measured 12.9 runs a game with the stories on
+against 6.8 off: Lu walked 44% of batters (a curve aimed at the zone breaks
+out of it, and it was her only pitch), Mars homered in 46% of plate
+appearances, Winnie walked 84% of the time and Hattie's spot was an out 92% of
+the time. After the changes in the table (and with the release solve fixed), over 240 rotated-roster games:
+6.4 runs a game on, 6.2 off; Mars homers in 12% of plate appearances; Winnie
+walks 58% and strikes out looking 42%; Hattie hits 66%; Sam reaches 58%; Lu
+and Musa walk nobody and Kwame walks 18%. `quirks.test.ts` gates the game's
+shape, not these values. They are still guesses, now guesses that play.
+
+Departures from v1, each for a reason in `quirks.ts`: Ollie is safe at the bag he was stealing rather than back on the one he left
+(every consumer of the steal event reads "not safe" as an out); Amir has the
+arm but not the range, because a second speed for one kid's legs is what the
+one-kid-speed lint exists to stop; Rudy and Amir get the top of the arm scale
+rather than 1.5 times it, because the throw-speed band is a published one;
+and Jay cannot refuse relief in a game that has none.
+
+What the VIEW shows of it (also behind the flag): the pitch picker carries
+only the cards on the arm's menu (one for Lu, three for Ezra, Musa's renamed
+WOBBLER); the zone box drawn at the plate shrinks with Winnie's zone; a person
+batting as Yaz loses the ball, its shadow and the timing ring halfway in; and
+nine moments are called over the field from a new `story` sim event (HEATER,
+WOBBLER, CLUTCH, MOONSHOT, OW! FREE BASE, NO TAG, WRONG BASE, GREEN LIGHT,
+FAMILY).
+
+The 3D draft card names the behaviour too, in the classic card's own words
+(`src/data/quirkLabels.ts`, shared by both games), and only while the flag is
+on.
+
+Not in v2 yet: Bao's four cards are four names for one flight; and none of the seven signature looks is on the v2 proxy
+or the sculpts.
+
+One thing the work turned up that was not about the cast: the release solve
+did not hit its flight-time target for the base fastball below pitching 6, so
+a pitching-5 arm's fastball arrived sooner than a pitching-7 arm's. Fixed in
+the same month (`sim.pitch-corridor` theSolveIsABisection); Roz's test is what
+found it.
 
 What did not exist in either sim when this page was written, in rough order of
 size (kept as the scoping record; see above for what v1 has since built):

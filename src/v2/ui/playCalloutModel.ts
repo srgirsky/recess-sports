@@ -9,8 +9,9 @@
 
 import type { SimEvent } from '../sim/game';
 import type { SpendKind } from '../sim/juice';
+import type { StoryBeat } from '../sim/quirks';
 
-export type PlayCalloutKind = 'ball' | 'strike' | 'foul' | 'safe' | 'out' | 'homer' | 'spend';
+export type PlayCalloutKind = 'ball' | 'strike' | 'foul' | 'safe' | 'out' | 'homer' | 'spend' | 'story';
 
 /** What each spend is called over the field — an icon carries it; the word is short. */
 const SPEND_LABELS: Record<SpendKind, string> = {
@@ -22,6 +23,22 @@ const SPEND_LABELS: Record<SpendKind, string> = {
   crazy: '🤪 CRAZY BALL!',
   fireball: '☄️ BLAZE!',
   freezeball: '🧊 FLOATER!',
+};
+
+/**
+ * A kid's story, said over the field (`features.storyKids`). Icon first, two
+ * words at most: the kid this is for cannot read the sheet the story is from.
+ */
+const STORY_LABELS: Record<StoryBeat, { label: string; detail: string | null }> = {
+  heater: { label: '🔥 HEATER!', detail: null },
+  wobbler: { label: '🎲 WOBBLER!', detail: 'IT WORKED' },
+  clutch: { label: '⭐ CLUTCH!', detail: null },
+  moonshot: { label: '🌙 MOONSHOT!', detail: null },
+  hitByPitch: { label: '😵 OW!', detail: 'FREE BASE' },
+  slippedTag: { label: '💨 NO TAG!', detail: null },
+  wrongBase: { label: '🤷 WRONG BASE!', detail: null },
+  greenLight: { label: '🟢 GREEN LIGHT!', detail: null },
+  family: { label: '👫 FAMILY!', detail: null },
 };
 
 /**
@@ -89,6 +106,7 @@ export function playCalloutFor(e: SimEvent): PlayCalloutModel | null {
 
   if (e.t === 'pa') return null;
   if (e.t === 'spend') return { kind: 'spend', label: SPEND_LABELS[e.kind], detail: null };
+  if (e.t === 'story') return { kind: 'story', ...STORY_LABELS[e.beat] };
   // The stolen base: the same SAFE / OUT a kid reads at a bag, with the bag
   // beneath it. Fired after the pitch's own event, so this is the verdict
   // left showing when both land on one instant.

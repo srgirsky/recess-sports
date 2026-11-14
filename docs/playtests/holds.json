@@ -44,9 +44,24 @@
       "label": "special pitches (crazy ball, fireball, freezeball)",
       "status": "never-held",
       "note": "Listed among the reference's optional arcade systems (docs/OVERVIEW.md § 2026-08-08 re-audit › 5: 'hustle, defensive shifts, juice/stamina and special pitches') but never formally held or ported. Recorded here so the port lands behind its flag, defaults off, and is judged by the same protocol as the held three rather than slipping in as parity work."
+    },
+    "storyKids": {
+      "label": "story behaviours (the cast sheet's signature habits and flaws)",
+      "status": "never-held",
+      "note": "The v2 port of the per-kid behaviours v1 shipped in November 2026 (docs/world1/cast-scope.md § Mechanics the archetypes need). Never formally decided for v2. Recorded here so the port lands behind its flag and defaults off: almost every number in params.STORY is an unsourced first guess, and turning them on moves every measured plate record. The maintainer decides whether a playtest record or a direct decision turns it on."
     }
   },
-  "questions": ["sim.human-pitch", "sim.runner-sends"],
-  "verdicts": ["lift", "hold", "inconclusive"],
-  "ageBands": ["4-5", "6-8"]
+  "questions": [
+    "sim.human-pitch",
+    "sim.runner-sends"
+  ],
+  "verdicts": [
+    "lift",
+    "hold",
+    "inconclusive"
+  ],
+  "ageBands": [
+    "4-5",
+    "6-8"
+  ]
 }

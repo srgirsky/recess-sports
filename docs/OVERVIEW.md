@@ -156,6 +156,20 @@ numbers are guesses: the cast sheet cites an Archetypes document
 this repo has never held. What is still unbuilt is listed in
 `docs/world1/cast-scope.md`.
 
+**The same behaviours, in the 3D game's sim.** November 2026: all twenty-five
+kids, the sibling bonus and the story positions play in v2 behind
+`features.storyKids`, off by default. v2 could not import v1's module (it is
+not one of the sim's five) and should not have copied it: v1 states outcomes
+(a travel-time multiplier, a band bump, a ball chance) and v2 derives them, so
+`src/v2/sim/quirks.ts` changes only what the plate model takes as input: the
+menu an arm picks from, the definition a pitch flies with, the size of the
+release error, whether a batter offers, the zone he is called against, his
+power this pitch, and later a fielder's hands, reach and arm and a runner's
+jump. Two kids are the exception because their sheet line is about where the
+ball goes: Hattie's lands in one place and Mars's perfect swing is gone. It sits behind a flag because almost every number is a guess
+and turning them on moves every measured plate record; the scope page has the
+per-kid table and what is still missing.
+
 ### Design pillars (ages 4–8)
 
 - **Minimal reading.** Icons, color, and voice over text. A 6-year-old who can't read should be able to play.
@@ -706,6 +720,24 @@ the play reducer was **re-tracing** the ball on every re-read, when the ball
 obeys the same physics from one tick to the next and the trace is identical —
 what changes between reads is where the *fielders* are. Together: 1.7s per game
 to 0.14s, and PR 8's 50k plate appearances from unusable to 113 seconds.
+
+**And for four months that solve quietly inverted the pitching stat
+(fixed 2026-11-13).** The outer half was six secant steps over release speed.
+Below about 39 ft/s nothing thrown on the low branch reaches a 46 ft plate,
+and the solve reported that as a five-second flight so the secant would push
+the speed up. It extrapolated a slope through the cliff instead and stopped
+wherever it was: a pitching-5 fastball asked for 1.28 s arrived in 1.01 s, a
+pitching-7 one asked for 1.19 s arrived in 1.19 s, and every arm from 1 to 5
+threw a quicker fastball than a 6. The record said so twice ("not in the
+order wantSec asks for"; "a half-converged 1.02 s that the fireball equals")
+and each time filed it as saturation, something the physics could not
+deliver. It was the solver. A bracketed bisection, with "cannot reach" read
+as plain "too slow", hits every reachable flight and lets an unreachable one
+settle at the slowest pitch there is. What found it was not a gate: Roz's
+story asks for a faster fastball, and the test that hers arrives sooner than
+the same arm's failed at stat 5. `mound.test.ts` now asserts the order over
+every kind, stat and spot; the game's shape moved by under a point
+(`sim.pitch-corridor` theSolveIsABisection).
 
 The game produces K% 25.6, BB% 10.5 and 6.8 runs a game — all plausible — and
 **BABIP .624 against real baseball's ~.300**. Every second ball in play is a hit.

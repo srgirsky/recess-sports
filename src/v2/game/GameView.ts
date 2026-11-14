@@ -115,6 +115,7 @@ import {
 } from '../render/replayCues';
 import { simulateGameLive, type GameResult, type LiveFrame, type SimEvent } from '../sim/game';
 import { parseFeatures, type Features } from '../sim/features';
+import { ballSeenFrac, pitchCardFor, pitchMenu, zoneScale } from '../sim/quirks';
 import { DEFAULT_SKILL, type Skill } from '../sim/assist';
 import { timingRing } from '../ui/coachModel';
 import type { Shift } from '../sim/shifts';
@@ -466,6 +467,10 @@ export class GameView {
   private readonly trayChips = new Map<PowerKind, HTMLButtonElement>();
   /** The special pitch cards, so `paintHud` can mark each affordable or broke. */
   private readonly specialCards = new Map<SpecialPitchKind, HTMLButtonElement>();
+  /** The four base cards, kept so the story can take one off an arm's menu (`quirks.ts`). */
+  private readonly baseCards = new Map<PitchKind, HTMLButtonElement>();
+  /** The ball is hidden because the person is batting with their eyes shut (Yaz). */
+  private blindHidden = false;
   /**
    * What the sim ARMED for the person's side this plate appearance — set off
    * the sim's own `spend` event, never off the tap, so a proposal the meter
@@ -1524,11 +1529,43 @@ export class GameView {
     }
   }
 
+  /**
+   * Yaz bats with her eyes shut (`features.storyKids`, `quirks.ts`): a person
+   * swinging for her loses the ball — and its shadow, and the timing ring —
+   * partway in, and has to finish the swing from memory. Presentation only;
+   * the sim grades the tap it gets.
+   */
+  private get blind(): boolean {
+    const f = this.frame;
+    if (!this.featureFlags.storyKids || !this.batting || !f?.pitch || !f.batterId) return false;
+    const seen = ballSeenFrac(this.character(f.batterId));
+    return seen < 1 && this.pitchElapsed > f.pitch.travelSec * seen;
+  }
+
+  private paintBlindBall(): void {
+    const blind = this.blind;
+    if (blind) {
+      this.refs.ball.visible = false;
+      if (this.refs.ballShadow) this.refs.ballShadow.visible = false;
+    } else if (this.blindHidden) {
+      this.refs.ball.visible = true;
+    }
+    this.blindHidden = blind;
+  }
+
   /** Show the plate cues only while a pitch is in the air. */
   private paintPlateCues(): void {
     // The zone is shown to whoever is being asked to aim at it — the batter
     // while the ball is in the air, the pitcher while he is choosing.
-    if (this.zoneBox) this.zoneBox.visible = this.batting || this.onTheMound;
+    if (this.zoneBox) {
+      this.zoneBox.visible = this.batting || this.onTheMound;
+      // Winnie's zone is smaller and the umpire calls it that way, so the box
+      // is too: the same scale, about the same centre (`quirks.ts` `zoneScale`,
+      // `atbat.ts` `isStrike`). Exactly 1 for everyone else and with the flag off.
+      const batter = this.featureFlags.storyKids && this.frame?.batterId ? this.character(this.frame.batterId) : null;
+      const k = batter ? zoneScale(batter) : 1;
+      if (this.zoneBox.scale.x !== k) this.zoneBox.scale.set(k, k, 1);
+    }
     if (this.aimBar) {
       this.aimBar.visible = this.batting;
       this.aimBar.position.y = this.aimHeightFt;
@@ -1556,7 +1593,7 @@ export class GameView {
     });
     if (this.timingRingMesh) {
       const pitch = this.frame?.pitch;
-      const show = this.timingRingOn && this.batting && !!pitch && !this.inputs.swing;
+      const show = this.timingRingOn && this.batting && !!pitch && !this.inputs.swing && !this.blind;
       this.timingRingMesh.visible = show;
       if (show && pitch) {
         const ring = timingRing(this.pitchElapsed, pitch.travelSec);
@@ -2622,6 +2659,7 @@ export class GameView {
         cameraAt: { x: this.camera.position.x, y: this.camera.position.y, z: this.camera.position.z },
         ballProjection: { verticalFovDeg: this.camera.fov, viewportHeightPx: this.canvas.clientHeight },
       });
+      this.paintBlindBall();
       this.updateDraftPresentation(dt);
       this.animateCpuSwing();
       this.paintPlateCues();
@@ -3006,6 +3044,7 @@ export class GameView {
       card.addEventListener('pointerdown', () => {
         this.pitchKind = kind;
       });
+      this.baseCards.set(kind, card);
       this.pickerEl?.appendChild(card);
     });
     // The special cards (`features.specialPitches`): the same card, built
@@ -3218,6 +3257,22 @@ export class GameView {
       card.setAttribute('aria-disabled', String(broke));
     }
     if (isSpecialPitch(this.pitchKind) && !affordable.includes(this.pitchKind)) this.pitchKind = 'fastball';
+    // ★ THE STORY, ON THE PICKER (`features.storyKids`, `sim/quirks.ts`). The
+    // sim throws only what is on this arm's menu whatever is asked for, so a
+    // card for a pitch she does not throw would be a card that lies: Lu has
+    // one, Ezra three, and Musa's one is named for what it is. With the flag
+    // off every card is shown under its own name, as before.
+    const arm = this.featureFlags.storyKids && frame.pitcherId ? this.character(frame.pitcherId) : null;
+    const menu: readonly PitchKind[] = arm ? pitchMenu(arm) : KINDS;
+    for (const [kind, card] of this.baseCards) {
+      card.hidden = !menu.includes(kind);
+      const art = (arm && pitchCardFor(arm, kind)) || PITCH_CARDS[kind];
+      const icon = card.querySelector('.pitch-card__icon');
+      const name = card.querySelector('.pitch-card__name');
+      if (icon && icon.textContent !== art.icon) icon.textContent = art.icon;
+      if (name && name.textContent !== art.label) name.textContent = art.label;
+    }
+    if (!isSpecialPitch(this.pitchKind) && !menu.includes(this.pitchKind)) this.pitchKind = menu[0];
     if (!this.onTheMound) return;
     for (const chip of this.pickerEl.children) {
       const el = chip as HTMLElement;

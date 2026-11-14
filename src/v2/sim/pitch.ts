@@ -34,7 +34,6 @@
 
 import { MOUND_DIST, type Vec3 } from './field';
 import { PITCH } from './params';
-import { clamp } from './units';
 import { FLIGHT_HZ, cloneState, stepFlight, type BallState, type Guard } from './flight';
 
 /** The four kinds every pitcher has. `choosePitch` draws from exactly these. */
@@ -156,6 +155,16 @@ export const SPECIAL_PITCH_KINDS: ReadonlyArray<SpecialPitchKind> = Object.freez
   'freezeball',
 ] as const);
 
+/**
+ * One arm's own version of a pitch: the definition it actually flies with, and
+ * a tag that names it in `releaseAtSpot`'s memo. The KIND a pitch reports is
+ * unchanged — this is how it is thrown, not what it is called.
+ */
+export interface Delivery {
+  def: PitchDef;
+  tag: string;
+}
+
 export function isSpecialPitch(kind: PitchKind): kind is SpecialPitchKind {
   return kind in SPECIAL_PITCHES;
 }
@@ -178,8 +187,10 @@ export function releasePitch(opts: {
   pitchingStat: number;
   aimHeightFt: number;
   aimLateralFt: number;
+  /** This arm's own version of the kind (`quirks.ts` `deliveryFor`). Omitted: the kind's. */
+  delivery?: Delivery;
 }): BallState {
-  const def = pitchDef(opts.kind);
+  const def = opts.delivery?.def ?? pitchDef(opts.kind);
   const from: Vec3 = { x: 0, y: PITCH.RELEASE_HEIGHT_FT, z: MOUND_DIST };
 
   const w = (def.spinRpm * 2 * Math.PI) / 60;
@@ -203,36 +214,82 @@ export function releasePitch(opts: {
   //
   // The inner solve finds the elevation that hits the aim height at a given
   // speed; the outer one adjusts the speed until the flight lasts as long as it
-  // should. Both are secant iterations — there is no closed form once drag and
+  // should. Both are bisections — there is no closed form once drag and
   // Magnus are in.
   const azRad = Math.atan2(opts.aimLateralFt - from.x, 0 - from.z);
 
+  let lastElev: number | undefined;
   const timeAt = (speed: number) => {
-    const elev = solveElevation(from, speed, azRad, spin, opts.aimHeightFt);
-    // Unreachable: report a flight LONGER than any target, so the secant reads
-    // it as "too slow" and pushes the speed up rather than stalling.
+    const elev = solveElevation(from, speed, azRad, spin, opts.aimHeightFt, lastElev);
+    // Unreachable: report a flight LONGER than any target, so the bisection
+    // below reads it as "too slow" — which it is.
     if (elev === null) return { elev: 0.6, sec: PITCH.MAX_FLIGHT_SEC };
+    lastElev = elev;
     const flown = flyToPlate({ p: { ...from }, v: velocityAt(elev, azRad, speed), w: { ...spin } });
     return { elev, sec: flown.travelSec };
   };
 
-  let s0 = 30;
-  let s1 = 55;
-  let f0 = timeAt(s0).sec - wantSec;
-  let f1 = timeAt(s1).sec - wantSec;
-  for (let i = 0; i < PITCH.AIM_ITERATIONS; i++) {
-    const d = f1 - f0;
-    if (d === 0) break;
-    const next = clamp(s1 - f1 * ((s1 - s0) / d), 15, 200);
-    s0 = s1;
-    f0 = f1;
-    s1 = next;
-    f1 = timeAt(s1).sec - wantSec;
-    if (Math.abs(f1) < PITCH.AIM_TOL_SEC) break;
+  // ★ A BRACKET THAT IS NEVER LEFT, and the difference is the cliff.
+  // On the branch a pitcher throws, flight time falls monotonically as speed
+  // rises — until, going DOWN, the speed stops reaching the plate at all
+  // (~39 ft/s over 46 ft, whatever the spin). `timeAt` reports that as the
+  // longest possible flight, which makes "too slow" one monotone predicate
+  // across the cliff: every unreachable speed is too slow, and so is every
+  // reachable one that takes longer than `wantSec`.
+  //
+  // What this replaces was a bare secant from 30 and 55 ft/s. It read the
+  // cliff as a 5-second flight, extrapolated a slope through it, and six
+  // steps later stopped wherever it was: a stat-5 fastball asked for 1.28 s
+  // came out at 1.01 s while a stat-7 one came out at 1.19 s, so the weaker
+  // arm threw the quicker pitch (`sim.pitch-corridor` theSolveIsABisection).
+  //
+  // So: keep a bracket `[lo, hi]` with `lo` too slow and `hi` too fast, and
+  // only ever step INSIDE it. While both ends are real flights the step is
+  // the secant's (false position) — the curve is smooth there and it lands
+  // in three or four; when `lo` is past the cliff there is no slope to use
+  // and the step is the midpoint. A reachable target is hit. An unreachable
+  // one — a weak arm's changeup wants a flight no low-branch release has —
+  // closes on the cliff from the reachable side and throws the SLOWEST pitch
+  // there is, which is what "as slow as he can" means. `hi` is a real flight
+  // at every step, so the answer always is.
+  let lo: number = PITCH.SOLVE_SPEED_LO_FTS;
+  let hi: number = PITCH.SOLVE_SPEED_HI_FTS;
+  let fLo = Infinity; // not a flight: past the cliff, or never thrown
+  let best = timeAt(hi);
+  let fHi = best.sec - wantSec;
+  for (let i = 0; i < PITCH.AIM_ITERATIONS && hi - lo > PITCH.SOLVE_SPEED_TOL_FTS; i++) {
+    let next = (lo + hi) / 2;
+    if (Number.isFinite(fLo)) {
+      // False position, held off the ends so the bracket always shrinks.
+      const guess = hi - fHi * ((hi - lo) / (fHi - fLo));
+      const edge = (hi - lo) * 0.1;
+      next = guess < lo + edge ? lo + edge : guess > hi - edge ? hi - edge : guess;
+    }
+    const at = timeAt(next);
+    const f = at.sec - wantSec;
+    if (at.sec >= PITCH.MAX_FLIGHT_SEC) {
+      lo = next;
+      fLo = Infinity;
+      continue;
+    }
+    if (f > 0) {
+      lo = next;
+      fLo = f;
+    } else {
+      hi = next;
+      fHi = f;
+      best = at;
+    }
+    if (Math.abs(f) < PITCH.AIM_TOL_SEC) {
+      hi = next;
+      best = at;
+      break;
+    }
   }
+  const s1 = hi;
 
-  const final = timeAt(s1);
-  return { p: { ...from }, v: velocityAt(final.elev, azRad, s1), w: spin };
+  // `best` is the flight AT `hi`, already solved: no second elevation solve.
+  return { p: { ...from }, v: velocityAt(best.elev, azRad, s1), w: spin };
 }
 
 // --- Aiming at a SPOT, which is what makes this affordable -------------------
@@ -289,8 +346,13 @@ export function releaseAtSpot(opts: {
   pitchingStat: number;
   aimHeightFt: number;
   aimLateralFt: number;
+  delivery?: Delivery;
 }): ReleasePlan {
-  const key = `${opts.kind}|${opts.pitchingStat}|${opts.aimHeightFt}|${opts.aimLateralFt}`;
+  // A delivery's `tag` joins the key, and an ordinary pitch's key is the string
+  // it always was — so the memo stays bounded (a fixed handful of tags) and no
+  // entry an ordinary arm made can be handed to a kid who throws it his own way.
+  const base = `${opts.kind}|${opts.pitchingStat}|${opts.aimHeightFt}|${opts.aimLateralFt}`;
+  const key = opts.delivery ? `${base}|${opts.delivery.tag}` : base;
   const hit = releaseCache.get(key);
   if (hit) return hit;
 
@@ -342,35 +404,115 @@ function solveElevation(
   speed: number,
   azRad: number,
   spin: Vec3,
-  aimHeightFt: number
+  aimHeightFt: number,
+  near?: number
 ): number | null {
   const miss = (elev: number) =>
     flyToPlate({ p: { ...from }, v: velocityAt(elev, azRad, speed), w: { ...spin } }).state.p.y -
     aimHeightFt;
 
+  // ★ A ROOT INSIDE A BRACKET, BY FALSE POSITION (ILLINOIS). `lo` misses low
+  // and `hi` misses high with `lo < hi`, which is the RISING side of the
+  // crossing-height curve — the low branch — by construction: on the lob
+  // side a higher elevation arrives LOWER. Plain false position stalls on a
+  // curve this convex (one end never moves); halving the stuck end's value
+  // is the standard cure and keeps the bracket. It stops on the miss itself,
+  // in feet, so the answer is as good as `PITCH.ELEV_TOL_FT` says however
+  // wide the bracket began — fourteen blind halvings of a 1.6 rad bracket
+  // bought 0.005 ft and cost fourteen flights; this takes four to six.
+  const within = (lo: number, mLo: number, hi: number, mHi: number): number => {
+    let side = 0;
+    for (let i = 0; i < PITCH.ELEV_ITERATIONS; i++) {
+      const e = hi - mHi * ((hi - lo) / (mHi - mLo));
+      const m = miss(e);
+      if (Math.abs(m) < PITCH.ELEV_TOL_FT) return e;
+      if (m < 0) {
+        lo = e;
+        mLo = m;
+        if (side === -1) mHi /= 2;
+        side = -1;
+      } else {
+        hi = e;
+        mHi = m;
+        if (side === 1) mLo /= 2;
+        side = 1;
+      }
+    }
+    return (lo + hi) / 2;
+  };
+
+  // ★ START WHERE THE LAST ANSWER WAS. The outer solve asks for the elevation
+  // at one speed after another, a foot or two per second apart, and the
+  // answer moves a few hundredths of a radian between them. A narrow bracket
+  // round the previous root finds the new one without the scan below — and
+  // if the root is not inside it (the speed fell off the reachability cliff,
+  // or moved further than that), the scan runs exactly as it always did.
+  if (near !== undefined) {
+    const a = near - PITCH.ELEV_NEAR_RAD;
+    const b = near + PITCH.ELEV_NEAR_RAD;
+    const mA = miss(a);
+    const mB = miss(b);
+    if (mA < 0 && mB >= 0) return within(a, mA, b, mB);
+  }
+
   const LO = -0.4;
   const HI = 1.2;
   let peakElev = LO;
   let peakMiss = -Infinity;
+  let belowElev = LO;
+  let belowMiss = NaN;
   for (let i = 0; i <= PITCH.ELEV_SCAN; i++) {
     const e = LO + ((HI - LO) * i) / PITCH.ELEV_SCAN;
     const m = miss(e);
+    if (i === 0) belowMiss = m;
     if (m > peakMiss) {
       peakMiss = m;
       peakElev = e;
     }
+    // The last sample still missing low BEFORE the first that does not: the
+    // tightest low-branch bracket the scan can give.
+    if (m < 0 && peakMiss < 0) {
+      belowElev = e;
+      belowMiss = m;
+    }
   }
-  if (peakMiss < 0) return null; // cannot reach the plate at this speed
-  if (miss(LO) >= 0) return LO;
-
-  let lo = LO;
-  let hi = peakElev;
-  for (let i = 0; i < PITCH.ELEV_ITERATIONS; i++) {
-    const mid = (lo + hi) / 2;
-    if (miss(mid) < 0) lo = mid;
-    else hi = mid;
+  if (peakMiss < 0) {
+    // ★ NINE SAMPLES CANNOT CALL THE CLIFF. Just above the slowest speed that
+    // reaches the plate, the elevations that get there are a sliver between
+    // two samples, and the scan's best sample misses low on both sides of
+    // it. Reading that as "unreachable" put the cliff in a different place
+    // depending on whether the warm start above had found the sliver first,
+    // so a saturated solve could come out slower than a reachable one beside
+    // it. A ternary search for the true peak between the best sample's
+    // neighbours settles it, and only a trial that looked unreachable pays.
+    const step = (HI - LO) / PITCH.ELEV_SCAN;
+    let a = peakElev - step;
+    let b = peakElev + step;
+    for (let i = 0; i < PITCH.ELEV_PEAK_STEPS; i++) {
+      const m1 = a + (b - a) / 3;
+      const m2 = b - (b - a) / 3;
+      const f1 = miss(m1);
+      const f2 = miss(m2);
+      if (f1 > peakMiss) {
+        peakMiss = f1;
+        peakElev = m1;
+      }
+      if (f2 > peakMiss) {
+        peakMiss = f2;
+        peakElev = m2;
+      }
+      if (peakMiss >= 0) break;
+      if (f1 < f2) a = m1;
+      else b = m2;
+    }
+    if (peakMiss < 0) return null; // cannot reach the plate at this speed
+    // Reached after all: the low-branch bracket is the scan sample below it.
+    belowElev = Math.max(LO, peakElev - 2 * step);
+    belowMiss = miss(belowElev);
+    if (belowMiss >= 0) return belowElev;
   }
-  return (lo + hi) / 2;
+  if (belowMiss >= 0) return LO;
+  return within(belowElev, belowMiss, peakElev, peakMiss);
 }
 
 function velocityAt(elevRad: number, azRad: number, speed: number): Vec3 {

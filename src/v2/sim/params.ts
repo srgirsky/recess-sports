@@ -417,12 +417,28 @@ export const PITCH = {
   ARM_MULT_MIN: 0.86,
   ARM_MULT_MAX: 1.18,
   /**
-   * Secant steps used to solve the release elevation that actually delivers the
-   * ball to the aim point. Three is enough: the crossing miss is near-linear in
-   * elevation over this range. See `releasePitch` for why a solve is needed at
-   * all (aiming straight at the target arrives 26ft underground).
+   * The most steps `releasePitch`'s outer solve takes over release SPEED (the
+   * wanted flight time). It leaves early once the flight is within
+   * `AIM_TOL_SEC` or the bracket is narrower than `SOLVE_SPEED_TOL_FTS`: a
+   * reachable target takes three or four false-position steps, and only a
+   * saturated one — halving toward the reachability cliff — uses nine. It
+   * was six unbracketed secant steps until 2026-11-13; see `releasePitch`.
    */
-  AIM_ITERATIONS: 6,
+  AIM_ITERATIONS: 12,
+  /**
+   * The bracket `releasePitch` solves release speed inside, ft/s. The floor is
+   * below the slowest speed that reaches the plate at all (~39) and the
+   * ceiling above the fastest pitch anything asks for (the fireball from the
+   * best arm is ~57).
+   */
+  SOLVE_SPEED_LO_FTS: 34,
+  SOLVE_SPEED_HI_FTS: 66,
+  /**
+   * How narrow the bracket gets before the solve stops, ft/s. At the cliff a
+   * tenth of a foot per second is about four milliseconds of flight, inside
+   * `AIM_TOL_SEC`.
+   */
+  SOLVE_SPEED_TOL_FTS: 0.1,
   /** Close enough on flight time, seconds. */
   AIM_TOL_SEC: 0.005,
   /**
@@ -450,6 +466,16 @@ export const PITCH = {
    */
   ELEV_ITERATIONS: 14,
   ELEV_SCAN: 8,
+  /** Ternary steps spent finding the true peak when the scan's best sample still misses low. */
+  ELEV_PEAK_STEPS: 8,
+  /** The elevation solve stops when the ball crosses within this of its aim height, ft. */
+  ELEV_TOL_FT: 0.002,
+  /**
+   * Half-width of the bracket the elevation solve first tries round the
+   * previous speed's answer, rad. Wide enough for a foot or two per second of
+   * speed, narrow enough to stay on the low branch.
+   */
+  ELEV_NEAR_RAD: 0.12,
   /** A pitch that has not reached the plate by now is not going to. */
   MAX_FLIGHT_SEC: 5,
 } as const;
@@ -1104,6 +1130,71 @@ export const JUICE = {
     level: 0.3,
     leading: 0.12,
   },
+} as const;
+
+/**
+ * The story behaviours (`features.storyKids`, `sim/quirks.ts`): what the cast
+ * sheet says a kid does, as the handful of numbers the physical model does not
+ * already hold.
+ *
+ * ★ NONE OF THESE IS MEASURED, AND ONLY TWO ARE SOURCED. `CLUTCH_POWER` is the
+ * sheet's 0.95 on the 1-10 scale and `WOBBLER_WORKS` is its 40%. The rest are
+ * first guesses for the maintainer to correct; the Archetypes document the
+ * sheet cites for them has never been in this repo. They are deliberately NOT
+ * read from `config.QUIRKS`: v1's values were sized against a pixel plate and
+ * a banded swing, and several of them (a travel-time multiplier, a ball
+ * chance) describe outcomes this model derives instead of stating.
+ */
+export const STORY = {
+  /** Kwame's and Dev's execution error, as a multiple of their own arm's. The crazy ball is 2.0. */
+  SCATTER_MULT: { wild_arm: 2.0, wobble: 1.5 },
+  /** The fraction of the standard strike zone Winnie presents, each way. */
+  SMALL_ZONE: 0.6,
+  /** A Clutch kid's power stat in her moment (the sheet's 0.95). */
+  CLUTCH_POWER: 9.5,
+  /** How often Musa's one pitch works (the sheet's 40%). */
+  WOBBLER_WORKS: 0.4,
+  /**
+   * Roz's release speed, as a multiple of each kind's own. The fireball is
+   * 1.25 on a fastball, for scale.
+   */
+  VELOCITY_SPEED_MULT: 1.12,
+  /**
+   * Mars's perfectly timed ball. The exit speed is the slowest round number
+   * that clears every venue's fence at this angle across the whole spray it
+   * may take (swept: 100 leaves one park standing, 110 none); `quirks.test.ts`
+   * asserts the clearing, not the number.
+   */
+  MOONSHOT: { EXIT_FTS: 112, ANGLE_DEG: 30, SPIN_RPM: 1800, SPRAY_MAX_DEG: 35, WINDOW_FRAC: 0.012 },
+  /**
+   * Josie's foul-backs: how square contact must be before it stops being a
+   * candidate tick, and how often a candidate is one. Everyone else's pair is
+   * `contact.ts`'s 0.18 and 0.45.
+   */
+  FOUL_BACK: { BELOW: 0.45, CHANCE: 0.6 },
+  /** Hattie's one spot: a flare that comes down about ninety feet out, just right of second. */
+  SAME_SPOT: { EXIT_FTS: 62, ANGLE_DEG: 22, SPRAY_DEG: 40, SPIN_RPM: 1200 },
+  /**
+   * How far inside the zone's edge a taken ball must cross to hit Sam, ft. He
+   * crowds the plate: a ball this far in has nowhere else to go.
+   */
+  LEAN_IN_FT: 0.6,
+  /** What siblings drafted onto the same nine each gain, at every stat (capped at 10). */
+  SIBLING_BONUS: 1,
+  /** Feet added to Sonny's reach: the golden glove's bonus, worn all game. */
+  BRICK_HOUSE_REACH_FT: 1.0,
+  /**
+   * Rudy's and Amir's arm in the field, on the 1-10 scale. The top of the
+   * scale and not past it: `throwSpeedFts` is anchored on a published band,
+   * and an arm stronger than its ceiling would be a number with no source.
+   */
+  CANNON_ARM: 10,
+  /** How often a throw of Roya's goes to a bag nobody chose. */
+  WRONG_BASE: 0.35,
+  /** Yaz, eyes closed: the contact stat she reads the ball with, and the power she hits it with. */
+  BLIND: { CONTACT: 3, POWER: 10 },
+  /** The fraction of a pitch's flight a person batting as Yaz gets to watch. */
+  BLIND_SEEN_FRAC: 0.5,
 } as const;
 
 /**

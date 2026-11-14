@@ -29,7 +29,7 @@
 // ---------------------------------------------------------------------------
 
 import type { Character } from '../../data/types';
-import { GAME, PLAY, RUN } from './params';
+import { ATBAT, GAME, PLAY, RUN } from './params';
 import {
   choosePitch,
   cpuSwingAtSec,
@@ -58,6 +58,20 @@ import type { PitchKind } from './pitch';
 import { flyToPlate, releasePitch } from './pitch';
 import { resolvePlate, type PlateOverrides, type PlateParams } from './params';
 import type { Features } from './features';
+import {
+  clutchFiring,
+  familyLookup,
+  hasGreenLight,
+  hitByPitch,
+  jumpCapSec,
+  siblingsTogether,
+  slipsTheTag,
+  storyDefence,
+  throwsHeater,
+  throwsWobbler,
+  wasMoonshot,
+  type StoryBeat,
+} from './quirks';
 import { drainPitch, effectivePitching, newStamina } from './stamina';
 import type { StaminaState } from './stamina';
 import { addJuice, cpuPickSpecialPitch, cpuWantsSpend, isSpecialSpend, newJuice, spend, spendSide } from './juice';
@@ -176,6 +190,17 @@ export type SimEvent =
       marginSec: number;
       relayed: boolean;
       human: boolean;
+    }
+  | {
+      /**
+       * A kid's story happening, the instant it does (`features.storyKids`,
+       * `quirks.ts` `StoryBeat`). Never emitted with the flag off. It restates
+       * nothing the other events carry: it is the NAME of the moment, for a
+       * view that wants to say it.
+       */
+      t: 'story';
+      kidId: string;
+      beat: StoryBeat;
     }
   | {
       /**
@@ -534,6 +559,12 @@ function* playAtBatLive(
     specials: boolean;
     /** `features.shifts`: does the fielding side choose where it stands? */
     shifts: boolean;
+    /**
+     * `features.storyKids`: the batting side's runs minus the fielding side's
+     * as this HALF began (this half's runs are added per pitch) — or null with
+     * the flag off, when no kid's quirk is read (`quirks.ts`).
+     */
+    story: { lead: number; siblings: Set<string>; called: Set<string> } | null;
     /** The person's level and which of the two roles they hold this PA. Null: nobody. */
     assist: { skill: Skill; bats: boolean; pitches: boolean } | null;
   },
@@ -638,6 +669,8 @@ function* playAtBatLive(
   // Throws over this plate appearance, and whether the coming pitch follows
   // one — a runner just thrown at holds for it.
   let pickoffs = 0;
+  // Whether this plate appearance's Clutch moment has been called (`story` events).
+  let clutchCalled = false;
   let thrownOver = false;
   const leadBase = (): 1 | 2 | null => (half.occupants[1] ? 2 : half.occupants[0] ? 1 : null);
   // Nobody to throw at when nobody is on, or when the batting side is a CPU
@@ -688,13 +721,16 @@ function* playAtBatLive(
         { defence: args.defence, lookup: args.lookup, pitcher: args.pitcher },
         windupInput.steal === true && !args.assist?.pitches,
         cpuRunners && !thrownOver,
-        rng.fork(`steal${pitches}`)
+        rng.fork(`steal${pitches}`),
+        args.story !== null && !thrownOver
       );
       const leaning = going !== null && going.from === base;
-      const race = pickoffRace(
+      const raced = pickoffRace(
         { runner, pitcher: args.pitcher, base, leaning },
         rng.fork(`pick${pitches}.${pickoffs}`)
       );
+      // The throw beat Ollie back and the tag did not (`quirks.ts`).
+      const race = args.story && raced.out && slipsTheTag(runner) ? { ...raced, out: false } : raced;
       thrownOver = true;
       if (race.out) {
         // v1's `applyPickoff`: the runner leaves his bag and an out is made;
@@ -781,6 +817,15 @@ function* playAtBatLive(
       batter: args.assist?.pitches ? assistBatter(args.assist.skill, args.batter) : args.batter,
       count: half.state.count,
       plate: args.plate,
+      // The moment, built only with the flag on: its presence IS the flag as
+      // far as the plate is concerned. Runs this half count toward the lead.
+      story: args.story
+        ? {
+            bases: [half.occupants[0] !== null, half.occupants[1] !== null, half.occupants[2] !== null],
+            lead: args.story.lead + half.score,
+            heaterReady: !half.heaterThrown,
+          }
+        : undefined,
     };
     // A special kind is paid for or downgraded HERE, before the throw, so
     // `throwPitch` only ever throws what the meter covered.
@@ -788,11 +833,29 @@ function* playAtBatLive(
       decidePitch(windupInput.pitch, spec, pitchRng) ??
       (args.assist?.bats ? assistPitchPlan(args.assist.skill, spec, pitchRng) : undefined);
     const inFlight = throwPitch(spec, pitchRng, chosen);
+    // Jay's Heater is one a half inning: his first fastball of it (`quirks.ts`).
+    const heater = args.story !== null && !half.heaterThrown && inFlight.kind === 'fastball' && throwsHeater(pitcher);
+    if (heater) half.heaterThrown = true;
+    if (args.story !== null) {
+      // The story's beats, named as they happen. A Clutch kid's moment is
+      // called once, on the first pitch she sees in it.
+      // A kid batting beside a brother or sister is named once a game.
+      if (args.story.siblings.has(args.batter.id) && !args.story.called.has(args.batter.id)) {
+        args.story.called.add(args.batter.id);
+        onEvent?.({ t: 'story', kidId: args.batter.id, beat: 'family' });
+      }
+      if (!clutchCalled && spec.story && clutchFiring(args.batter, spec.story)) {
+        clutchCalled = true;
+        onEvent?.({ t: 'story', kidId: args.batter.id, beat: 'clutch' });
+      }
+      if (heater) onEvent?.({ t: 'story', kidId: pitcher.id, beat: 'heater' });
+      if (inFlight.kind === 'crazy' && throwsWobbler(pitcher)) onEvent?.({ t: 'story', kidId: pitcher.id, beat: 'wobbler' });
+    }
     if (stamina) {
       // Drained on the throw, before the swing: the pitch just thrown was the
       // tired arm's, the NEXT one is a little more so — and a special costs
       // the arm triple (`STAMINA.DRAIN_SPECIAL`), as in v1.
-      drainPitch(stamina, isSpecialPitch(inFlight.kind));
+      drainPitch(stamina, isSpecialPitch(inFlight.kind) || heater);
       frame.stamina = stamina.stamina;
     }
     // ★ THE RUNNER DECIDES BEFORE THE THROW, AND THE FRAME SAYS SO. A steal
@@ -816,9 +879,14 @@ function* playAtBatLive(
       { defence: args.defence, lookup: args.lookup, pitcher },
       windupInput.steal === true && !args.assist?.pitches,
       cpuRunners && !thrownOver,
-      rng.fork(`steal${pitches}`)
+      rng.fork(`steal${pitches}`),
+      args.story !== null && !thrownOver
     );
     thrownOver = false;
+    // Zaya went on her own, on a bench that otherwise waits for the order.
+    if (going && args.story !== null && !going.human && !cpuRunners && hasGreenLight(going.spec.runner)) {
+      onEvent?.({ t: 'story', kidId: going.spec.runner.id, beat: 'greenLight' });
+    }
     frame.steal = going
       ? { runnerId: going.spec.runner.id, from: going.from, to: going.spec.to, runnerSec: runnerSecTo(going.spec) }
       : null;
@@ -861,7 +929,8 @@ function* playAtBatLive(
           going,
           result.travelSec,
           args.assist?.bats ? undefined : pitchInput.throwDown,
-          rng.fork(`steal${pitches}`)
+          rng.fork(`steal${pitches}`),
+          args.story !== null
         )
       : null;
     frame.steal = null;
@@ -899,9 +968,20 @@ function* playAtBatLive(
         relayed: steal.race.relayed,
         human: going.human,
       });
+      if (steal.slipped) onEvent?.({ t: 'story', kidId: going.spec.runner.id, beat: 'slippedTag' });
     }
 
     if (result.kind !== 'inPlay') {
+      // ★ SAM WEARS ONE (`quirks.ts` `hitByPitch`). A hit batter takes first and
+      // moves only the runners he forces, which is exactly a walk — so the
+      // count is set one ball short of one and the ball just taken is folded
+      // as it would have been. The rules layer both games share grows no new
+      // case, and v1 does the same (`systems/quirks.ts` `countWhenHit`).
+      if (args.story !== null && result.kind === 'ball' && hitByPitch(args.batter, result.crossing)) {
+        half.state = { ...half.state, count: { ...half.state.count, balls: ATBAT.BALLS_PER_WALK - 1 } };
+        log.push(`${args.batter.name} is hit by the pitch`);
+        onEvent?.({ t: 'story', kidId: args.batter.id, beat: 'hitByPitch' });
+      }
       const folded = applyAtBat(half.state, asAtBatResult(result)!);
       half.state = folded.state;
       half.score += folded.runsScored;
@@ -940,6 +1020,10 @@ function* playAtBatLive(
     half.occupants.forEach((id, i) => {
       if (id) runners.push({ base: (i + 1) as 1 | 2 | 3, char: args.lookup(id) });
     });
+    // Mars's perfect swing is named as the ball leaves the bat, not when it lands.
+    if (args.story !== null && wasMoonshot(args.batter, result.launch)) {
+      onEvent?.({ t: 'story', kidId: args.batter.id, beat: 'moonshot' });
+    }
     const out: { outcome: PlayOutcome | null; scored: string[] } = { outcome: null, scored: [] };
     yield* runPlayLive(
       {
@@ -957,11 +1041,13 @@ function* playAtBatLive(
         boost: juice ? { turboLegs: armed.turboLegs, goldenGlove: armed.goldenGlove } : undefined,
         // Undefined with the flag off: every fielder on his table post.
         shift: args.shifts ? shift : undefined,
+        story: args.story !== null ? true : undefined,
       },
       rng.fork(`play${pitches}`),
       frame,
       out,
-      args.assist
+      args.assist,
+      onEvent
     );
     const outcome = out.outcome!;
     const scored = out.scored;
@@ -1124,22 +1210,32 @@ function decideSteal(
   },
   ordered: boolean,
   cpuMay: boolean,
-  stealRng: Rng
+  stealRng: Rng,
+  /**
+   * `features.storyKids`, and nobody was just thrown at: Zaya may go on her
+   * own judgement where `cpuMay` says a person's runners wait for the order.
+   */
+  story = false
 ): StealDecision | null {
   const catcher = catcherOf(args.defence, args.lookup);
   if (!catcher) return null;
-  if (!ordered && !cpuMay) return null;
+  if (!ordered && !cpuMay && !story) return null;
   for (const from of [2, 1] as const) {
     const who = half.occupants[from - 1];
     if (!who || half.occupants[from]) continue;
     const runner = args.lookup(who);
+    if (!ordered && !cpuMay && !hasGreenLight(runner)) continue;
     const to = (from + 1) as StealTarget;
     const expected = fastballFlightSec(args.pitcher.stats.pitching);
     const spec: StealSpec = { runner, catcher, pitcher: args.pitcher, to, pitchTravelSec: expected };
+    if (story) {
+      const cap = jumpCapSec(runner);
+      if (cap !== undefined) spec.jumpCapSec = cap;
+    }
     const sit = {
       outs: half.state.outs,
       nextBagOccupied: half.occupants[from] !== null,
-      jumpSec: ordered ? undefined : jumpSecOf(runner, stealRng),
+      jumpSec: ordered ? undefined : jumpSecOf(runner, stealRng, spec.jumpCapSec),
     };
     if (!ordered && !cpuWantsSteal(spec, sit)) continue;
     return { spec, from, human: ordered };
@@ -1163,21 +1259,29 @@ function resolveSteal(
   going: StealDecision,
   pitchTravelSec: number,
   throwDown: { atSec: number } | undefined,
-  rng: Rng
-): { safe: boolean; line: string; race: StealResult } {
+  rng: Rng,
+  story = false
+): { safe: boolean; slipped: boolean; line: string; race: StealResult } {
   const readSec = throwDown ? Math.max(0, throwDown.atSec - pitchTravelSec) : undefined;
   const race = stealRace({ ...going.spec, pitchTravelSec, readSec }, rng);
   const { from } = going;
+  const { runner, to } = going.spec;
+  // Ollie has never been tagged: the throw beat him and the tag did not.
+  const slipped = story && !race.safe && slipsTheTag(runner);
+  const safe = race.safe || slipped;
   const who = half.occupants[from - 1];
-  const folded = applySteal(half.state, from, race.safe);
+  const folded = applySteal(half.state, from, safe);
   half.state = folded.state;
   half.occupants[from - 1] = null;
-  if (race.safe) half.occupants[from] = who;
-  const { runner, to } = going.spec;
+  if (safe) half.occupants[from] = who;
+  const bag = to === 2 ? 'second' : 'third';
   return {
-    safe: race.safe,
+    safe,
+    slipped,
     race,
-    line: `${runner.name} ${race.safe ? 'STEALS' : 'is caught stealing at'} ${to === 2 ? 'second' : 'third'}`,
+    line: slipped
+      ? `${runner.name} slips the tag at ${bag}`
+      : `${runner.name} ${safe ? 'STEALS' : 'is caught stealing at'} ${bag}`,
   };
 }
 
@@ -1235,7 +1339,8 @@ function* runPlayLive(
   frame: LiveFrame,
   out: { outcome: PlayOutcome | null; scored: string[] },
   /** The person's role this half, or null when no side is a person's. */
-  assist: { bats: boolean; pitches: boolean } | null
+  assist: { bats: boolean; pitches: boolean } | null,
+  onEvent?: (e: SimEvent) => void
 ): Generator<LiveFrame, void, PlayInputs> {
   const s = beginPlay(spec, rng);
   const dt = 1 / 60;
@@ -1246,7 +1351,11 @@ function* runPlayLive(
   let inputs: PlayInputs = {};
   while (s.phase === 'live' && guard++ < Math.ceil(PLAY.MAX_PLAY_SEC / dt) + 8) {
     stepPlay(s, dt, inputs);
-    for (const e of s.events) if (e.t === 'score') out.scored.push(e.runner);
+    for (const e of s.events) {
+      if (e.t === 'score') out.scored.push(e.runner);
+      // Roya's throw went somewhere: named the tick it leaves her hand.
+      else if (e.t === 'stray') onEvent?.({ t: 'story', kidId: e.fielder, beat: 'wrongBase' });
+    }
     // ★ WHAT THE CALLER PASSED TO `.next()`. The generator's third type
     // parameter has been `void` since PR 13 and is what makes a live driver
     // able to steer without a second implementation of the flow existing.
@@ -1279,6 +1388,8 @@ interface HalfState {
    * the next inning, as the rule has it.
    */
   cut?: boolean;
+  /** Jay has thrown this half inning's Heater (`features.storyKids`). */
+  heaterThrown?: boolean;
 }
 
 /**
@@ -1297,9 +1408,18 @@ interface HalfState {
 export function* simulateGameLive(spec: GameSpec, rng: Rng): Generator<LiveFrame, GameResult, PlayInputs> {
   const geo = spec.geo ?? DEFAULT_GEOMETRY;
   const regulation = spec.regulationInnings ?? GAME.REGULATION_INNINGS;
+  // ★ THE STORY FLAG, ASKED ONCE (`quirks.ts`). With it off `lookup` IS
+  // `spec.lookup`, the plan is `planDefence`'s, and every site below hands
+  // the plate and the play `null`/`undefined` — which is how the pinned
+  // games hold. With it on, siblings sharing a nine are each a little better
+  // and three kids stand where their story says.
+  const story = spec.features?.storyKids === true;
+  const lookup = story ? familyLookup(spec.lookup, [spec.away.ids, spec.home.ids]) : spec.lookup;
+  const siblings = story ? siblingsTogether([spec.away.ids, spec.home.ids]) : new Set<string>();
+  const familyCalled = new Set<string>();
   const mk = (t: TeamSpec): Side => ({
     spec: t,
-    plan: planDefence(t.ids, spec.lookup, t.order),
+    plan: story ? storyDefence(planDefence(t.ids, lookup, t.order), lookup) : planDefence(t.ids, lookup, t.order),
     lineupIdx: 0,
     score: 0,
     stamina: newStamina(),
@@ -1357,13 +1477,13 @@ export function* simulateGameLive(spec: GameSpec, rng: Rng): Generator<LiveFrame
     log.push(`${half === 'top' ? 'Top' : 'Bot'} ${inning} — ${bat.spec.name}`);
 
     while (!isHalfOver(hs.state)) {
-      const batter = spec.lookup(bat.plan.order[bat.lineupIdx % bat.plan.order.length]);
+      const batter = lookup(bat.plan.order[bat.lineupIdx % bat.plan.order.length]);
       yield* playAtBatLive(
         {
           batter,
-          pitcher: spec.lookup(field.plan.pitcherId),
+          pitcher: lookup(field.plan.pitcherId),
           defence: field.plan.positions,
-          lookup: spec.lookup,
+          lookup,
           geo,
           half: hs,
           tally,
@@ -1391,6 +1511,7 @@ export function* simulateGameLive(spec: GameSpec, rng: Rng): Generator<LiveFrame
           // where `juice` is non-null; alone the flag changes nothing.
           specials: spec.features?.specialPitches ?? false,
           shifts: spec.features?.shifts ?? false,
+          story: story ? { lead: bat.score - field.score, siblings, called: familyCalled } : null,
           assist: spec.humanSide
             ? {
                 skill: spec.skill ?? 'normal',

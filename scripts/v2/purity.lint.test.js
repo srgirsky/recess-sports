@@ -420,6 +420,26 @@ describe('★ there is exactly ONE kid speed in the sim', () => {
   });
 });
 
+describe('★ a kid\'s story is read in one module of the sim', () => {
+  // `src/v2/sim/quirks.ts` is the only file that may look at `Character.quirk`,
+  // and it expresses a quirk as an INPUT to the plate model. A reducer that
+  // tests `.quirk` for itself is a second place a behaviour can be defined, and
+  // one the flag (`features.storyKids`, asked once by `game.ts` and carried as
+  // `PitchSpec.story`) does not reach — so the pinned games would move with
+  // the flag off. Broken once before it was trusted: a scratch module in
+  // `src/v2/sim/` returning `k.quirk` fails this naming the file.
+  it('lets nothing but quirks.ts read `.quirk`', () => {
+    for (const f of sources) {
+      if (f.isTest || f.rel.endsWith(join('sim', 'quirks.ts'))) continue;
+      expect(
+        /\.quirk\b/.test(code(f.text)),
+        `${f.rel} reads a kid's quirk directly — ask src/v2/sim/quirks.ts instead, ` +
+          `so the story flag still decides whether it is read at all`
+      ).toBe(false);
+    }
+  });
+});
+
 describe('★ the bridge reads sim state and never writes it', () => {
   // ★ THE RULE AGENTS.md STATES FOR `src/v2/render/**`, made structural. The
   // bridge is the single named coupling point, and the whole value of having
