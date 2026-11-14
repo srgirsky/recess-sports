@@ -116,7 +116,11 @@ grip; June's helmet is an oversized red shell with a bill on `Head`; Ezra's
 tassels are four white strands below the hem on `Hips`. The other four are
 geometry ON the kid (Fatou's hijab and Guri's patka in place of hair, Sonny's
 gear over his torso, Dev's racing chair) and wait for the sculpt campaign's
-sheets.
+sheets. The two head coverings were TRIED as props on 2026-11-13 (a sphere
+shell with the sculpt's `M_Hair` material switched off) and thrown away: on
+these heads a primitive wrap reads as a space helmet and a bobble hat, and a
+clumsy hijab or patka is worse than none. They need modelling against a
+sheet, by the sculpt pipeline.
 
 The triangle and byte budgets are full roster-wide (see the asset-budget
 memory and `validate-models`), so catcher's gear and the hijab have to be paid
