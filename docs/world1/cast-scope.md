@@ -228,10 +228,16 @@ one-kid-speed lint exists to stop; Rudy and Amir get the top of the arm scale
 rather than 1.5 times it, because the throw-speed band is a published one;
 and Jay cannot refuse relief in a game that has none.
 
-Not in v2 yet: the VIEW knows none of it. The pitch picker still shows four
-cards for Lu, the drawn zone is the full one for Winnie, Yaz's ball does not
-vanish, and nothing is called out. And none of the seven signature looks is
-on the v2 proxy or the sculpts.
+What the VIEW shows of it (also behind the flag): the pitch picker carries
+only the cards on the arm's menu (one for Lu, three for Ezra, Musa's renamed
+WOBBLER); the zone box drawn at the plate shrinks with Winnie's zone; a person
+batting as Yaz loses the ball, its shadow and the timing ring halfway in; and
+six moments are called over the field from a new `story` sim event (HEATER,
+WOBBLER, CLUTCH, MOONSHOT, OW! FREE BASE, NO TAG).
+
+Not in v2 yet: no callout for Roya's stray throw, Zaya going on her own or
+the sibling bonus; Bao's four cards are four names for one flight; and none of
+the seven signature looks is on the v2 proxy or the sculpts.
 
 One thing the work turned up that is not about the cast: the release solve
 does not hit its flight-time target for the base fastball below pitching 6

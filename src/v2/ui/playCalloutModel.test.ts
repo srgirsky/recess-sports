@@ -55,6 +55,24 @@ describe('play callouts', () => {
   });
 });
 
+describe('a story beat is named, icon first', () => {
+  const BEATS = ['heater', 'wobbler', 'clutch', 'moonshot', 'hitByPitch', 'slippedTag'] as const;
+
+  it.each(BEATS)('★ %s has a callout a child can read', (beat) => {
+    const c = playCalloutFor({ t: 'story', kidId: 'x', beat });
+    expect(c?.kind).toBe('story');
+    // An icon, then at most two words: the pillar is minimal reading.
+    const words = c!.label.replace(/[^A-Z !]/g, '').trim().split(/\s+/);
+    expect(words.length).toBeLessThanOrEqual(2);
+    expect(c!.label).toMatch(/^\P{L}+ [A-Z]/u);
+  });
+
+  it('★ no two beats say the same thing', () => {
+    const labels = BEATS.map((beat) => playCalloutFor({ t: 'story', kidId: 'x', beat })!.label);
+    expect(new Set(labels).size).toBe(BEATS.length);
+  });
+});
+
 describe('the verdict stays up long enough to read', () => {
   it('holds full strength for at least 1.2s (main: ~650ms of a 1050ms pop)', () => {
     const frames = calloutKeyframes();

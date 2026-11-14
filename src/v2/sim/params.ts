@@ -1167,6 +1167,8 @@ export const STORY = {
   WRONG_BASE: 0.35,
   /** Yaz, eyes closed: the contact stat she reads the ball with, and the power she hits it with. */
   BLIND: { CONTACT: 1, POWER: 10 },
+  /** The fraction of a pitch's flight a person batting as Yaz gets to watch. */
+  BLIND_SEEN_FRAC: 0.5,
 } as const;
 
 /**

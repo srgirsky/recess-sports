@@ -435,3 +435,33 @@ export function storyDefence(plan: DefencePlan, lookup: (id: string) => Characte
   }
   return positions === plan.positions ? plan : { ...plan, positions };
 }
+
+// --- What the view is told ---------------------------------------------------
+
+/**
+ * A story moment worth saying out loud. `game.ts` emits one as a `story`
+ * event the instant it happens, and only with the flag on; the view names it
+ * (`ui/playCalloutModel.ts`). A beat is a fact the sim already settled —
+ * nothing reads one back.
+ */
+export type StoryBeat = 'heater' | 'wobbler' | 'clutch' | 'moonshot' | 'hitByPitch' | 'slippedTag';
+
+/** Was this batted ball Mars's perfect swing? */
+export function wasMoonshot(batter: Character, launch: LaunchSpec): boolean {
+  return has(batter, 'moonshot') && launch.exitVelocityFts === STORY.MOONSHOT.EXIT_FTS && launch.launchAngleDeg === STORY.MOONSHOT.ANGLE_DEG;
+}
+
+/**
+ * The fraction of a pitch's flight this batter can SEE (1 is all of it). The
+ * view's question: a person batting as Yaz loses the ball partway in, because
+ * her eyes are shut. The sim does not read it — her swing is whatever the
+ * person does with what they saw.
+ */
+export function ballSeenFrac(batter: Character): number {
+  return has(batter, 'eyes_closed') ? STORY.BLIND_SEEN_FRAC : 1;
+}
+
+/** What this arm's card for `kind` is called, when it is not the usual name. */
+export function pitchCardFor(pitcher: Character, kind: PitchKind): { icon: string; label: string } | undefined {
+  return has(pitcher, 'forty_percent') && kind === 'changeup' ? { icon: '🎲', label: 'WOBBLER' } : undefined;
+}

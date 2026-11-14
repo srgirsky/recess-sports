@@ -167,6 +167,7 @@ body {
 }
 .play-callout.is-foul .play-callout__label,
 .play-callout.is-spend .play-callout__label,
+.play-callout.is-story .play-callout__label,
 .play-callout.is-homer .play-callout__label {
   color: var(--gold);
 }

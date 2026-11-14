@@ -58,7 +58,19 @@ import type { PitchKind } from './pitch';
 import { flyToPlate, releasePitch } from './pitch';
 import { resolvePlate, type PlateOverrides, type PlateParams } from './params';
 import type { Features } from './features';
-import { familyLookup, hasGreenLight, hitByPitch, jumpCapSec, slipsTheTag, storyDefence, throwsHeater } from './quirks';
+import {
+  clutchFiring,
+  familyLookup,
+  hasGreenLight,
+  hitByPitch,
+  jumpCapSec,
+  slipsTheTag,
+  storyDefence,
+  throwsHeater,
+  throwsWobbler,
+  wasMoonshot,
+  type StoryBeat,
+} from './quirks';
 import { drainPitch, effectivePitching, newStamina } from './stamina';
 import type { StaminaState } from './stamina';
 import { addJuice, cpuPickSpecialPitch, cpuWantsSpend, isSpecialSpend, newJuice, spend, spendSide } from './juice';
@@ -177,6 +189,17 @@ export type SimEvent =
       marginSec: number;
       relayed: boolean;
       human: boolean;
+    }
+  | {
+      /**
+       * A kid's story happening, the instant it does (`features.storyKids`,
+       * `quirks.ts` `StoryBeat`). Never emitted with the flag off. It restates
+       * nothing the other events carry: it is the NAME of the moment, for a
+       * view that wants to say it.
+       */
+      t: 'story';
+      kidId: string;
+      beat: StoryBeat;
     }
   | {
       /**
@@ -645,6 +668,8 @@ function* playAtBatLive(
   // Throws over this plate appearance, and whether the coming pitch follows
   // one — a runner just thrown at holds for it.
   let pickoffs = 0;
+  // Whether this plate appearance's Clutch moment has been called (`story` events).
+  let clutchCalled = false;
   let thrownOver = false;
   const leadBase = (): 1 | 2 | null => (half.occupants[1] ? 2 : half.occupants[0] ? 1 : null);
   // Nobody to throw at when nobody is on, or when the batting side is a CPU
@@ -810,6 +835,16 @@ function* playAtBatLive(
     // Jay's Heater is one a half inning: his first fastball of it (`quirks.ts`).
     const heater = args.story !== null && !half.heaterThrown && inFlight.kind === 'fastball' && throwsHeater(pitcher);
     if (heater) half.heaterThrown = true;
+    if (args.story !== null) {
+      // The story's beats, named as they happen. A Clutch kid's moment is
+      // called once, on the first pitch she sees in it.
+      if (!clutchCalled && spec.story && clutchFiring(args.batter, spec.story)) {
+        clutchCalled = true;
+        onEvent?.({ t: 'story', kidId: args.batter.id, beat: 'clutch' });
+      }
+      if (heater) onEvent?.({ t: 'story', kidId: pitcher.id, beat: 'heater' });
+      if (inFlight.kind === 'crazy' && throwsWobbler(pitcher)) onEvent?.({ t: 'story', kidId: pitcher.id, beat: 'wobbler' });
+    }
     if (stamina) {
       // Drained on the throw, before the swing: the pitch just thrown was the
       // tired arm's, the NEXT one is a little more so — and a special costs
@@ -923,6 +958,7 @@ function* playAtBatLive(
         relayed: steal.race.relayed,
         human: going.human,
       });
+      if (steal.slipped) onEvent?.({ t: 'story', kidId: going.spec.runner.id, beat: 'slippedTag' });
     }
 
     if (result.kind !== 'inPlay') {
@@ -934,6 +970,7 @@ function* playAtBatLive(
       if (args.story !== null && result.kind === 'ball' && hitByPitch(args.batter, result.crossing)) {
         half.state = { ...half.state, count: { ...half.state.count, balls: ATBAT.BALLS_PER_WALK - 1 } };
         log.push(`${args.batter.name} is hit by the pitch`);
+        onEvent?.({ t: 'story', kidId: args.batter.id, beat: 'hitByPitch' });
       }
       const folded = applyAtBat(half.state, asAtBatResult(result)!);
       half.state = folded.state;
@@ -973,6 +1010,10 @@ function* playAtBatLive(
     half.occupants.forEach((id, i) => {
       if (id) runners.push({ base: (i + 1) as 1 | 2 | 3, char: args.lookup(id) });
     });
+    // Mars's perfect swing is named as the ball leaves the bat, not when it lands.
+    if (args.story !== null && wasMoonshot(args.batter, result.launch)) {
+      onEvent?.({ t: 'story', kidId: args.batter.id, beat: 'moonshot' });
+    }
     const out: { outcome: PlayOutcome | null; scored: string[] } = { outcome: null, scored: [] };
     yield* runPlayLive(
       {
@@ -1209,7 +1250,7 @@ function resolveSteal(
   throwDown: { atSec: number } | undefined,
   rng: Rng,
   story = false
-): { safe: boolean; line: string; race: StealResult } {
+): { safe: boolean; slipped: boolean; line: string; race: StealResult } {
   const readSec = throwDown ? Math.max(0, throwDown.atSec - pitchTravelSec) : undefined;
   const race = stealRace({ ...going.spec, pitchTravelSec, readSec }, rng);
   const { from } = going;
@@ -1225,6 +1266,7 @@ function resolveSteal(
   const bag = to === 2 ? 'second' : 'third';
   return {
     safe,
+    slipped,
     race,
     line: slipped
       ? `${runner.name} slips the tag at ${bag}`
