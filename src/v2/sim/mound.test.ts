@@ -12,6 +12,17 @@ import { throwPitch, isStrike, type PitchPlan } from './atbat';
 import { makeRng } from './rng';
 import { zoneBandFt, zoneHalfWidthFt } from './athletes';
 import { ROSTER } from '../../data/characters';
+import { PITCH } from './params';
+import {
+  PITCHES,
+  PITCH_SPOTS,
+  SPECIAL_PITCH_KINDS,
+  armMult,
+  flyToPlate,
+  releaseAtSpot,
+  releaseFrom,
+  type PitchKind,
+} from './pitch';
 
 const byArm = (v: number) =>
   ROSTER.reduce((b, c) =>
@@ -121,4 +132,51 @@ describe('★ a person picks the pitch, and still misses by his own arm', () => 
     const other = throwPitch(spec(byArm(10)), makeRng('same'), p);
     expect(other.crossing).not.toEqual(same.crossing);
   });
+});
+
+describe('★ a better arm never throws the slower pitch', () => {
+  // The property the release solve exists to deliver, and for four months did
+  // not: its outer solve was a secant that extrapolated through the speed at
+  // which a release stops reaching the plate, so a pitching-5 fastball
+  // crossed in 1.01 s and a pitching-7 one in 1.19 s. Every total stayed
+  // plausible. Only an ORDER can see it (`sim.pitch-corridor`
+  // theSolveIsABisection), so that is what is asserted — never a flight time.
+  const KINDS = [...(Object.keys(PITCHES) as PitchKind[]), ...SPECIAL_PITCH_KINDS];
+  const halfH = (ZHI - ZLO) / 2;
+  const flight = (kind: PitchKind, stat: number, spot: { lateral: number; height: number }) =>
+    flyToPlate(
+      releaseFrom(
+        releaseAtSpot({
+          kind,
+          pitchingStat: stat,
+          aimLateralFt: spot.lateral * zoneHalfWidthFt(),
+          aimHeightFt: MID + spot.height * halfH,
+        })
+      )
+    ).travelSec;
+
+  it.each(KINDS)('%s: flight time never rises with the pitching stat, at any spot', (kind) => {
+    for (const spot of PITCH_SPOTS) {
+      let prev = Infinity;
+      for (let stat = 1; stat <= 10; stat++) {
+        const t = flight(kind, stat, spot);
+        // Two solves for one target agree to the solve's own tolerance.
+        expect(t, `${kind} stat ${stat} at ${spot.lateral},${spot.height}`).toBeLessThanOrEqual(prev + 2 * PITCH.AIM_TOL_SEC);
+        prev = Math.min(prev, t);
+      }
+    }
+  }, 120_000);
+
+  it('the best arm is properly quicker than the worst, for every kind', () => {
+    for (const kind of KINDS) {
+      expect(flight(kind, 10, PITCH_SPOTS[4]), kind).toBeLessThan(flight(kind, 1, PITCH_SPOTS[4]) - 0.05);
+    }
+  }, 120_000);
+
+  it('a reachable target is hit: the fastball takes what its arm was asked for', () => {
+    for (let stat = 1; stat <= 10; stat++) {
+      const want = PITCH.FLIGHT_TIME_SEC * armMult(stat);
+      expect(Math.abs(flight('fastball', stat, PITCH_SPOTS[4]) - want), `stat ${stat}`).toBeLessThan(2 * PITCH.AIM_TOL_SEC);
+    }
+  }, 120_000);
 });

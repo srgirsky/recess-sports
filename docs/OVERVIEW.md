@@ -707,6 +707,24 @@ obeys the same physics from one tick to the next and the trace is identical —
 what changes between reads is where the *fielders* are. Together: 1.7s per game
 to 0.14s, and PR 8's 50k plate appearances from unusable to 113 seconds.
 
+**And for four months that solve quietly inverted the pitching stat
+(fixed 2026-11-13).** The outer half was six secant steps over release speed.
+Below about 39 ft/s nothing thrown on the low branch reaches a 46 ft plate,
+and the solve reported that as a five-second flight so the secant would push
+the speed up. It extrapolated a slope through the cliff instead and stopped
+wherever it was: a pitching-5 fastball asked for 1.28 s arrived in 1.01 s, a
+pitching-7 one asked for 1.19 s arrived in 1.19 s, and every arm from 1 to 5
+threw a quicker fastball than a 6. The record said so twice ("not in the
+order wantSec asks for"; "a half-converged 1.02 s that the fireball equals")
+and each time filed it as saturation, something the physics could not
+deliver. It was the solver. A bracketed bisection, with "cannot reach" read
+as plain "too slow", hits every reachable flight and lets an unreachable one
+settle at the slowest pitch there is. What found it was not a gate: Roz's
+story asks for a faster fastball, and the test that hers arrives sooner than
+the same arm's failed at stat 5. `mound.test.ts` now asserts the order over
+every kind, stat and spot; the game's shape moved by under a point
+(`sim.pitch-corridor` theSolveIsABisection).
+
 The game produces K% 25.6, BB% 10.5 and 6.8 runs a game — all plausible — and
 **BABIP .624 against real baseball's ~.300**. Every second ball in play is a hit.
 That is the defence, the causes are already on the record (`sim.throwSpeed` still

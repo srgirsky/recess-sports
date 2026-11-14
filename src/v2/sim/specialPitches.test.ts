@@ -105,11 +105,10 @@ describe('★ the specials are parameter sets in the one model', () => {
   }, SOLVES);
 
   it('★ orders the flight times: floater > changeup > fastball > fireball, over every arm and spot', () => {
-    // An ORDER, never a value. Means over the whole grid, because the base
-    // solve saturates at weak arms (`sim.throwSpeed.comparedWithThePitch`)
-    // and a single stat can invert — the fastball's stat-5 flight is a
-    // half-converged 1.02 s that a fireball equals. The kid's experience is
-    // the grid.
+    // An ORDER, never a value. Means over the whole grid, because a weak
+    // arm's slowest kinds SATURATE at the slowest flight a release can have
+    // (`sim.pitch-corridor` theSolveIsABisection), so at stat 1 the changeup
+    // and the floater are the same pitch. The kid's experience is the grid.
     const mean = (kind: PitchKind) => {
       let sum = 0;
       let n = 0;

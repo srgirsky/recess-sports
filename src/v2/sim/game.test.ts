@@ -460,43 +460,55 @@ describe('★ the flow is a generator, and draining it changes nothing', () => {
    * dropped the ball exactly when the tag was due, so games with an unforced
    * runner beaten to a bag now end those plays differently.
    */
+  /**
+   * ★ RECAPTURED 2026-11-13 FOR THE RELEASE SOLVE (`pitch.ts` `releasePitch`).
+   * The outer solve was a six-step secant that read "this speed cannot reach
+   * the plate" as a five-second flight and extrapolated through it; it is
+   * now solved inside a bracket. Every pitch a pitching-1-to-5 arm throws is
+   * therefore a different pitch — a stat-5 fastball was arriving in 1.01 s
+   * against the 1.28 s it was asked for, quicker than a stat-7's — so all
+   * thirty-three games moved, in `pa`, `h` and `k` alike. This IS a change
+   * at the plate, unlike the two before it. What it did to the game's shape
+   * over 873 harness games: strikeouts 18.2% -> 19.0%, walks 9.4% -> 10.0%,
+   * pitches per plate appearance 3.95 -> 4.03, fair-ball mix unchanged.
+   */
   const GOLDEN: Record<string, string> = {
-    'park:a': '5-4 i6 pa61 h29 k9 r9 s10',
-    'park:b': '1-0 i6 pa50 h21 k9 r1 s6',
-    'park:c': '6-0 i6 pa58 h28 k16 r6 s8',
-    'sandlot:a': '5-4 i6 pa58 h27 k13 r9 s10',
-    'sandlot:b': '1-5 i6 pa51 h21 k11 r6 s11',
-    'sandlot:c': '5-1 i6 pa57 h25 k15 r6 s9',
-    'blacktop:a': '6-2 i6 pa56 h22 k14 r8 s8',
-    'blacktop:b': '4-5 i6 pa54 h27 k12 r9 s8',
-    'blacktop:c': '3-3 i7 pa58 h23 k17 r6 s9',
+    'park:a': '5-1 i6 pa57 h24 k10 r6 s10',
+    'park:b': '1-5 i6 pa51 h24 k11 r6 s10',
+    'park:c': '3-1 i7 pa59 h20 k20 r4 s14',
+    'sandlot:a': '5-2 i6 pa58 h29 k9 r7 s11',
+    'sandlot:b': '1-1 i7 pa56 h20 k14 r2 s6',
+    'sandlot:c': '1-0 i6 pa56 h27 k15 r1 s9',
+    'blacktop:a': '3-2 i6 pa52 h19 k15 r5 s7',
+    'blacktop:b': '4-5 i6 pa50 h21 k11 r9 s7',
+    'blacktop:c': '3-2 i6 pa56 h26 k16 r5 s8',
     // Added with the venues: there is no pre-generator result for content that
     // did not exist then, so these are their birth fingerprints and ratchet
     // from here exactly as the first three do.
-    'tin_can:a': '8-2 i6 pa63 h26 k17 r10 s8',
-    'tin_can:b': '4-5 i6 pa54 h26 k12 r9 s9',
-    'tin_can:c': '0-10 i6 pa59 h31 k14 r10 s10',
-    'cement:a': '5-2 i6 pa58 h27 k13 r7 s7',
-    'cement:b': '2-4 i6 pa51 h24 k11 r6 s8',
-    'cement:c': '3-2 i6 pa56 h25 k16 r5 s5',
-    'steele:a': '4-2 i6 pa56 h28 k12 r6 s12',
-    'steele:b': '4-6 i6 pa58 h29 k13 r10 s11',
-    'steele:c': '7-0 i6 pa58 h27 k16 r7 s9',
-    'playground:a': '4-0 i6 pa56 h22 k12 r4 s12',
-    'playground:b': '5-5 i7 pa70 h34 k15 r10 s12',
-    'playground:c': '3-1 i6 pa57 h27 k14 r4 s9',
-    'eckman:a': '4-2 i6 pa56 h23 k15 r6 s16',
-    'eckman:b': '0-4 i6 pa49 h21 k10 r4 s9',
-    'eckman:c': '6-11 i6 pa66 h37 k13 r17 s16',
-    'dirt_yards:a': '4-2 i6 pa56 h24 k15 r6 s15',
-    'dirt_yards:b': '7-1 i6 pa63 h36 k13 r8 s12',
-    'dirt_yards:c': '3-2 i6 pa57 h26 k14 r5 s8',
-    'big_city:a': '5-4 i6 pa57 h22 k9 r9 s9',
-    'big_city:b': '1-5 i6 pa52 h24 k12 r6 s8',
-    'big_city:c': '6-0 i6 pa58 h28 k16 r6 s6',
-    'dome:a': '5-3 i6 pa57 h21 k10 r8 s7',
-    'dome:b': '3-5 i6 pa52 h24 k12 r8 s8',
-    'dome:c': '4-12 i6 pa64 h34 k11 r16 s13',
+    'tin_can:a': '8-1 i6 pa63 h25 k14 r9 s6',
+    'tin_can:b': '3-5 i6 pa53 h28 k11 r8 s11',
+    'tin_can:c': '1-2 i6 pa45 h18 k13 r3 s7',
+    'cement:a': '5-3 i6 pa57 h23 k15 r8 s9',
+    'cement:b': '2-5 i6 pa51 h24 k11 r7 s10',
+    'cement:c': '1-1 i7 pa57 h22 k16 r2 s4',
+    'steele:a': '5-1 i6 pa57 h25 k11 r6 s11',
+    'steele:b': '5-1 i6 pa55 h27 k12 r6 s7',
+    'steele:c': '5-10 i6 pa66 h38 k14 r15 s19',
+    'playground:a': '6-1 i6 pa56 h24 k9 r7 s14',
+    'playground:b': '1-7 i6 pa53 h26 k12 r8 s10',
+    'playground:c': '3-0 i6 pa51 h19 k18 r3 s7',
+    'eckman:a': '3-2 i6 pa54 h22 k10 r5 s10',
+    'eckman:b': '0-4 i6 pa49 h22 k10 r4 s8',
+    'eckman:c': '2-0 i6 pa57 h28 k15 r2 s9',
+    'dirt_yards:a': '4-2 i6 pa56 h27 k11 r6 s14',
+    'dirt_yards:b': '1-6 i6 pa51 h21 k9 r7 s9',
+    'dirt_yards:c': '2-0 i6 pa54 h25 k15 r2 s9',
+    'big_city:a': '5-2 i6 pa60 h28 k11 r7 s12',
+    'big_city:b': '1-5 i6 pa53 h28 k11 r6 s9',
+    'big_city:c': '2-7 i6 pa58 h27 k15 r9 s17',
+    'dome:a': '6-2 i6 pa56 h23 k11 r8 s8',
+    'dome:b': '2-5 i6 pa54 h32 k12 r7 s7',
+    'dome:c': '2-7 i6 pa57 h30 k13 r9 s9',
   };
 
   it('★ still produces what it produced before the generator refactor', () => {
@@ -534,7 +546,8 @@ describe('★ the flow is a generator, and draining it changes nothing', () => {
   // 1283789542 -> 116246726 when the runner began picking his pitch
   // (2026-10-30), and 116246726 -> 1691509118 with the World 1 re-cast
   // (2026-11-03) — a roster change, not a sim change; see GOLDEN.
-  const CHECKSUM_30 = 2025622013;
+  // 2025622013 -> 1761971867 with the release solve (2026-11-13); see GOLDEN.
+  const CHECKSUM_30 = 1761971867;
   // Keep the original thirty-game ratchet on the venues it was born with.
   // New venues get explicit birth fingerprints above; adding content must not
   // silently rewrite the baseline that catches drift in the existing game.

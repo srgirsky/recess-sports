@@ -41,6 +41,16 @@ function playsOf(seed: string): Array<{ h: PlayHighlights; ticks: number; outs: 
   let wasLive = false;
   while (!r.done) {
     const f = r.value as LiveFrame;
+    // ★ THE PLAY IS RECORDED BEFORE THE NEXT ONE'S HIGHLIGHTS REPLACE IT. The
+    // frame after a live play is usually the next WINDUP, and this used to
+    // reset `h` on that frame first and then push it — so every play was
+    // filed under the NEXT play's (still empty, later mutated) highlights
+    // with its own `outs` read as 0. It held only while no seeded game put an
+    // undived, uncaromed double play after a routine one.
+    if (wasLive && !(f.phase === 'live' && f.play)) {
+      plays.push({ h, ticks, outs: h.outs, homer: h.homer });
+      wasLive = false;
+    }
     if (f.phase === 'windup') {
       h = newHighlights();
       ticks = 0;
@@ -49,9 +59,6 @@ function playsOf(seed: string): Array<{ h: PlayHighlights; ticks: number; outs: 
       foldHighlights(h, f.play, cameraInputFor(f));
       ticks++;
       wasLive = true;
-    } else if (wasLive) {
-      plays.push({ h, ticks, outs: h.outs, homer: h.homer });
-      wasLive = false;
     }
     r = it.next();
   }
