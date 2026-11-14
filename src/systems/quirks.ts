@@ -127,6 +127,39 @@ export function storyLineup(plan: LineupPlan): LineupPlan {
   return out;
 }
 
+/**
+ * The same thing where there is no lineup plan at all — kid mode, which
+ * fields its nine in draft order. `ids[i]` stands at `posts[i]`; the kids
+ * whose story names a position trade places with whoever drew it. The array
+ * it was given, for a nine with none of them out of place.
+ */
+export function storyPosts(posts: readonly PositionId[], ids: readonly string[]): readonly string[] {
+  if (ids.length !== posts.length) return ids;
+  let out = ids;
+  const settled = new Set<string>();
+  for (const { quirk, spots } of STORY_POSITIONS) {
+    for (const id of ids) {
+      if (!has(getCharacter(id), quirk)) continue;
+      const at = out.indexOf(id);
+      if (spots.includes(posts[at])) {
+        settled.add(id);
+        continue;
+      }
+      for (const spot of spots) {
+        const j = posts.indexOf(spot);
+        if (j < 0 || settled.has(out[j])) continue;
+        const next = [...out];
+        next[at] = out[j];
+        next[j] = id;
+        out = next;
+        settled.add(id);
+        break;
+      }
+    }
+  }
+  return out;
+}
+
 /** Ezra does not play on Fridays. */
 export function sitsOnFriday(kid: Character): boolean {
   return has(kid, 'the_loop');

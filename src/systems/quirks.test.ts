@@ -1023,3 +1023,45 @@ describe('the auto lineup puts a kid where their story says', () => {
     }
   });
 });
+
+// --- ...and in kid mode, which has no lineup plan ------------------------------
+
+import { storyPosts } from './quirks';
+
+describe('kid mode fields in draft order, with the story kids where they belong', () => {
+  const POSTS: PositionId[] = ['C', '1B', '2B', 'SS', '3B', 'LF', 'CF', 'RF'];
+  const at = (order: readonly string[], id: string) => POSTS[order.indexOf(id)];
+
+  it('★ eight with none of them come back as the same array', () => {
+    const eight = ['nostrike', 'calls_shot', 'rocket', 'zippy', 'big_lou', 'chip', 'peaches', 'sniffles'];
+    expect(storyPosts(POSTS, eight)).toBe(eight);
+  });
+
+  it('Sonny catches, Amir plays centre, Rudy is on the grass', () => {
+    const eight = ['chip', 'peaches', 'tank', 'flash', 'sniffles', 'zippy', 'big_lou', 'ace_kid'];
+    const order = storyPosts(POSTS, eight);
+    expect(at(order, 'tank')).toBe('C');
+    expect(at(order, 'ace_kid')).toBe('CF');
+    expect(['LF', 'RF']).toContain(at(order, 'flash'));
+    expect([...order].sort()).toEqual([...eight].sort());
+  });
+
+  it('★ every eight it is handed is the same eight, each of the three in place', () => {
+    let a = 54321;
+    const rnd = () => ((a = (a * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
+    const ids = ROSTER.map((c) => c.id);
+    for (let n = 0; n < 400; n++) {
+      const eight = [...ids].sort(() => rnd() - 0.5).slice(0, 8);
+      const order = storyPosts(POSTS, eight);
+      expect([...order].sort()).toEqual([...eight].sort());
+      if (eight.includes('tank')) expect(at(order, 'tank')).toBe('C');
+      if (eight.includes('ace_kid')) expect(at(order, 'ace_kid')).toBe('CF');
+      if (eight.includes('flash')) expect(['LF', 'RF', 'CF']).toContain(at(order, 'flash'));
+    }
+  });
+
+  it('leaves a short-handed side alone rather than guess', () => {
+    const seven = ['tank', 'chip', 'peaches', 'sniffles', 'zippy', 'big_lou', 'ace_kid'];
+    expect(storyPosts(POSTS, seven)).toBe(seven);
+  });
+});
