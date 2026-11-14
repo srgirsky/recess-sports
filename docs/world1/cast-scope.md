@@ -202,7 +202,7 @@ maintainer turns it on. All twenty-five quirk kids and both team rules:
 | Musa | one pitch; 40% of the time it flies as the crazy ball, aimed through its break with his own scatter rather than the crazy ball's doubled one |
 | Kwame, Dev | the release misses by 2.0 and 1.5 times the arm's own error |
 | Bao | every pitch is the floater's flight: as slow as the release solve can throw, heavy backspin |
-| Roz | her FASTBALL leaves the hand 12% faster; the other three are untouched, because the release solve already saturates on them |
+| Roz | everything she throws leaves the hand 12% faster |
 | Jay | his first fastball of each half inning flies as the fireball; with stamina on it drains like a special |
 | Winnie | never offers, CPU or person, behind a zone 60% the size each way |
 | Rafi | every swing is a bunt, CPU or person |
@@ -225,14 +225,13 @@ first values the harness measured 12.9 runs a game with the stories on
 against 6.8 off: Lu walked 44% of batters (a curve aimed at the zone breaks
 out of it, and it was her only pitch), Mars homered in 46% of plate
 appearances, Winnie walked 84% of the time and Hattie's spot was an out 92% of
-the time. After the changes in the table, over 240 rotated-roster games:
-7.1 runs a game on, 6.6 off; Mars homers in 12% of plate appearances; Winnie
+the time. After the changes in the table (and with the release solve fixed), over 240 rotated-roster games:
+6.4 runs a game on, 6.2 off; Mars homers in 12% of plate appearances; Winnie
 walks 58% and strikes out looking 42%; Hattie hits 66%; Sam reaches 58%; Lu
 and Musa walk nobody and Kwame walks 18%. `quirks.test.ts` gates the game's
 shape, not these values. They are still guesses, now guesses that play.
 
-Departures from v1, each for a reason in `quirks.ts`: Roz is fastball-only;
-Ollie is safe at the bag he was stealing rather than back on the one he left
+Departures from v1, each for a reason in `quirks.ts`: Ollie is safe at the bag he was stealing rather than back on the one he left
 (every consumer of the steal event reads "not safe" as an out); Amir has the
 arm but not the range, because a second speed for one kid's legs is what the
 one-kid-speed lint exists to stop; Rudy and Amir get the top of the arm scale
@@ -250,11 +249,11 @@ Not in v2 yet: no callout for Roya's stray throw, Zaya going on her own or
 the sibling bonus; Bao's four cards are four names for one flight; and none of
 the seven signature looks is on the v2 proxy or the sculpts.
 
-One thing the work turned up that is not about the cast: the release solve
-does not hit its flight-time target for the base fastball below pitching 6
-(asked for 1.28 to 1.45 s, it throws 1.01 to 1.14 s), so in the shipped game a
-pitching-5 arm's fastball arrives sooner than a pitching-7 arm's. It is the
-same saturation `sim.throwSpeed.comparedWithThePitch` records for the changeup.
+One thing the work turned up that was not about the cast: the release solve
+did not hit its flight-time target for the base fastball below pitching 6, so
+a pitching-5 arm's fastball arrived sooner than a pitching-7 arm's. Fixed in
+the same month (`sim.pitch-corridor` theSolveIsABisection); Roz's test is what
+found it.
 
 What did not exist in either sim when this page was written, in rough order of
 size (kept as the scoping record; see above for what v1 has since built):

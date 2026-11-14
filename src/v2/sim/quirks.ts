@@ -31,7 +31,7 @@
 //   wild_arm       Kwame     his release misses by twice his arm's error
 //   wobble         Dev       the same, milder
 //   rainbow        Bao       everything he throws is the floater: slow, hanging
-//   velocity       Roz       her fastball leaves the hand faster
+//   velocity       Roz       everything she throws leaves the hand faster
 //   never_swings   Winnie    takes every pitch, behind the smallest zone around
 //   always_bunts   Rafi      every swing of his is a bunt
 //   clutch_*       Nora, Marcus, Yui   a slugger's bat, in their moment only
@@ -111,10 +111,12 @@ export function pitchOnMenu(pitcher: Character, kind: PitchKind): PitchKind {
 }
 
 const RAINBOW: Delivery = { def: SPECIAL_PITCHES.freezeball, tag: 'rainbow' };
-const VELOCITY: Delivery = {
-  def: { ...PITCHES.fastball, speedMult: PITCHES.fastball.speedMult * STORY.VELOCITY_SPEED_MULT },
-  tag: 'velocity',
-};
+const VELOCITY = Object.fromEntries(
+  BASE_MENU.map((kind) => [
+    kind,
+    { def: { ...PITCHES[kind], speedMult: PITCHES[kind].speedMult * STORY.VELOCITY_SPEED_MULT }, tag: 'velocity' },
+  ])
+) as Record<BasePitchKind, Delivery>;
 
 /**
  * How this arm throws `kind`, when that is not how everyone throws it.
@@ -125,19 +127,16 @@ const VELOCITY: Delivery = {
  * floater's speed is the slowest at which every (stat, spot) release lands
  * (`pitch.ts` § SPECIAL_PITCHES), so there is no slower curve to give him.
  *
- * Roz's is her FASTBALL at a faster release, and only her fastball. The sheet
- * says everything of hers arrives early, and v1 does that; here the release
- * solve cannot. Swept over every stat and spot, the base changeup, curve and
- * screwball already saturate it (they cross up to a foot from their aim, the
- * gap `sim.throwSpeed.comparedWithThePitch` records), and asking those three
- * for more speed moves the miss around without shortening the flight. The
- * fastball solves cleanly at every multiplier up to the fireball's.
+ * Roz's is each kind's own spin at a faster release: everything she throws
+ * gets there sooner. (Until the release solve was bracketed this could only
+ * be her fastball — asked for more speed on a kind that already saturated,
+ * the old solve moved the miss around without shortening the flight.)
  */
 export function deliveryFor(pitcher: Character, kind: PitchKind, heaterReady = false): Delivery | undefined {
   if (isSpecialPitch(kind)) return undefined;
   if (heaterReady && throwsHeater(pitcher) && kind === 'fastball') return HEATER;
   if (has(pitcher, 'rainbow')) return RAINBOW;
-  if (has(pitcher, 'velocity') && kind === 'fastball') return VELOCITY;
+  if (has(pitcher, 'velocity')) return VELOCITY[kind];
   return undefined;
 }
 

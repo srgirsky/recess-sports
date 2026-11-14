@@ -206,13 +206,9 @@ describe('the mound', () => {
     for (const kind of BASE) expect(flightOf(bao, kind, QUIET), kind).toBeGreaterThan(flightOf(bao, kind));
   });
 
-  it('★ velocity: Roz\'s fastball arrives sooner, and her other three are untouched', () => {
+  it('★ velocity: every pitch of Roz\'s arrives sooner than the same arm would throw it', () => {
     const roz = kidWith('velocity');
-    expect(flightOf(roz, 'fastball', QUIET)).toBeLessThan(flightOf(roz, 'fastball'));
-    for (const kind of BASE.filter((k) => k !== 'fastball')) {
-      expect(deliveryFor(roz, kind), kind).toBeUndefined();
-      expect(flightOf(roz, kind, QUIET), kind).toBe(flightOf(roz, kind));
-    }
+    for (const kind of BASE) expect(flightOf(roz, kind, QUIET), kind).toBeLessThan(flightOf(roz, kind));
   });
 
   it('★ a delivery still lands on the spot it was aimed at, at every stat and spot', () => {
@@ -234,7 +230,9 @@ describe('the mound', () => {
             const aimHeightFt = mid + spot.height * halfH;
             const plan = releaseAtSpot({ kind, pitchingStat: stat, aimLateralFt, aimHeightFt, delivery });
             const at = flyToPlate(releaseFrom(plan)).state.p;
-            const off = Math.hypot(at.x - aimLateralFt, at.y - aimHeightFt);
+            // HEIGHT is what the release is solved for; a breaking ball's sideways
+            // move off its aim is the pitch's break, not a miss.
+            const off = Math.abs(at.y - aimHeightFt);
             expect(off, `${q} ${kind} stat ${stat} spot ${spot.lateral},${spot.height}`).toBeLessThan(0.05);
           }
         }

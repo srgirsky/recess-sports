@@ -1155,8 +1155,8 @@ export const STORY = {
   /** How often Musa's one pitch works (the sheet's 40%). */
   WOBBLER_WORKS: 0.4,
   /**
-   * Roz's fastball release, as a multiple of the fastball's own. Inside the
-   * range the release solve is known to land: the fireball is 1.25.
+   * Roz's release speed, as a multiple of each kind's own. The fireball is
+   * 1.25 on a fastball, for scale.
    */
   VELOCITY_SPEED_MULT: 1.12,
   /**
