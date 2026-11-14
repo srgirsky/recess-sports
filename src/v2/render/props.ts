@@ -258,3 +258,91 @@ export function paintTeamBand(band: Object3D, colorHex: number | null): void {
   }
   holder.visible = true;
 }
+
+// --- Signature looks that are props ------------------------------------------
+//
+// The cast sheet gives seven kids a signature look. Four of them are geometry
+// ON the kid (a wrap in place of hair, gear over a torso, a different chair)
+// and belong to the sculpt. Three are things a kid WEARS OR CARRIES, and those
+// can ride a bone like the bat does: Mars's bat (above), June's helmet and
+// Ezra's tassels. A look only — nothing in the sim reads any of this.
+
+export const HELMET_PROP_NAME = 'prop_helmet';
+export const TASSEL_PROP_NAME = 'prop_tzitzit';
+
+/**
+ * June's batting helmet: "too big", so it is a shell a clear margin wider
+ * than the canonical head (1.29 ft from the `Head` joint to its crown), sat
+ * low over the brow with a bill out front. Sized in the skeleton's own feet
+ * on the `Head` bone, so it follows every clip and every head scale.
+ */
+export const HELMET = { radiusFt: 0.8, centreUpFt: 0.62, billFt: 0.42, color: 0xc0392b, tiltRad: -0.1 } as const;
+
+let helmetParts: { shell: SphereGeometry; bill: CylinderGeometry; material: ReturnType<typeof makeToonMaterial> } | null = null;
+
+function attachHelmet(bones: readonly { name: string; add(o: Object3D): unknown }[]): Object3D | null {
+  const head = bones.find((b) => b.name === 'Head');
+  if (!head) return null;
+  helmetParts ??= {
+    // The top 58% of a sphere: crown to just under the widest point.
+    shell: new SphereGeometry(HELMET.radiusFt, 20, 12, 0, Math.PI * 2, 0, Math.PI * 0.58),
+    bill: new CylinderGeometry(HELMET.radiusFt * 0.78, HELMET.radiusFt * 0.78, 0.05, 18, 1, false, -Math.PI * 0.3, Math.PI * 0.6),
+    material: makeToonMaterial({ color: HELMET.color }),
+  };
+  const helmet = new Group();
+  helmet.name = HELMET_PROP_NAME;
+  const shell = new Mesh(helmetParts.shell, helmetParts.material);
+  shell.castShadow = true;
+  // The bill: a flat wedge of disc, pushed forward of the brow.
+  const bill = new Mesh(helmetParts.bill, helmetParts.material);
+  bill.position.set(0, -HELMET.radiusFt * 0.12, HELMET.billFt);
+  helmet.add(shell, bill);
+  helmet.position.set(0, HELMET.centreUpFt, 0);
+  helmet.rotation.x = HELMET.tiltRad;
+  head.add(helmet);
+  return helmet;
+}
+
+/**
+ * Ezra's tzitzit: four white tassels below the hem, one at each corner of the
+ * garment — front and back of each hip. Hung from `Hips` so they ride the
+ * body; they are short enough to stay clear of a striding thigh.
+ */
+export const TASSELS = { outFt: 0.3, depthFt: 0.3, dropFt: 0.2, lengthFt: 0.44, radiusFt: 0.026, color: 0xf6f2e8 } as const;
+
+let tasselParts: { strand: CylinderGeometry; material: ReturnType<typeof makeToonMaterial> } | null = null;
+
+function attachTassels(bones: readonly { name: string; add(o: Object3D): unknown }[]): Object3D | null {
+  const hips = bones.find((b) => b.name === 'Hips');
+  if (!hips) return null;
+  tasselParts ??= {
+    // Narrow at the knot, flared at the fringe.
+    strand: new CylinderGeometry(TASSELS.radiusFt, TASSELS.radiusFt * 2, TASSELS.lengthFt, 6),
+    material: makeToonMaterial({ color: TASSELS.color }),
+  };
+  const group = new Group();
+  group.name = TASSEL_PROP_NAME;
+  for (const sx of [-1, 1]) {
+    for (const sz of [-1, 1]) {
+      const strand = new Mesh(tasselParts.strand, tasselParts.material);
+      strand.position.set(sx * TASSELS.outFt, -TASSELS.dropFt - TASSELS.lengthFt / 2, sz * TASSELS.depthFt);
+      group.add(strand);
+    }
+  }
+  hips.add(group);
+  return group;
+}
+
+/**
+ * Hang whatever this kid's signature look is, if it is one a prop can be.
+ * Null for a kid with no signature, for the four looks that live on the
+ * sculpt, and for `bigBat` (which is the bat's own business).
+ */
+export function attachSignatureProp(
+  view: { bones: readonly { name: string; add(o: Object3D): unknown }[] },
+  signature?: Signature
+): Object3D | null {
+  if (signature === 'slidingHelmet') return attachHelmet(view.bones);
+  if (signature === 'tzitzit') return attachTassels(view.bones);
+  return null;
+}

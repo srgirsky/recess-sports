@@ -109,12 +109,14 @@ sculptlib) plus a measured sheet:
 
 **v1 has all seven as of November 2026** (`VisualParams.signature`, drawn in
 `src/art/CharacterArt.ts` in street clothes and team jerseys; Dev's chair is
-restyled as a cambered racing chair). In v2 one of them exists: Mars's bat is
-the shared bat prop scaled 1.3 long and 1.18 round at the grip
-(`render/props.ts` `BIG_BAT_SCALE`), on proxy and sculpt alike. The other six
-need geometry on the kid (a wrap in place of hair, a helmet, gear, tassels)
-and wait for the sculpt campaign's sheets; the proxy and the sculpts do not
-read the field for them.
+restyled as a cambered racing chair). In v2 the three a kid WEARS OR CARRIES
+exist as runtime props on a bone (`render/props.ts`), on proxy and sculpt
+alike: Mars's bat is the shared bat scaled 1.3 long and 1.18 round at the
+grip; June's helmet is an oversized red shell with a bill on `Head`; Ezra's
+tassels are four white strands below the hem on `Hips`. The other four are
+geometry ON the kid (Fatou's hijab and Guri's patka in place of hair, Sonny's
+gear over his torso, Dev's racing chair) and wait for the sculpt campaign's
+sheets.
 
 The triangle and byte budgets are full roster-wide (see the asset-budget
 memory and `validate-models`), so catcher's gear and the hijab have to be paid

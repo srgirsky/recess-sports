@@ -70,7 +70,7 @@ import {
 } from '../render/modelLoader';
 import { hasDeliveredPerformance } from '../render/assets';
 import { AnimationDirector } from '../render/AnimationDirector';
-import { attachBatProp, attachGloveProp, attachTeamBandProp, paintTeamBand } from '../render/props';
+import { attachBatProp, attachGloveProp, attachSignatureProp, attachTeamBandProp, paintTeamBand } from '../render/props';
 import { buildProceduralClips } from '../render/proceduralClips';
 import { heroClipFor, performanceFor } from '../render/performance';
 import { impactStrength } from '../render/impactCues';
@@ -1376,6 +1376,8 @@ export class GameView {
     const band = attachTeamBandProp(view);
     if (band) this.teamBands.set(character.id, band);
     else this.teamBands.delete(character.id);
+    // The looks a kid wears rather than is (June's helmet, Ezra's tassels).
+    attachSignatureProp(view, character.visual.signature);
     return new AnimationDirector(view.mesh, {
       clips: this.deliveredClips,
       performanceClips: this.performanceClips.get(character.id),

@@ -13,7 +13,7 @@ import { describe, it, expect } from 'vitest';
 import { Bone, Box3, Vector3, type Object3D } from 'three';
 import { ROSTER } from '../../data/characters';
 import { ProxyCharacter } from './ProxyCharacter';
-import { BAT_ANCHOR_BONE, BAT_LENGTH_FT, BAT_PROP_NAME, BIG_BAT_SCALE, GLOVE_ANCHOR_BONE, TEAM_BAND_ANCHOR_BONE, attachBatProp, attachGloveProp, attachTeamBandProp, paintTeamBand } from './props';
+import { BAT_ANCHOR_BONE, BAT_LENGTH_FT, BAT_PROP_NAME, BIG_BAT_SCALE, HELMET, HELMET_PROP_NAME, TASSELS, TASSEL_PROP_NAME, attachSignatureProp, GLOVE_ANCHOR_BONE, TEAM_BAND_ANCHOR_BONE, attachBatProp, attachGloveProp, attachTeamBandProp, paintTeamBand } from './props';
 import { AnimationDirector } from './AnimationDirector';
 import { buildProceduralClips } from './proceduralClips';
 import type { Mesh } from 'three';
@@ -159,5 +159,55 @@ describe('Mars\'s bat is visibly too big', () => {
     for (const sig of ['hijab', 'patka', 'slidingHelmet', 'catcherGear', 'tzitzit'] as const) {
       expect(attachBatProp(anchored(), sig)!.scale.toArray()).toEqual([1, 1, 1]);
     }
+  });
+});
+
+describe('the looks a kid wears: June\'s helmet and Ezra\'s tassels', () => {
+  const rig = () => {
+    const head = new Bone();
+    head.name = 'Head';
+    const hips = new Bone();
+    hips.name = 'Hips';
+    return { bones: [head, hips], head, hips };
+  };
+
+  it('★ June\'s helmet rides her head and is too big for it', () => {
+    const r = rig();
+    const helmet = attachSignatureProp(r, 'slidingHelmet')!;
+    expect(helmet.name).toBe(HELMET_PROP_NAME);
+    expect(helmet.parent).toBe(r.head);
+    expect(r.hips.children.length).toBe(0);
+    // "Too big": wider than the whole canonical head is tall, joint to crown.
+    const HEAD_TALL_FT = 1.294;
+    expect(HELMET.radiusFt * 2).toBeGreaterThan(HEAD_TALL_FT);
+    // And it sits ON the head, not above it: the shell's rim is below the crown.
+    expect(HELMET.centreUpFt).toBeLessThan(HEAD_TALL_FT);
+    expect(HELMET.centreUpFt + HELMET.radiusFt).toBeGreaterThan(HEAD_TALL_FT);
+  });
+
+  it('★ Ezra\'s tassels are four, one at each corner, hanging below his hips', () => {
+    const r = rig();
+    const tassels = attachSignatureProp(r, 'tzitzit')!;
+    expect(tassels.name).toBe(TASSEL_PROP_NAME);
+    expect(tassels.parent).toBe(r.hips);
+    expect(tassels.children.length).toBe(4);
+    const corners = tassels.children.map((c) => `${Math.sign(c.position.x)},${Math.sign(c.position.z)}`).sort();
+    expect(corners).toEqual(['-1,-1', '-1,1', '1,-1', '1,1']);
+    for (const strand of tassels.children) expect(strand.position.y + TASSELS.lengthFt / 2).toBeLessThan(0);
+  });
+
+  it('★ nobody else is handed one, and the four sculpted looks are left to the sculpt', () => {
+    for (const sig of [undefined, 'hijab', 'patka', 'catcherGear', 'bigBat'] as const) {
+      const r = rig();
+      expect(attachSignatureProp(r, sig)).toBeNull();
+      expect(r.head.children.length + r.hips.children.length).toBe(0);
+    }
+    expect(ROSTER.filter((c) => c.visual.signature === 'slidingHelmet').map((c) => c.id)).toEqual(['nostrike']);
+    expect(ROSTER.filter((c) => c.visual.signature === 'tzitzit').map((c) => c.id)).toEqual(['bend_it']);
+  });
+
+  it('a rig with no such bone gets nothing rather than a throw', () => {
+    expect(attachSignatureProp({ bones: [] }, 'slidingHelmet')).toBeNull();
+    expect(attachSignatureProp({ bones: [] }, 'tzitzit')).toBeNull();
   });
 });
