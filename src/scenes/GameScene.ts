@@ -145,6 +145,7 @@ import {
   wobblerTravelMult,
   zoneScaleFor,
   type Moment,
+  storyPosts,
 } from '../systems/quirks';
 import { type Alignment } from '../systems/alignment';
 import {
@@ -3496,7 +3497,9 @@ export class GameScene extends Phaser.Scene {
         })),
       ];
     } else {
-      const others = defendingIds.filter((id) => id !== pitcher.id);
+      // Draft order, with the kids whose story names a position standing in it
+      // (Sonny catches; `quirks.storyPosts`). The same order for any other nine.
+      const others = storyPosts(POSITION_ORDER, defendingIds.filter((id) => id !== pitcher.id));
       this.fieldAssignment = [
         { position: 'P' as PositionId, charId: pitcher.id },
         ...POSITION_ORDER.map((position, i) => ({ position, charId: others[i % others.length] })),
@@ -4549,7 +4552,10 @@ export class GameScene extends Phaser.Scene {
       // Main mode: the aimed path, exactly as a local batter would resolve.
       const timing = timingForSwing(getSwingTiming(this.mode), sw.swingType);
       const { swing, band } = resolveContactAimed({
-        band: bandFromError(sw.errorMs, timing),
+        // The remote batter's kid swings as she swings: Yaz's band bump is
+        // applied here exactly as the local path applies it. (Kid mode's wire
+        // carries a band the guest's device already bumped.)
+        band: blindSwingBand(this.cpuBatter, bandFromError(sw.errorMs, timing)),
         errorMs: sw.errorMs,
         cursor: sw.cursor,
         plan: this.netMoundPlan,
@@ -4927,6 +4933,8 @@ export class GameScene extends Phaser.Scene {
       });
     }
     if (m.plan?.kind !== 'fireball' && m.plan?.kind !== 'freezeball') this.startBallTrail();
+    // Yaz's eyes are shut on this device too: the guest is the one swinging.
+    this.blindfold(m.travelMs);
     if (this.features.battingCursor && m.plan) this.showSwingCursor();
     if (this.features.steals && m.plan) this.showStealChips(); // armed → rides the swing msg
     if (this.features.juice) this.showPowerButton();
