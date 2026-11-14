@@ -17,7 +17,7 @@
 // awaiting its sheet, and a test that pinned one would be pinning the guess.
 // ---------------------------------------------------------------------------
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { getCharacter, ROSTER } from '../../data/characters';
 import type { Character, Quirk } from '../../data/types';
 import { isStrike, pitchAndSwing, resolvePitch, throwPitch, type PitchSpec } from './atbat';
@@ -36,6 +36,13 @@ import {
   type Moment,
 } from './quirks';
 import { makeRng } from './rng';
+
+// ★ ONE TIMEOUT FOR THE FILE, AND WHY. These tests throw and judge thousands
+// of pitches, and the first cold release solve of each (kind, stat, spot) is
+// ~14 ms (`pitch.ts` § releaseAtSpot). Locally the slowest finishes inside the
+// default; CI's runner is about twice as slow and one did not. Nothing here
+// waits on anything — a slow run is a slow machine, never a hang.
+vi.setConfig({ testTimeout: 120_000 });
 
 const QUIET: Moment = { bases: [false, false, false], lead: 0 };
 const kidWith = (q: Quirk): Character => {
