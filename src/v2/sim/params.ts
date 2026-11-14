@@ -417,12 +417,28 @@ export const PITCH = {
   ARM_MULT_MIN: 0.86,
   ARM_MULT_MAX: 1.18,
   /**
-   * Secant steps used to solve the release elevation that actually delivers the
-   * ball to the aim point. Three is enough: the crossing miss is near-linear in
-   * elevation over this range. See `releasePitch` for why a solve is needed at
-   * all (aiming straight at the target arrives 26ft underground).
+   * The most steps `releasePitch`'s outer solve takes over release SPEED (the
+   * wanted flight time). It leaves early once the flight is within
+   * `AIM_TOL_SEC` or the bracket is narrower than `SOLVE_SPEED_TOL_FTS`: a
+   * reachable target takes three or four false-position steps, and only a
+   * saturated one — halving toward the reachability cliff — uses nine. It
+   * was six unbracketed secant steps until 2026-11-13; see `releasePitch`.
    */
-  AIM_ITERATIONS: 6,
+  AIM_ITERATIONS: 12,
+  /**
+   * The bracket `releasePitch` solves release speed inside, ft/s. The floor is
+   * below the slowest speed that reaches the plate at all (~39) and the
+   * ceiling above the fastest pitch anything asks for (the fireball from the
+   * best arm is ~57).
+   */
+  SOLVE_SPEED_LO_FTS: 34,
+  SOLVE_SPEED_HI_FTS: 66,
+  /**
+   * How narrow the bracket gets before the solve stops, ft/s. At the cliff a
+   * tenth of a foot per second is about four milliseconds of flight, inside
+   * `AIM_TOL_SEC`.
+   */
+  SOLVE_SPEED_TOL_FTS: 0.1,
   /** Close enough on flight time, seconds. */
   AIM_TOL_SEC: 0.005,
   /**
@@ -450,6 +466,16 @@ export const PITCH = {
    */
   ELEV_ITERATIONS: 14,
   ELEV_SCAN: 8,
+  /** Ternary steps spent finding the true peak when the scan's best sample still misses low. */
+  ELEV_PEAK_STEPS: 8,
+  /** The elevation solve stops when the ball crosses within this of its aim height, ft. */
+  ELEV_TOL_FT: 0.002,
+  /**
+   * Half-width of the bracket the elevation solve first tries round the
+   * previous speed's answer, rad. Wide enough for a foot or two per second of
+   * speed, narrow enough to stay on the low branch.
+   */
+  ELEV_NEAR_RAD: 0.12,
   /** A pitch that has not reached the plate by now is not going to. */
   MAX_FLIGHT_SEC: 5,
 } as const;
