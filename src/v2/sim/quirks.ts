@@ -171,6 +171,20 @@ export function wobblerKind(kind: PitchKind, rng: Rng): PitchKind {
   return rng() < STORY.WOBBLER_WORKS ? 'crazy' : kind;
 }
 
+/**
+ * Does this arm aim its breaking ball THROUGH the break? An ordinary pitcher
+ * aims at a spot and the ball breaks off it, which is why most curves in this
+ * game are balls. These three throw one pitch for a living and know where it
+ * ends up: Lu's only pitch, Ezra's Loop ("starts outside the zone and lands
+ * in it"), and Musa's wobbler on the days it works. `atbat.ts` re-aims by the
+ * break the release would have had, so the ball starts off the spot and
+ * arrives on it — before the arm's own execution error, which is untouched.
+ */
+export function aimsThroughBreak(pitcher: Character, kind: PitchKind, wobbler: boolean): boolean {
+  if (wobbler) return true;
+  return kind === 'curve' && (has(pitcher, 'one_curve') || has(pitcher, 'the_loop'));
+}
+
 /** Ezra's Loop starts outside the zone and lands in it: a CPU batter always offers. */
 export function mustChase(pitcher: Character, kind: PitchKind): boolean {
   return has(pitcher, 'the_loop') && kind === 'curve';
@@ -264,8 +278,8 @@ export function foulBack(batter: Character): { below: number; chance: number } |
 }
 
 /**
- * The batted ball as this kid's story sends it. `perfect` is whether the swing
- * sat inside the perfect timing window.
+ * The batted ball as this kid's story sends it. `dead` is whether the swing
+ * was dead on: inside `moonshotWindowFrac` of the flight.
  *
  * These two are the only places the story states where a ball GOES rather
  * than how it was hit, because that is what each sheet line says: Hattie's
@@ -273,12 +287,12 @@ export function foulBack(batter: Character): { below: number; chance: number } |
  * whatever was thrown. Everything after the launch — the flight, the fence,
  * whether anybody catches it — is still the play's.
  */
-export function storyLaunch(batter: Character, launch: LaunchSpec, perfect: boolean): LaunchSpec {
+export function storyLaunch(batter: Character, launch: LaunchSpec, dead: boolean): LaunchSpec {
   if (has(batter, 'same_spot')) {
     const s = STORY.SAME_SPOT;
     return { ...launch, exitVelocityFts: s.EXIT_FTS, launchAngleDeg: s.ANGLE_DEG, sprayDeg: s.SPRAY_DEG, spinRpm: s.SPIN_RPM };
   }
-  if (has(batter, 'moonshot') && perfect) {
+  if (has(batter, 'moonshot') && dead) {
     const m = STORY.MOONSHOT;
     const spray = launch.sprayDeg > m.SPRAY_MAX_DEG ? m.SPRAY_MAX_DEG : launch.sprayDeg < -m.SPRAY_MAX_DEG ? -m.SPRAY_MAX_DEG : launch.sprayDeg;
     return { ...launch, exitVelocityFts: m.EXIT_FTS, launchAngleDeg: m.ANGLE_DEG, sprayDeg: spray, spinRpm: m.SPIN_RPM };
@@ -464,4 +478,14 @@ export function ballSeenFrac(batter: Character): number {
 /** What this arm's card for `kind` is called, when it is not the usual name. */
 export function pitchCardFor(pitcher: Character, kind: PitchKind): { icon: string; label: string } | undefined {
   return has(pitcher, 'forty_percent') && kind === 'changeup' ? { icon: '🎲', label: 'WOBBLER' } : undefined;
+}
+
+/**
+ * How close to the crossing Mars's swing must be to be THE swing, as a
+ * fraction of the pitch's flight. Much narrower than the perfect window:
+ * the CPU lands inside that one on about half its swings, and a kid who
+ * homers every other time up is not a slugger, she is a different game.
+ */
+export function moonshotWindowFrac(): number {
+  return STORY.MOONSHOT.WINDOW_FRAC;
 }

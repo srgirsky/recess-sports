@@ -41,7 +41,7 @@
 // ---------------------------------------------------------------------------
 
 import type { Character } from '../../data/types';
-import { ATBAT, BAT, resolvePlate, type PlateParams } from './params';
+import { ATBAT, resolvePlate, type PlateParams } from './params';
 import {
   pitchScatterFt,
   plateJudgementFt,
@@ -65,11 +65,13 @@ import type { LaunchSpec } from './launch';
 import type { Rng } from './rng';
 import type { BallState } from './flight';
 import {
+  aimsThroughBreak,
   alwaysBunts,
   batterInMoment,
   blindBatter,
   deliveryFor,
   foulBack,
+  moonshotWindowFrac,
   mustChase,
   neverProtects,
   neverSwings,
@@ -345,13 +347,22 @@ export function throwPitch(spec: PitchSpec, rng: Rng, human?: PitchPlan): PitchI
   // finite set of (kind, arm, spot); the scatter is an angular nudge on the
   // answer, small-angle so a miss of `scatterFt` at the plate is `scatterFt /
   // MOUND_DIST` radians. One integration per pitch instead of ninety.
-  const plan2 = releaseAtSpot({
-    kind: plan.kind,
-    pitchingStat: spec.pitcher.stats.pitching,
-    aimHeightFt: plan.aimHeightFt,
-    aimLateralFt: plan.aimLateralFt,
-    delivery: spec.story ? deliveryFor(spec.pitcher, plan.kind, spec.story.heaterReady === true) : undefined,
-  });
+  const delivery = spec.story ? deliveryFor(spec.pitcher, plan.kind, spec.story.heaterReady === true) : undefined;
+  const solveFor = (aimLateralFt: number, aimHeightFt: number) =>
+    releaseAtSpot({ kind: plan.kind, pitchingStat: spec.pitcher.stats.pitching, aimHeightFt, aimLateralFt, delivery });
+  let plan2 = solveFor(plan.aimLateralFt, plan.aimHeightFt);
+  // ★ THREE ARMS AIM THROUGH THE BREAK (`quirks.ts` `aimsThroughBreak`). The
+  // release above is solved for the spot's HEIGHT and pointed straight at it,
+  // so a breaking ball finishes a foot or more off its aim sideways — that gap
+  // is the pitch's break, and it is why most curves here are balls. A kid
+  // with one pitch knows where hers ends up: fly the clean release, see where
+  // it crossed, and aim that far the other way. One correction, not a solve —
+  // the break barely changes over a foot of aim — and both releases are
+  // memoised, so it costs one extra flight a pitch.
+  if (spec.story && aimsThroughBreak(spec.pitcher, plan.kind, wobbler)) {
+    const at = flyToPlate(releaseFrom(plan2)).state.p;
+    plan2 = solveFor(plan.aimLateralFt - (at.x - plan.aimLateralFt), plan.aimHeightFt - (at.y - plan.aimHeightFt));
+  }
   const miss = rng.fork('execute');
   // ★ A SPECIAL IS A PARAMETER SET, AND THIS IS ITS ONLY OTHER KNOB. The
   // crazy ball is wild by `scatterMult` on the kid's OWN execution error —
@@ -433,7 +444,7 @@ export function resolvePitch(
     // A bunt is a bunt whoever squares: the story's two launches are swings.
     const launch =
       story && !bunt
-        ? storyLaunch(spec.batter, swing.launch, Math.abs(timingErrorSec) <= BAT.PERFECT_WINDOW_FRAC * travelSec)
+        ? storyLaunch(spec.batter, swing.launch, Math.abs(timingErrorSec) <= moonshotWindowFrac() * travelSec)
         : swing.launch;
     return { kind: 'inPlay', launch, plateSpeedFts, ...base };
   };

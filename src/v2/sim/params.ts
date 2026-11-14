@@ -1139,7 +1139,7 @@ export const STORY = {
    * may take (swept: 100 leaves one park standing, 110 none); `quirks.test.ts`
    * asserts the clearing, not the number.
    */
-  MOONSHOT: { EXIT_FTS: 112, ANGLE_DEG: 30, SPIN_RPM: 1800, SPRAY_MAX_DEG: 35 },
+  MOONSHOT: { EXIT_FTS: 112, ANGLE_DEG: 30, SPIN_RPM: 1800, SPRAY_MAX_DEG: 35, WINDOW_FRAC: 0.012 },
   /**
    * Josie's foul-backs: how square contact must be before it stops being a
    * candidate tick, and how often a candidate is one. Everyone else's pair is
@@ -1147,12 +1147,12 @@ export const STORY = {
    */
   FOUL_BACK: { BELOW: 0.45, CHANCE: 0.6 },
   /** Hattie's one spot: a flare that comes down about ninety feet out, just right of second. */
-  SAME_SPOT: { EXIT_FTS: 62, ANGLE_DEG: 22, SPRAY_DEG: 12, SPIN_RPM: 1200 },
+  SAME_SPOT: { EXIT_FTS: 62, ANGLE_DEG: 22, SPRAY_DEG: 40, SPIN_RPM: 1200 },
   /**
    * How far inside the zone's edge a taken ball must cross to hit Sam, ft. He
    * crowds the plate: a ball this far in has nowhere else to go.
    */
-  LEAN_IN_FT: 0.35,
+  LEAN_IN_FT: 0.6,
   /** What siblings drafted onto the same nine each gain, at every stat (capped at 10). */
   SIBLING_BONUS: 1,
   /** Feet added to Sonny's reach: the golden glove's bonus, worn all game. */
@@ -1166,7 +1166,7 @@ export const STORY = {
   /** How often a throw of Roya's goes to a bag nobody chose. */
   WRONG_BASE: 0.35,
   /** Yaz, eyes closed: the contact stat she reads the ball with, and the power she hits it with. */
-  BLIND: { CONTACT: 1, POWER: 10 },
+  BLIND: { CONTACT: 3, POWER: 10 },
   /** The fraction of a pitch's flight a person batting as Yaz gets to watch. */
   BLIND_SEEN_FRAC: 0.5,
 } as const;

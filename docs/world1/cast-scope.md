@@ -197,9 +197,9 @@ maintainer turns it on. All twenty-five quirk kids and both team rules:
 
 | Kid | In v2 |
 |---|---|
-| Lu | the curve is her whole menu, whoever asks for what |
-| Ezra | no fastball; a CPU batter always offers at his curve |
-| Musa | one pitch; 40% of the time it flies as the crazy ball, with his own aim rather than the crazy ball's doubled scatter |
+| Lu | the curve is her whole menu, whoever asks for what, and she aims it through its break so it lands on the spot |
+| Ezra | no fastball; his curve is aimed through its break, and a CPU batter always offers at it |
+| Musa | one pitch; 40% of the time it flies as the crazy ball, aimed through its break with his own scatter rather than the crazy ball's doubled one |
 | Kwame, Dev | the release misses by 2.0 and 1.5 times the arm's own error |
 | Bao | every pitch is the floater's flight: as slow as the release solve can throw, heavy backspin |
 | Roz | her FASTBALL leaves the hand 12% faster; the other three are untouched, because the release solve already saturates on them |
@@ -207,11 +207,11 @@ maintainer turns it on. All twenty-five quirk kids and both team rules:
 | Winnie | never offers, CPU or person, behind a zone 60% the size each way |
 | Rafi | every swing is a bunt, CPU or person |
 | Nora, Marcus, Yui | power 9.5 in their moment, through the bat-speed model |
-| Mars | a swing inside the perfect timing window leaves at 112 ft/s and 30 degrees, which clears every venue |
+| Mars | a swing dead on (within 1.2% of the flight) leaves at 112 ft/s and 30 degrees, which clears every venue; about one plate appearance in eight |
 | Josie | contact below 0.45 square is ticked foul 60% of the time (everyone else: below 0.18, 45%) |
-| Hattie | every ball in play is the same flare, down about ninety feet out just right of second |
-| Yaz | offers at everything, reads it with a contact of 1, hits it with a power of 10 |
-| Sam | never protects with two strikes; a ball he takes more than 0.35 ft inside the zone's edge, between knees and shoulders, hits him and is folded as a walk |
+| Hattie | every ball in play is the same flare toward the right-field line (62 ft/s, 22 degrees up, 40 degrees right), a hit about two times in three |
+| Yaz | offers at everything, reads it with a contact of 3, hits it with a power of 10 |
+| Sam | never protects with two strikes; a ball he takes more than 0.6 ft inside the zone's edge, between knees and shoulders, hits him and is folded as a walk |
 | Zaya | steals on her own judgement even on a person's bench, and her jump is never late |
 | Ollie | a steal race or pickoff he loses, he wins anyway |
 | Sonny, Greta | never drop or bobble; Sonny reaches a foot further |
@@ -219,6 +219,17 @@ maintainer turns it on. All twenty-five quirk kids and both team rules:
 | Roya | 35% of her throws go to the next bag round that her arm reaches |
 | siblings | Roz with Rudy, Hattie with Ezra: +1 at every stat, capped at 10, legs included |
 | positions | Sonny catches, Amir plays centre, Rudy stands in the outfield; the pitcher is never moved |
+
+**The numbers were tuned once against the whole game, 2026-11-13.** At their
+first values the harness measured 12.9 runs a game with the stories on
+against 6.8 off: Lu walked 44% of batters (a curve aimed at the zone breaks
+out of it, and it was her only pitch), Mars homered in 46% of plate
+appearances, Winnie walked 84% of the time and Hattie's spot was an out 92% of
+the time. After the changes in the table, over 240 rotated-roster games:
+7.1 runs a game on, 6.6 off; Mars homers in 12% of plate appearances; Winnie
+walks 58% and strikes out looking 42%; Hattie hits 66%; Sam reaches 58%; Lu
+and Musa walk nobody and Kwame walks 18%. `quirks.test.ts` gates the game's
+shape, not these values. They are still guesses, now guesses that play.
 
 Departures from v1, each for a reason in `quirks.ts`: Roz is fastball-only;
 Ollie is safe at the bag he was stealing rather than back on the one he left

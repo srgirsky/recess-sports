@@ -665,6 +665,87 @@ describe('the team', () => {
   });
 });
 
+describe('★ the story does not break the game it is told in', () => {
+  // What the first numbers did, and why this is here: with every guess at
+  // its first value the harness measured 12.9 runs a game against 6.8 — Lu
+  // walked 44% of the batters she faced (a curve aimed at the zone breaks out
+  // of it, and the curve was her only pitch), Mars homered in 46% of her
+  // plate appearances, Winnie walked 84% of the time and Hattie's one spot
+  // was an out 92% of the time. Each kid's own test passed. So the gate is on
+  // the GAME: thirty rosters rotated through, stories on and off.
+  const rotated = (on: boolean) => {
+    let runs = 0;
+    const perKid: Record<string, { pa: number; onBase: number; hr: number }> = {};
+    const N = 60;
+    for (let g = 0; g < N; g++) {
+      const off = (g * 7) % ROSTER.length;
+      const at = (j: number) => ROSTER[(off + j) % ROSTER.length].id;
+      let lastHr = false;
+      const r = simulateGame(
+        {
+          away: { name: 'A', ids: Array.from({ length: 9 }, (_, j) => at(j)) },
+          home: { name: 'B', ids: Array.from({ length: 9 }, (_, j) => at(j + 9)) },
+          lookup: getCharacter,
+          features: on ? { ...DEFAULT_FEATURES, storyKids: true } : undefined,
+          onEvent: (e) => {
+            if (e.t === 'contact') lastHr = e.hit === 'HR' && !e.foul;
+            if (e.t !== 'pa') return;
+            const k = (perKid[e.batterId] ??= { pa: 0, onBase: 0, hr: 0 });
+            k.pa++;
+            if (e.result === 'hit' || e.result === 'walk') k.onBase++;
+            if (e.result === 'hit' && lastHr) k.hr++;
+            lastHr = false;
+          },
+        },
+        makeRng(`shape${g}`)
+      );
+      runs += r.awayScore + r.homeScore;
+    }
+    return { rpg: runs / N, perKid };
+  };
+  const on = rotated(true);
+  const off = rotated(false);
+
+  it('★ scoring with the stories on stays within a quarter of scoring without', () => {
+    expect(on.rpg).toBeGreaterThan(off.rpg * 0.75);
+    expect(on.rpg).toBeLessThan(off.rpg * 1.25);
+  });
+
+  it('★ no kid\'s story makes her an automatic out or an automatic base', () => {
+    for (const kid of ROSTER.filter((c) => c.quirk)) {
+      const k = on.perKid[kid.id];
+      if (!k || k.pa < 40) continue;
+      const obp = k.onBase / k.pa;
+      expect(obp, `${kid.name} reaches base ${Math.round(obp * 100)}% of the time`).toBeGreaterThan(0.25);
+      expect(obp, `${kid.name} reaches base ${Math.round(obp * 100)}% of the time`).toBeLessThan(0.8);
+    }
+  });
+
+  it('★ Mars is the biggest bat in the game and still makes outs', () => {
+    const mars = kidWith('moonshot');
+    const hers = on.perKid[mars.id];
+    expect(hers.pa).toBeGreaterThan(40);
+    const rate = hers.hr / hers.pa;
+    const others = ROSTER.filter((c) => c.id !== mars.id && on.perKid[c.id]?.pa > 40).map((c) => on.perKid[c.id].hr / on.perKid[c.id].pa);
+    expect(rate).toBeGreaterThan(Math.max(...others));
+    expect(rate).toBeLessThan(0.25);
+  });
+
+  it('★ the three who aim through the break throw it for strikes', () => {
+    // An ordinary curve is aimed at a spot and breaks off it. Lu's is her
+    // whole job (`aimsThroughBreak`): the same curve, called against the zone.
+    const lu = kidWith('one_curve');
+    const [lo, hi] = zoneBandFt();
+    const plan = { kind: 'curve' as const, aimLateralFt: 0, aimHeightFt: (lo + hi) / 2 };
+    const strikes = (story?: Moment) =>
+      Array.from({ length: 200 }, (_, i) => throwPitch({ pitcher: lu, batter: PLAIN[0], count, story }, makeRng(`k${i}`), plan)).filter((t) =>
+        isStrike(t.crossing)
+      ).length / 200;
+    expect(strikes(QUIET)).toBeGreaterThan(0.8);
+    expect(strikes(QUIET)).toBeGreaterThan(strikes() + 0.3);
+  });
+});
+
 describe('★ the port is not inert', () => {
   const ids = (qs: Quirk[], fill: number) => [...qs.map((q) => kidWith(q).id), ...PLAIN.slice(0, fill).map((c) => c.id)];
   const AWAY = ROSTER.filter((c) => c.quirk).slice(0, 9).map((c) => c.id);
