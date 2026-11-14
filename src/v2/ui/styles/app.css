@@ -2292,6 +2292,14 @@ body.screen-open #hud > *:not(.btn--mute):not(.btn--log) {
   line-height: 1.2;
   font-weight: 600;
 }
+.draft-preview__story {
+  margin: 0;
+  font-size: 0.74rem;
+  line-height: 1.15;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: var(--red);
+}
 .draft-preview__ratings {
   grid-column: 3;
   grid-row: 3;
@@ -2421,7 +2429,7 @@ body.screen-open #hud > *:not(.btn--mute):not(.btn--log) {
   }
   .draft-preview__identity { --card-corner: 0.9rem; }
   .draft-preview__name { font-size: 0.9rem; }
-  .draft-preview__tagline, .draft-preview__line, .draft-preview__bench { display: none; }
+  .draft-preview__tagline, .draft-preview__story, .draft-preview__line, .draft-preview__bench { display: none; }
   .draft-rating { grid-template-columns: 0.8rem 1fr; }
   .draft-rating__label { display: none; }
   .draft-preview__ratings { padding: var(--s1); gap: 0.12rem; }
@@ -2532,6 +2540,15 @@ body.screen-open #hud > *:not(.btn--mute):not(.btn--log) {
   z-index: 25;
 }
 .btn--log[hidden] {
+  display: none;
+}
+/* The draft's own PICK THE REST button lives in that same slot beside the
+   mute, and the log sat on top of it — at every size, and there is no free
+   corner on the draft to move it to (measured: the row under the mute holds
+   PICK THE REST on a phone, and the left corner holds BACK). The observer
+   downloads at the title or the result (see above), so on the draft the log
+   simply is not there. */
+body:has(.screen--draft) .btn--log {
   display: none;
 }
 /* The two-column special-pitch picker reaches the top-right controls on

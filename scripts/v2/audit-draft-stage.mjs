@@ -56,13 +56,17 @@ await new Promise((ok, fail) => {
 const failures = [];
 let browser;
 try {
-  browser = await chromium.launch();
+  // Muted: the audit clicks, and a click is the gesture that unlocks audio.
+  browser = await chromium.launch({ args: ['--mute-audio'] });
   for (const vp of MATRIX) {
     const page = await browser.newPage({ viewport: { width: vp.width, height: vp.height } });
     const errors = [];
     page.on('pageerror', (e) => errors.push(String(e)));
     await page.addInitScript(() => { window.requestAnimationFrame = () => 0; window.cancelAnimationFrame = () => {}; });
-    await page.goto(`http://localhost:${port}/v2/`, { waitUntil: 'networkidle' });
+    // `DRAFT_STAGE_QUERY=features=storyKids` audits the stage with a held
+    // feature on; unset — CI — it is the shipped page.
+    const query = process.env.DRAFT_STAGE_QUERY ? `?${process.env.DRAFT_STAGE_QUERY}` : '';
+    await page.goto(`http://localhost:${port}/v2/${query}`, { waitUntil: 'networkidle' });
     await page.waitForFunction(() => {
       const b = document.querySelector('.screen--title .btn');
       return b && !b.disabled && window.__spike?.game;

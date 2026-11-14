@@ -246,8 +246,11 @@ nine moments are called over the field from a new `story` sim event (HEATER,
 WOBBLER, CLUTCH, MOONSHOT, OW! FREE BASE, NO TAG, WRONG BASE, GREEN LIGHT,
 FAMILY).
 
-Not in v2 yet: Bao's four cards are four names for one flight; the draft card
-names no behaviour; and none of the seven signature looks is on the v2 proxy
+The 3D draft card names the behaviour too, in the classic card's own words
+(`src/data/quirkLabels.ts`, shared by both games), and only while the flag is
+on.
+
+Not in v2 yet: Bao's four cards are four names for one flight; and none of the seven signature looks is on the v2 proxy
 or the sculpts.
 
 One thing the work turned up that was not about the cast: the release solve
