@@ -739,7 +739,7 @@ export class GameScene extends Phaser.Scene {
    * trail are gone, and the swing is from memory. A no-op for everyone else.
    */
   private blindfold(travelMs: number): void {
-    const until = ballVisibleUntil(this.batter);
+    const until = ballVisibleUntil(this.swinger());
     const ball = this.ball;
     if (until >= 1 || !ball) return;
     this.time.delayedCall(travelMs * until, () => {
@@ -2928,10 +2928,25 @@ export class GameScene extends Phaser.Scene {
     this.powerBtn = undefined;
   }
 
+  /**
+   * The kid whose swing THIS device is making.
+   *
+   * ★ NOT `this.batter` ON A NET GUEST. The guest bats the bottom half on a
+   * seat whose `humanBats` flag is false (the flow flags are the host's), so
+   * `netApplyHud` files the guest's own batter under `cpuBatter` and
+   * `this.batter` is still whoever the host sent up last. Every per-kid rule
+   * a local swing reads (Winnie's refusal, Yaz's blindfold and bump) asked
+   * the wrong child there until two headless browsers were connected as host
+   * and guest and the guest's Yaz was seen to bat with her eyes open.
+   */
+  private swinger(): Character {
+    return this.battingSeat().humanBats ? this.batter : this.cpuBatter;
+  }
+
   private onSwing(): void {
     if (this.phase !== 'pitching' || this.swung) return;
     // Winnie has never swung the bat. The tap is heard, and declined.
-    if (neverSwings(this.batter)) {
+    if (neverSwings(this.swinger())) {
       if (!this.declinedSwing) {
         this.declinedSwing = true;
         floatingText(this, PLATE_VIEW.ZONE.CX, PLATE_VIEW.ZONE.CY - 120, '🧘 NOPE.', COLORS.white, 26);
@@ -2944,7 +2959,7 @@ export class GameScene extends Phaser.Scene {
       this.resolvePlayerSwingAimed(error, this.cursorPlate());
       return;
     }
-    const band = blindSwingBand(this.batter, bandFromError(error));
+    const band = blindSwingBand(this.swinger(), bandFromError(error));
     this.resolvePlayerSwing(band, false);
   }
 
