@@ -62,18 +62,18 @@
       ]
     },
     "big_lou": {
-      "source": "big-lou-pilot.blend",
-      "sourceSha256": "3fe565f3a869b8d6e4becb280653128a00d024833c1d3dd9913227799d1775e7",
-      "concept": "big-lou-turnaround.png",
-      "conceptSha256": "8e613340d5955ce7af1a8c9b2ac381514c0c7b577129202d8843bb35e13d2a45",
+      "source": "guri-pilot.blend",
+      "sourceSha256": "45cd3bc7d9dcd381470c704a46de940455ced5c10dece22583d636a12479bd96",
+      "concept": "guri-turnaround.png",
+      "conceptSha256": "19328d11d53e58c3a870ed80ca930b91a4ae5617fb301d0744a328935d6e9eb4",
       "output": "kid_big_lou.glb",
-      "outputSha256": "e843b3b149ec5711d2e264c54ddaec04669346ef100216e1ee2ac774e497fbb1",
+      "outputSha256": "49227dfd24e0fccb232029f409392285bf9bb5ed1d7eeb61a7644088a4c6d7f7",
       "definingTraits": [
-        "gentle broad silhouette",
-        "soft rounded face",
-        "layered casual shirt",
-        "relaxed shoulders",
-        "grounded friendly stance"
+        "navy patka with a topknot",
+        "tallest boy, broad and gentle",
+        "gold and cream striped tee",
+        "navy shorts",
+        "navy and white sneakers"
       ]
     },
     "tank": {

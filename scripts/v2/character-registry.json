@@ -39,14 +39,14 @@
     },
     "big_lou": {
       "name": "Guri Sandhu",
-      "slug": "big-lou",
-      "source": "big-lou-pilot.blend",
+      "slug": "guri",
+      "source": "guri-pilot.blend",
       "traits": [
-        "gentle broad silhouette",
-        "soft rounded face",
-        "layered casual shirt",
-        "relaxed shoulders",
-        "grounded friendly stance"
+        "navy patka with a topknot",
+        "tallest boy, broad and gentle",
+        "gold and cream striped tee",
+        "navy shorts",
+        "navy and white sneakers"
       ]
     },
     "tank": {

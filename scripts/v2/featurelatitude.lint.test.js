@@ -429,13 +429,19 @@ const TURNAROUND = {
   // class) so the head band is a bounded trace, crown row 106 to the
   // collar-line row 305. Brows centred ~170, eyes ~201, grin ~253, ears
   // centred ~209 and proud of the buzz shell.
+  // Guri Sandhu took this slot in the World 1 re-cast; the entry is his. The
+  // crown is the topknot's top, so every ratio sits lower than a bare-headed
+  // kid's. Bounded traces on guri-turnaround.png (crown row 123, neck row
+  // 347): brow bands rows 222-228 (centre 225), eyes rows 249-273 (centre
+  // 262), the closed smile at row 309. No earLine: the patka is the widest
+  // thing above the ears and the ears the widest below, so the widest-row
+  // trace flips between cloth and ear with no honest number to gate.
   big_lou: {
-    slug: 'big-lou',
-    brow: 32.2,
-    eye: 47.7,
-    mouth: 73.9,
-    earLine: 51.8,
-    span: { crownZ: 3.99, neckZ: 2.88 },
+    slug: 'guri',
+    brow: 45.5,
+    eye: 62.0,
+    mouth: 83.0,
+    span: { crownZ: 4.0, neckZ: 2.86 },
     tolerance: 2.5,
   },
   // ★ ZOOM HAS NO earLine TARGET (Zippy's precedent): his swept spike
