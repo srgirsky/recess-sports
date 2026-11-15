@@ -2285,16 +2285,6 @@
       "class": "face-atlas",
       "excerpt": "FACE: grin still joins the eyes. face-grin x505-565 y255-280: the crescent's"
     },
-    "boomer:e588e6795603": {
-      "char": "boomer",
-      "class": "face-atlas",
-      "excerpt": "HAIR: no fade, so no mohawk read. The whole skull to the ear and nape is an "
-    },
-    "boomer:870a494242bf": {
-      "char": "boomer",
-      "class": "face-atlas",
-      "excerpt": "HAIR: front-on the crest is a crown. face-grin x480-600 y120-210: six or sev"
-    },
     "boomer:02c7a7b9fd05": {
       "char": "boomer",
       "class": "other",
@@ -2334,11 +2324,6 @@
       "char": "boomer",
       "class": "hems-cuffs",
       "excerpt": "CLOTHING: shorts render near-black rather than navy in game (face-grin x450-"
-    },
-    "boomer:5ded84cae7e6": {
-      "char": "boomer",
-      "class": "other",
-      "excerpt": "FIELD SCALE: at 40px the crest is a 3-4px smudge merging with the dark skull"
     },
     "smokey:70df996f3473": {
       "char": "smokey",
@@ -2514,6 +2499,36 @@
       "char": "diva",
       "class": "hems-cuffs",
       "excerpt": "SWING HEM FOLD, minor: in the same frame the lower-left hem carries a heavy "
+    },
+    "boomer:2fada1627254": {
+      "char": "boomer",
+      "class": "other",
+      "excerpt": "HAIR: the crest does not read as hair. Front-on (boomer-runtime-face-grin.pn"
+    },
+    "boomer:173955c22c8c": {
+      "char": "boomer",
+      "class": "material-light",
+      "excerpt": "HAIR: temple edge of the fade is a saw-tooth with a stray dark sliver. The s"
+    },
+    "boomer:08cbee9846d2": {
+      "char": "boomer",
+      "class": "other",
+      "excerpt": "HAIR: front-on the crest is still not widest at its foot. face-grin: widest "
+    },
+    "boomer:6b6f196ef431": {
+      "char": "boomer",
+      "class": "face-atlas",
+      "excerpt": "HAIR: material is glossy grey-brown, not matte black. Broad tan-grey specula"
+    },
+    "boomer:817e76df529f": {
+      "char": "boomer",
+      "class": "hems-cuffs",
+      "excerpt": "HAIR: small dark triangular pits between locks that read as holes into the c"
+    },
+    "boomer:5605f02ed7e5": {
+      "char": "boomer",
+      "class": "face-atlas",
+      "excerpt": "HAIR: front-on the stubble tone runs all the way down to the brows, leaving "
     }
   }
 }

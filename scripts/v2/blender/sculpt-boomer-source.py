@@ -57,7 +57,7 @@ SLOTS = ("M_Body", "M_Uniform", "M_Hair", "M_Accessory")
 # lesson).
 SKIN = rgba("D97A2E")
 SKIN_SHADOW = rgba("A65618")
-HAIR = rgba("1E1812")        # the mohawk crest
+HAIR = rgba("16120F")        # the mohawk crest: matte near-black (1E1812 rendered brown-grey)
 STUBBLE = rgba("3A2C1E")     # the shaved fade
 SHIRT = rgba("FFF0D2")       # the pale stripe ground
 SHIRT_DARK = rgba("FFB93E")  # the gold bands — chroma up so the board ramp
@@ -236,37 +236,82 @@ def fringe_z_at(x_abs: float) -> float:
     return table[-1][1]
 
 
+# ★ THE FADE (2026-11-14, Jay's construction). The shell was one opaque dark
+# cap to the ear and nape, "almost the crest's value", so the read was "spiky
+# hair" and not "a mohawk over a fade", and its front edge was a jagged
+# stepped line. Now its colour runs from near-crest dark under the ridge,
+# through a stubble tone, into skin at its lower edge, and every front vertex
+# below the hairline is SNAPPED UP ONTO IT so the hairline is a clean line.
+FADE = rgba("8A5222")   # the sheet's shaved side: skin with a dark cast
+# not-traceable: colour heights, not silhouette. Read off the profile view:
+# near-black at the crest's foot, the stubble cast by ~z 3.3, skin by the ear.
+FADE_DARK_Z = 3.520
+FADE_MID_Z = 3.280
+FADE_SKIN_Z = 3.020
+SCALP_BACK_RIM = 2.940
+
+
+def fade_color(z: float):
+    smooth = lambda t: (lambda c: c * c * (3 - 2 * c))(max(0.0, min(1.0, t)))
+    if z >= FADE_MID_Z:
+        t = smooth((FADE_DARK_Z - z) / (FADE_DARK_Z - FADE_MID_Z))
+        return tuple(h + (f - h) * t for h, f in zip(STUBBLE, FADE))
+    t = smooth((FADE_MID_Z - z) / (FADE_MID_Z - FADE_SKIN_Z))
+    return tuple(f + (k - f) * t for f, k in zip(FADE, SKIN))
+
+
+def scalp_half_at(z: float):
+    table = SCALP_LEVELS
+    if z >= table[0][0]:
+        return table[0][1:]
+    for (za, *a), (zb, *b) in zip(table, table[1:]):
+        if zb <= z <= za:
+            t = (za - z) / (za - zb)
+            return tuple(u + t * (v - u) for u, v in zip(a, b))
+    return table[-1][1:]
+
+
 def ring_loft_scalp(builder: MeshBuilder, levels, detail: int) -> None:
-    """The ring-loft-with-tuck, tight to the skull, no curl."""
+    """The fade shell, tight to the skull, its hairline a snapped rim."""
     assert all(a[0] > b[0] for a, b in zip(levels, levels[1:])), \
         "ring_loft_scalp levels must be strictly descending in z"
-    segments = 18 if detail >= 2 else (10 if detail == 1 else 8)
+    segments = 16 if detail >= 2 else (10 if detail == 1 else 8)
     use = levels if detail >= 2 else thin_for_lod([(z, hx, hy, yc) for z, hx, hy, yc in levels], detail)
     ascending = list(reversed(use))
-    rows = []
+    rows, snaps = [], []
     for z, half_x, half_y, y_centre in ascending:
-        ring = []
+        ring, snapped = [], []
         for column in range(segments):
             theta = 2 * pi * column / segments
             x = half_x * cos(theta)
             y = y_centre + half_y * sin(theta)
-            if y < y_centre:
-                sf = skull_front_y(x, z)
-                if SCALP_OPEN_BOTTOM < z < fringe_z_at(abs(x)):
-                    y = max(y, (sf + 0.050) if sf > -9.0 else -0.160)
-                else:
-                    y = max(y, (sf - 0.060) if sf > -9.0 else -0.300)
-            ring.append(builder.vertex((x, y, z), STUBBLE, "Head"))
+            zz = z
+            inside = False
+            front = y < y_centre
+            rim = fringe_z_at(abs(x)) if front else SCALP_BACK_RIM
+            if z < rim:
+                inside = True
+                zz = rim
+                hx, hy, yc = scalp_half_at(zz)
+                x = hx * cos(theta)
+                y = yc + hy * sin(theta)
+            if front:
+                sf = skull_front_y(x, zz)
+                if sf > -9.0:
+                    y = min(y, sf - 0.024)
+            ring.append(builder.vertex((x, y, zz), fade_color(zz), "Head"))
+            snapped.append(inside)
         rows.append(ring)
-    bottom = builder.vertex((0.0, ascending[0][3], ascending[0][0] - 0.02), STUBBLE, "Head")
+        snaps.append(snapped)
     top = builder.vertex((0.0, ascending[-1][3], ascending[-1][0] + 0.02), STUBBLE, "Head")
     for column in range(segments):
         nxt = (column + 1) % segments
-        builder.face((bottom, rows[0][nxt], rows[0][column]), 2)
         builder.face((rows[-1][column], rows[-1][nxt], top), 2)
-    for lower, upper in zip(rows, rows[1:]):
+    for (lower, ls), (upper, us) in zip(zip(rows, snaps), zip(rows[1:], snaps[1:])):
         for column in range(segments):
             nxt = (column + 1) % segments
+            if ls[column] and ls[nxt] and us[nxt] and us[column]:
+                continue
             builder.face((lower[column], lower[nxt], upper[nxt], upper[column]), 2)
 
 
@@ -290,29 +335,39 @@ CREST_SPINE = [
 # measured: front z=3.69 halfWidth=0.325 tol=0.04
 CREST_RADII = [0.110, 0.330, 0.350, 0.320, 0.265, 0.195, 0.100]
 
-# The spikes. Apex tip z 3.99 is the head span's own crown; leans alternate
-# in x so the front reads the concept's tuft.
-# ⚠️ The leans MUST sum to zero (Flash's faceAsymmetry lesson).
+# ★ THE FLAME (2026-11-14). The crest was thirteen four-sided cones whose
+# flank pairs were spread 1.8x at the base and 1.5x at the tip, so front-on it
+# was "a crown, a chess rook, a shuttlecock: cones on a pedestal that flares
+# outward at the top". The sheet's crest is widest at its foot and tapers up
+# into a flame. Each lock is now a fat-footed three-station taper; the flank
+# pairs are rooted WIDER than their tips, and every lock leans the way the
+# crest fans in profile (forward at the brow, straight up on top, back at the
+# nape).
 # measured: front z=3.98 halfWidth=0.0243
-# The centre column carries the profile; the MIRRORED FLANK PAIRS carry the
-# front — his sheet's front crest is 0.25 half at z 3.82 and a single
-# column read as a nub (a first critic dropped three categories on it).
-# Pairs mirror exactly, so the leans sum to zero by construction.
-SPIKE_TABLE = [
-    ((-0.022, -0.340, 3.470), (-0.080, -0.460, 3.800)),
-    ((0.022, -0.180, 3.570), (0.080, -0.250, 3.930)),
-    ((0.000, -0.010, 3.610), (0.000, 0.000, 3.990)),
-    ((0.022, 0.160, 3.580), (0.080, 0.230, 3.950)),
-    ((-0.022, 0.320, 3.540), (-0.080, 0.460, 3.860)),
-    ((0.020, 0.470, 3.400), (0.076, 0.650, 3.680)),
-    ((-0.020, 0.580, 3.220), (-0.076, 0.780, 3.430)),
-    ((0.110, -0.240, 3.540), (0.190, -0.310, 3.820)),
-    ((-0.110, -0.240, 3.540), (-0.190, -0.310, 3.820)),
-    ((0.120, 0.020, 3.580), (0.215, 0.040, 3.870)),
-    ((-0.120, 0.020, 3.580), (-0.215, 0.040, 3.870)),
-    ((0.110, 0.280, 3.520), (0.195, 0.380, 3.760)),
-    ((-0.110, 0.280, 3.520), (-0.195, 0.380, 3.760)),
+# Mirrored pairs and a midline column: the leans sum to zero by construction
+# (Flash's faceAsymmetry lesson).
+FLAME_MIDLINE = [   # (foot y, foot z), (tip y, tip z) on x = 0
+    ((-0.300, 3.600), (-0.500, 3.960)),
+    ((-0.140, 3.720), (-0.220, 4.090)),
+    ((0.040, 3.760), (0.040, 4.120)),   # the crown: the export allows hair 4% over the 4.0ft bone height
+    ((0.220, 3.720), (0.340, 4.070)),
+    ((0.400, 3.600), (0.620, 3.920)),
+    ((0.560, 3.360), (0.860, 3.560)),
 ]
+FLAME_FLANKS = [    # (foot x, y, z), (tip x, y, z) for +x, mirrored to -x
+    ((0.200, -0.200, 3.580), (0.130, -0.340, 3.940)),
+    ((0.215, 0.060, 3.640), (0.140, 0.060, 4.000)),
+    ((0.190, 0.340, 3.540), (0.130, 0.520, 3.860)),
+]
+FLAME_RADII = (0.165, 0.105, 0.022)
+
+
+def flame_lock(builder: MeshBuilder, foot, tip, sides: int, flip: bool = False, mid_station: bool = True) -> None:
+    if not mid_station:   # the flank pairs: two stations, a plain taper (LOD0 budget)
+        builder.tube([foot, tip], [FLAME_RADII[0], FLAME_RADII[2]], 2, HAIR, "Head", sides, flip=flip)
+        return
+    mid = tuple(f + 0.48 * (t - f) for f, t in zip(foot, tip))
+    builder.tube([foot, mid, tip], list(FLAME_RADII), 2, HAIR, "Head", sides, flip=flip)
 
 
 def build_mohawk(builder: MeshBuilder, detail: int) -> None:
@@ -325,17 +380,16 @@ def build_mohawk(builder: MeshBuilder, detail: int) -> None:
     builder.tube(spine, radii, 2, HAIR, "Head", sides)
     if detail < 1:
         return
-    spikes = SPIKE_TABLE if detail >= 2 else SPIKE_TABLE[:7:2] + SPIKE_TABLE[9:11]
-    for (bx, by, bz), (tx, ty, tz) in spikes:
-        # Carried out onto the thicker crest: each spike now starts on the
-        # mass's surface and its tip keeps to the head span's own crown.
-        # Only the flank pairs spread: the midline column's small alternating
-        # leans, widened, pushed the face 9% off-centre.
-        wide = 1.8 if abs(bx) > 0.05 else 1.0
-        if abs(bx) <= 0.05 and by < 0.0:
-            bx = tx = 0.0   # the two front midline spikes stand over the forehead: no lean there
-        builder.tube([(bx * wide, by, bz + 0.160), (tx * (1.5 if abs(bx) > 0.05 else 1.0), ty, min(tz + 0.140, 4.110))],
-                     [0.150, 0.030], 2, HAIR, "Head", 4)
+    lock_sides = 6 if detail >= 2 else 4
+    for index, ((fy, fz), (ty, tz)) in enumerate(FLAME_MIDLINE):
+        if detail == 1 and index % 2:
+            continue
+        flame_lock(builder, (0.0, fy, fz), (0.0, ty, tz), lock_sides)
+    for index, (foot, tip) in enumerate(FLAME_FLANKS):
+        if detail == 1 and index % 2:
+            continue
+        flame_lock(builder, foot, tip, 4, mid_station=False)
+        flame_lock(builder, (-foot[0], foot[1], foot[2]), (-tip[0], tip[1], tip[2]), 4, flip=True, mid_station=False)
 
 
 # --- The gold-striped tee ------------------------------------------------------
