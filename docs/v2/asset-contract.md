@@ -45,7 +45,7 @@ say what the bone table says. See `render.proxySilhouette` in
 `scripts/measures.json`.)
 
 **Height is measured on the BONE, never on the mesh.** Hair may rise above
-`HeadTop_End` — up to 4% of body height, so an afro is still an afro — but body
+`HeadTop_End` — up to 10% of body height, so an afro is still an afro — but body
 geometry may not, and neither may a hat.
 
 ---
@@ -180,7 +180,8 @@ missed. The validator measures it from the delivered file.
   and the measured cost are in `scripts/v2/modelRules.mjs` beside `LOD_BUDGET`.
 
 - **Nothing but hair may be drawn above `HeadTop_End`**, and hair only by up to
-  **4% of body height** (`HAIR_HEADROOM_FRAC` in `src/v2/render/skeleton.ts`).
+  **10% of body height** (`HAIR_HEADROOM_FRAC` in `src/v2/render/skeleton.ts`;
+  4% until 2026-11-15, when it was cutting drawn hairstyles down).
   Height is measured on the bone; a hat that stands proud of the crown is a hat
   drawn wrong, not a taller kid. The validator checks the level's total extent,
   which is the part it can check on a Draco-compressed file. Which triangles are

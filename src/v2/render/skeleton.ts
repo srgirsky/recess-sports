@@ -74,7 +74,14 @@ export const HEIGHT_MAX_FT = 4.4;
  * proxy's afro was overshooting by 14.2% of body height, half a head of hair
  * above the top of the kid.
  */
-export const HAIR_HEADROOM_FRAC = 0.04;
+export const HAIR_HEADROOM_FRAC = 0.10;
+// ★ 0.04 UNTIL 2026-11-15. Relaxed on the maintainer's instruction ("only
+// rules that are part of the game"): at 4% the cap was deciding hairstyles.
+// Kwame's sheet draws a mohawk about as tall as his face and Dev's a tall mop,
+// and both sculpts were cut down to fit. 10% of a 4ft kid is 0.4ft of hair
+// above the head bone. It is still a cap, for the reason above: past it the
+// drawn kid stops being the height the cameras and cards were framed for (the
+// proxy afro that prompted the rule overshot by 14.2%).
 
 /**
  * The 33 mandatory bones. Order is part of the contract: the validator

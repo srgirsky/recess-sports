@@ -940,7 +940,8 @@
      2.413,
      2.803
     ],
-    "hairHeadroomFrac": 0.04,
+    "hairHeadroomFrac": 0.10,
+    "hairHeadroomNote": "0.04 until 2026-11-15. Relaxed to 0.10 on the maintainer's instruction: at 4% the cap was cutting drawn hairstyles down (Kwame's mohawk, Dev's mop). Not a new measurement; the 14.2% proxy overshoot that prompted the rule is still past it.",
     "hairOvershootPctBefore": {
      "afro": 14.2,
      "mohawk": 4.6,
