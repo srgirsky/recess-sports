@@ -605,11 +605,6 @@
       "class": "no-defect-note",
       "excerpt": "SCOPED HAND MIGRATION PASS: fresh runtime hero/run/contact and all four expr"
     },
-    "diva:39d26a9bc7f6": {
-      "char": "diva",
-      "class": "interpenetration",
-      "excerpt": "INHERITED GARMENT INTERPENETRATION, BASELINE CONFIRMED: exact baseline/curre"
-    },
     "diva:407a3ed9aae0": {
       "char": "diva",
       "class": "evidence",
@@ -1150,11 +1145,6 @@
       "class": "interpenetration",
       "excerpt": "SHARED POSE ISSUES REMAIN OPEN: swing_contact f7 shows the lower forearm eme"
     },
-    "clover:ba59f523a52c": {
-      "char": "clover",
-      "class": "interpenetration",
-      "excerpt": "CURRENT CLOTHING DEFECT: pitch_windup .73 and run .15 show the raised thigh "
-    },
     "clover:06260638fa49": {
       "char": "clover",
       "class": "no-defect-note",
@@ -1539,11 +1529,6 @@
       "char": "peaches",
       "class": "no-defect-note",
       "excerpt": "SCOPED HAND MIGRATION PASS: runtime hero/run/contact, four expression captur"
-    },
-    "peaches:94127d33e722": {
-      "char": "peaches",
-      "class": "interpenetration",
-      "excerpt": "INHERITED CLOTHING INTERPENETRATION CONFIRMED: pitch_windup t0.73 and run t0"
     },
     "peaches:b82951f7001e": {
       "char": "peaches",
@@ -2459,6 +2444,56 @@
       "char": "wheelchair_ace",
       "class": "face-atlas",
       "excerpt": "COLOUR: skin is saturated orange (about #713d0a forearm against the sheet's "
+    },
+    "diva:45dc6b028807": {
+      "char": "diva",
+      "class": "hems-cuffs",
+      "excerpt": "THIGH THROUGH SKIRT IN THE SWING, HEM SPLIT: dazzle-runtime-swing.png (swing"
+    },
+    "diva:32d63fe94e9f": {
+      "char": "diva",
+      "class": "hems-cuffs",
+      "excerpt": "RUN SKIRT CLEARED, PITCH AND BUNT UNVERIFIED: the previous finding of the th"
+    },
+    "diva:efcb2241173b": {
+      "char": "diva",
+      "class": "hems-cuffs",
+      "excerpt": "RUN HEM IS FACETED, minor: at run frame 6 the hem outline is a run of straig"
+    },
+    "clover:6762d04ae9c3": {
+      "char": "clover",
+      "class": "hems-cuffs",
+      "excerpt": "NEW (verified at 8x, /private/tmp/claude-501/-Users-sethgirsky-Documents-Pro"
+    },
+    "clover:493ad5b05f5c": {
+      "char": "clover",
+      "class": "hems-cuffs",
+      "excerpt": "UNVERIFIED AFTER THE SKIRT RE-WEIGHT: the previous finding cited pitch_windu"
+    },
+    "peaches:9314e5d2d983": {
+      "char": "peaches",
+      "class": "hems-cuffs",
+      "excerpt": "NEW (skirt-weight pass) — the hem piping splits and steps in the run. peache"
+    },
+    "peaches:39e6fa0af848": {
+      "char": "peaches",
+      "class": "hems-cuffs",
+      "excerpt": "NEW (skirt-weight pass) — the hem crosses itself in the swing. peaches-runti"
+    },
+    "peaches:011557390f45": {
+      "char": "peaches",
+      "class": "hems-cuffs",
+      "excerpt": "NEW minor (skirt-weight pass) — hem end spikes. The hem's outboard corners e"
+    },
+    "peaches:dae831322a3d": {
+      "char": "peaches",
+      "class": "hems-cuffs",
+      "excerpt": "NEW marginal (skirt-weight pass) — faint thigh ghosting in the cloth just ab"
+    },
+    "peaches:0b425113ab4b": {
+      "char": "peaches",
+      "class": "hems-cuffs",
+      "excerpt": "CLEARED IN THE TWO SAMPLED FRAMES, NOT CERTIFIED ELSEWHERE — thigh through t"
     }
   }
 }

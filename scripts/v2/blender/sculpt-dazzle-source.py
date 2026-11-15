@@ -39,7 +39,7 @@ from sculptlib.head import HeadSpec, head_surface
 from sculptlib.leg import LegSpec, build_leg, leg_x
 from sculptlib.mesh import MeshBuilder, thin_for_lod
 from sculptlib.palette import Palette
-from sculptlib.rig import ARM_ELBOW_X, ARM_SHOULDER_X, LEG_ANKLE_Z, limb_bone
+from sculptlib.rig import ARM_ELBOW_X, ARM_SHOULDER_X, LEG_ANKLE_Z, hem_follows_thighs, limb_bone
 from sculptlib.shoe import ShoeSpec, build_shoe
 
 REPO = Path.cwd()
@@ -489,6 +489,29 @@ def dress_color(theta: float, z: float):
     return SHIRT
 
 
+
+# ★ THE SKIRT IS CARRIED BY THE THIGHS, NOT THE PELVIS ALONE. Every ring of it
+# rode `Hips`, so a lifted thigh came straight through the cloth above the hem
+# in the run and the pitch windup (recorded on three kids as "inherited
+# garment interpenetration"). Below the hip each skirt vertex now passes this
+# share of its weight to the thigh on its own side (`hem_follows_thighs`), as
+# the long tops do. Weights only: the bind pose and every board are unchanged.
+# ★ HALF THE SHARE, AND IT TAKES HOLD 0.2ft BELOW THE HIP. At the tops' own
+# 0.85, ramping all the way down to the hem, three critics saw the same two
+# things: the hem yanked into spikes and a pinwheel in the stride (and split
+# in two at swing contact), while just under the waistband the cloth still
+# barely moved and the thigh's top showed through. A skirt stands 0.19ft off
+# the thigh at the hem, so half the thigh's travel is enough to stay ahead
+# of it; and reaching that half by z 1.40 covers the hip.
+# not-traceable: skin-weight numbers, not form numbers.
+SKIRT_THIGH_SHARE = 0.55
+SKIRT_FULL_SHARE_Z = 1.400
+
+
+def skirt_weight(at, bone):
+    return hem_follows_thighs(at, bone, SKIRT_FULL_SHARE_Z, SKIRT_THIGH_SHARE)
+
+
 def pleated_loft(builder: MeshBuilder, levels, material: int, color, segments: int,
                  color_fn=None, shape_fn=None) -> None:
     """`MeshBuilder.loft` with a `shape_fn(theta, z) -> (scale, dz)` hook.
@@ -506,7 +529,7 @@ def pleated_loft(builder: MeshBuilder, levels, material: int, color, segments: i
             scale, dz = shape_fn(theta, z) if shape_fn else (1.0, 0.0)
             at = (rx * scale * cos(theta), ry * scale * sin(theta), z + dz)
             vertex_color = color_fn(theta, z) if color_fn else color
-            row.append(builder.vertex(at, vertex_color, bone))
+            row.append(builder.vertex(at, vertex_color, skirt_weight(at, bone)))
         rows.append(row)
     bottom = builder.vertex((0.0, 0.0, levels[0][0]), color, levels[0][3])
     top = builder.vertex((0.0, 0.0, levels[-1][0]), color, levels[-1][3])

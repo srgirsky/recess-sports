@@ -198,11 +198,11 @@
     },
     "diva": {
       "source": "dazzle-pilot.blend",
-      "sourceSha256": "ab9e2d8b6cdca1fdf01bd37762e12c3a652b23bef5eda070830a4c7d62e8fc85",
+      "sourceSha256": "68a8c53d40a6a918a8033ccaa304d38d5906115911c5fbcd8ca92579444f77bc",
       "concept": "dazzle-turnaround.png",
       "conceptSha256": "3eb499fa87bff373ae457d620ef72ae54de5c0636b605ed24022aeca7523f8df",
       "output": "kid_diva.glb",
-      "outputSha256": "23179d61e0cbb840ffa84c1add6feb194bd3a37fc09f303d25c8f521ccd7bd84",
+      "outputSha256": "f9367f496056097e47a9b6947307c3c871e1f41e176d45ea282f1e3dae125253",
       "definingTraits": [
         "long wavy auburn mane",
         "cream headband",
@@ -348,11 +348,11 @@
     },
     "clover": {
       "source": "clover-pilot.blend",
-      "sourceSha256": "f044ec7572deb0fba1ae427e4ee5c636a32dd3a99c0447d52f3decb3ef965706",
+      "sourceSha256": "36a53035035f59af2c12dfa091f098a612b6d00acc79bd835c8548091aab3f4f",
       "concept": "clover-turnaround.png",
       "conceptSha256": "1cff5e0a9ac0306500dc1786ace77af0e9b888d3501262d23839a81bbbcc4142",
       "output": "kid_clover.glb",
-      "outputSha256": "54b6655cf582037614fdd398329bb13fc3f6c0eac83e75b80413f92bfd74ae88",
+      "outputSha256": "71084a794992ae85b377e51ede80e3739387d9eb7bf05510fc727f09c827d36d",
       "definingTraits": [
         "blonde low pigtails",
         "swept side fringe",
@@ -423,11 +423,11 @@
     },
     "peaches": {
       "source": "peaches-pilot.blend",
-      "sourceSha256": "6bf31ada17fbeb3a0e72456e43ef7439b4172a9c6dd204f6de5742aa844ae2ed",
+      "sourceSha256": "c768603ab24c96c5ecc6919616ad4d96b038215a37d76ecd7fa4f276259b4b60",
       "concept": "peaches-turnaround.png",
       "conceptSha256": "42a7f8de5c44a061aa4f15b7dd8e9abd65a150488c8a814b0986db2e3d3f393e",
       "output": "kid_peaches.glb",
-      "outputSha256": "73223a9d033f3c5ffd5d61b2b80b6633e94b65bd7984ca85d686c67a7dd2bb5d",
+      "outputSha256": "f5c0fb2815090cff03a4127457ebe896f9d86e6d4719f8a8af2300a26d292811",
       "definingTraits": [
         "textured brown top-bun",
         "marigold sleeveless dress",
