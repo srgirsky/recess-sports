@@ -290,11 +290,6 @@
       "class": "decal-not-form",
       "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED (unchanged eviden"
     },
-    "mimi_mash:d1b0c591993f": {
-      "char": "mimi_mash",
-      "class": "other",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: NEW (minor): the inverted"
-    },
     "mimi_mash:cc68a81bbd09": {
       "char": "mimi_mash",
       "class": "face-atlas",
@@ -314,16 +309,6 @@
       "char": "mimi_mash",
       "class": "no-defect-note",
       "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: NON-DEFECT (carried, re-v"
-    },
-    "mimi_mash:9935093b0940": {
-      "char": "mimi_mash",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: NOT FILED per instruction"
-    },
-    "sprout:27c3a0154278": {
-      "char": "sprout",
-      "class": "no-defect-note",
-      "excerpt": "SCOPED HAND MIGRATION PASS: no new Sprout-specific blocking frame identified"
     },
     "sprout:42688dc714ab": {
       "char": "sprout",
@@ -465,81 +450,6 @@
       "class": "no-defect-note",
       "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: TEAM_MASK EXTENT — NON-DE"
     },
-    "bubbles:b54e4fbca973": {
-      "char": "bubbles",
-      "class": "no-defect-note",
-      "excerpt": "HAND-RIG REVIEW — SCOPED PASS: current ten three-angle action sheets show co"
-    },
-    "bubbles:d7b65ddf06c1": {
-      "char": "bubbles",
-      "class": "no-defect-note",
-      "excerpt": "BAT/HAIR RECHECK — CLEARED IN AUDITED SAMPLES: fresh .art-review/roster-hand"
-    },
-    "bubbles:aa5f065270bc": {
-      "char": "bubbles",
-      "class": "interpenetration",
-      "excerpt": "INHERITED CLOTHING DEFORMATION — NOT FIXED: raised pitching thigh and runnin"
-    },
-    "bubbles:1913d65cd02e": {
-      "char": "bubbles",
-      "class": "interpenetration",
-      "excerpt": "SHARED CONTACT CLEARANCE — OPEN: root reports a separately confirmed lower-f"
-    },
-    "bubbles:cb1d07491cdc": {
-      "char": "bubbles",
-      "class": "stance",
-      "excerpt": "SHARED BUNT POSE POLISH: at bunt t0.67 the lower-handle elbow rises beside t"
-    },
-    "bubbles:93eeea0e20eb": {
-      "char": "bubbles",
-      "class": "hair-nyquist",
-      "excerpt": "CURRENT HAIR IDENTITY POLISH: rear and side action views show broad angular "
-    },
-    "bubbles:eea084299d91": {
-      "char": "bubbles",
-      "class": "proportions",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: IMPROVED — crown lid and "
-    },
-    "bubbles:400a5097506d": {
-      "char": "bubbles",
-      "class": "hair-nyquist",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED — hair grouping i"
-    },
-    "bubbles:9b7e94dbac51": {
-      "char": "bubbles",
-      "class": "proportions",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED — thin arms/legs "
-    },
-    "bubbles:7ac814e2f431": {
-      "char": "bubbles",
-      "class": "butt-joins",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED — dark angular ne"
-    },
-    "bubbles:9ee99b095c32": {
-      "char": "bubbles",
-      "class": "hems-cuffs",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED — shoes use paral"
-    },
-    "bubbles:4fed1a152877": {
-      "char": "bubbles",
-      "class": "other",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED — scrunchie exten"
-    },
-    "bubbles:c01cee35f3ac": {
-      "char": "bubbles",
-      "class": "decal-not-form",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: IMPROVED — small nose for"
-    },
-    "bubbles:9b6e9edc85c4": {
-      "char": "bubbles",
-      "class": "material-light",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED, MEASURED — shoe "
-    },
-    "bubbles:3265e8820a79": {
-      "char": "bubbles",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: NON-DEFECT NOTE — ankle d"
-    },
     "chip:928563da0f50": {
       "char": "chip",
       "class": "no-defect-note",
@@ -634,11 +544,6 @@
       "char": "chip",
       "class": "no-defect-note",
       "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: NON-DEFECT - chip-profile"
-    },
-    "bend_it:a2284f5cbf96": {
-      "char": "bend_it",
-      "class": "no-defect-note",
-      "excerpt": "SCOPED HAND MIGRATION PASS: fresh runtime hero/run/contact and four expressi"
     },
     "bend_it:580bb09222b6": {
       "char": "bend_it",
@@ -925,11 +830,6 @@
       "class": "no-defect-note",
       "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CLEARED — the smooth-cone"
     },
-    "diva:ba6f30ec6637": {
-      "char": "diva",
-      "class": "decal-not-form",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: Shoe laces are single 1-2"
-    },
     "diva:7c864833b0ab": {
       "char": "diva",
       "class": "material-light",
@@ -964,96 +864,6 @@
       "char": "noodle",
       "class": "stance",
       "excerpt": "SHARED POSE POLISH REOBSERVED: bunt t0.67 receiving elbow rises beside head "
-    },
-    "noodle:b5124e7f2e50": {
-      "char": "noodle",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CLEARED — MOUTH LATITUDE."
-    },
-    "noodle:d2b9a36b6dc4": {
-      "char": "noodle",
-      "class": "material-light",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED (unchanged, not r"
-    },
-    "noodle:f31efb5b4c9c": {
-      "char": "noodle",
-      "class": "face-atlas",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: REVISED — EYEBROWS AT THE"
-    },
-    "noodle:7519db574cbe": {
-      "char": "noodle",
-      "class": "material-light",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: REVISED — BALD DOME FACET"
-    },
-    "noodle:07c3fdc69e1b": {
-      "char": "noodle",
-      "class": "proportions",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: REVISED — NOSE NOW READS "
-    },
-    "noodle:b2d7d0c6092c": {
-      "char": "noodle",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CLEARED (held) — SHOULDER"
-    },
-    "noodle:5273867c2c9f": {
-      "char": "noodle",
-      "class": "decal-not-form",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED — SHOE HAS NO LAC"
-    },
-    "noodle:2deb71ce5452": {
-      "char": "noodle",
-      "class": "sheared-edges",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED — DARK SLIVER ACR"
-    },
-    "noodle:9fcfa3014b2f": {
-      "char": "noodle",
-      "class": "sheared-edges",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED — GEOMETRY TABS A"
-    },
-    "noodle:7d03ee56e1af": {
-      "char": "noodle",
-      "class": "hems-cuffs",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED — ANKLE CUFF READ"
-    },
-    "noodle:c645717bb5c5": {
-      "char": "noodle",
-      "class": "material-light",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED — GARMENT WARMTH,"
-    },
-    "noodle:b1deda2234e2": {
-      "char": "noodle",
-      "class": "ears",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED — EARS REACH THE "
-    },
-    "noodle:645f5a941650": {
-      "char": "noodle",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: NON-DEFECT — the round 'p"
-    },
-    "noodle:fa55c06853f4": {
-      "char": "noodle",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: NON-DEFECT — the far lens"
-    },
-    "noodle:6aa0c2dfc9e8": {
-      "char": "noodle",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: NON-DEFECT — the four spa"
-    },
-    "noodle:7e97a46754de": {
-      "char": "noodle",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED (stance, read via"
-    },
-    "noodle:067fc43b9ed9": {
-      "char": "noodle",
-      "class": "proportions",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED, minor — LONG BAR"
-    },
-    "noodle:7230164caf48": {
-      "char": "noodle",
-      "class": "other",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: NEW, minor — FINGERTIPS C"
     },
     "turbo:c0cf0ad7143d": {
       "char": "turbo",
@@ -1115,11 +925,6 @@
       "class": "proportions",
       "excerpt": "HISTORICAL RECORD (retained, prior coordinate probes not independently repea"
     },
-    "turbo:fb1e9e479cc9": {
-      "char": "turbo",
-      "class": "stance",
-      "excerpt": "HISTORICAL RECORD (retained, prior coordinate probes not independently repea"
-    },
     "turbo:8c0b4ae2e9fc": {
       "char": "turbo",
       "class": "face-atlas",
@@ -1156,11 +961,6 @@
       "excerpt": "HISTORICAL RECORD (retained, prior coordinate probes not independently repea"
     },
     "turbo:4b9ef9662d70": {
-      "char": "turbo",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL RECORD (retained, prior coordinate probes not independently repea"
-    },
-    "turbo:63e4ee72e11a": {
       "char": "turbo",
       "class": "no-defect-note",
       "excerpt": "HISTORICAL RECORD (retained, prior coordinate probes not independently repea"
@@ -1255,11 +1055,6 @@
       "class": "decal-not-form",
       "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED — nose and cheek:"
     },
-    "penny:658800d33c63": {
-      "char": "penny",
-      "class": "hems-cuffs",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED — shoes: parallel"
-    },
     "penny:a09667827a06": {
       "char": "penny",
       "class": "no-defect-note",
@@ -1269,86 +1064,6 @@
       "char": "penny",
       "class": "no-defect-note",
       "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: NON-DEFECT — ankle daylig"
-    },
-    "the_prof:7112075967e2": {
-      "char": "the_prof",
-      "class": "no-defect-note",
-      "excerpt": "SCOPED HAND MIGRATION PASS: runtime hero/run/contact and four facial express"
-    },
-    "the_prof:383eec9a9da0": {
-      "char": "the_prof",
-      "class": "interpenetration",
-      "excerpt": "GARMENT INTERPENETRATION REOBSERVED: upset_goofy-2-2 at t1.2, 4x crop left21"
-    },
-    "the_prof:5b03aa3e5c50": {
-      "char": "the_prof",
-      "class": "interpenetration",
-      "excerpt": "SHARED POSE CAVEAT: contact frame7 partly hides the far sleeve across the to"
-    },
-    "the_prof:736feee8d7e0": {
-      "char": "the_prof",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: RESOLVED, verified this r"
-    },
-    "the_prof:871026ede072": {
-      "char": "the_prof",
-      "class": "interpenetration",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: NEW, the round's one real"
-    },
-    "the_prof:07d0fe4e89fe": {
-      "char": "the_prof",
-      "class": "face-atlas",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: The concept's thick brows"
-    },
-    "the_prof:c432f4f5d0fe": {
-      "char": "the_prof",
-      "class": "face-atlas",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: Angry is the weakest expr"
-    },
-    "the_prof:5353d88927a0": {
-      "char": "the_prof",
-      "class": "hair-nyquist",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: The hair carries ZERO aut"
-    },
-    "the_prof:4ccef91f8e46": {
-      "char": "the_prof",
-      "class": "proportions",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: The concept's asymmetric "
-    },
-    "the_prof:7c504e81458e": {
-      "char": "the_prof",
-      "class": "hair-nyquist",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: In profile the hair is a "
-    },
-    "the_prof:bcc78aeb3e62": {
-      "char": "the_prof",
-      "class": "hair-nyquist",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: The hairline staircase is"
-    },
-    "the_prof:80b1076da203": {
-      "char": "the_prof",
-      "class": "40px-read",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: At 40px the round glasses"
-    },
-    "the_prof:b1fc48bcd604": {
-      "char": "the_prof",
-      "class": "proportions",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: MINOR: the profile depth "
-    },
-    "the_prof:204c42af26e8": {
-      "char": "the_prof",
-      "class": "material-light",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: MINOR: the zip tape colou"
-    },
-    "the_prof:9f6b2f1ebf52": {
-      "char": "the_prof",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CLEARED this round, do no"
-    },
-    "the_prof:297f5d2b7d7b": {
-      "char": "the_prof",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: NOT findings, checked and"
     },
     "ace_kid:d9711dc5ca11": {
       "char": "ace_kid",
@@ -1424,11 +1139,6 @@
       "char": "ace_kid",
       "class": "no-defect-note",
       "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CLEARED (was: crown is a "
-    },
-    "ace_kid:4d3e7c309089": {
-      "char": "ace_kid",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CLEARED (was: profile hai"
     },
     "ace_kid:868596844a91": {
       "char": "ace_kid",
@@ -1535,11 +1245,6 @@
       "class": "butt-joins",
       "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: Sleeve-to-forearm is no l"
     },
-    "rocket:a53bb89b3534": {
-      "char": "rocket",
-      "class": "decal-not-form",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: Shoe toe cap and midsole "
-    },
     "rocket:737c56475c77": {
       "char": "rocket",
       "class": "proportions",
@@ -1550,35 +1255,10 @@
       "class": "no-defect-note",
       "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: NOT DEFECTS, recorded so "
     },
-    "gizmo:0518e1f20574": {
-      "char": "gizmo",
-      "class": "no-defect-note",
-      "excerpt": "SCOPED HAND MIGRATION PASS: fresh runtime hero/run/contact and four expressi"
-    },
     "gizmo:44279d4042a2": {
       "char": "gizmo",
       "class": "interpenetration",
       "excerpt": "SHARED POSE ISSUES REMAIN OPEN: held bunt raises the lower-handle elbow besi"
-    },
-    "gizmo:87f117c14f1b": {
-      "char": "gizmo",
-      "class": "proportions",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: REVISED — gizmo-front-rev"
-    },
-    "gizmo:e74e61a14217": {
-      "char": "gizmo",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CLEARED — gizmo-front-rev"
-    },
-    "gizmo:47c975e47496": {
-      "char": "gizmo",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CLEARED (round 2, re-read"
-    },
-    "gizmo:8abcf6548685": {
-      "char": "gizmo",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CLEARED (round 3) — gizmo"
     },
     "gizmo:b765721ef8cc": {
       "char": "gizmo",
@@ -1590,11 +1270,6 @@
       "class": "hair-nyquist",
       "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED — gizmo-profile-r"
     },
-    "gizmo:82741dec01a3": {
-      "char": "gizmo",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CLEARED — gizmo-profile-r"
-    },
     "gizmo:3d1e3af929b0": {
       "char": "gizmo",
       "class": "ears",
@@ -1605,50 +1280,10 @@
       "class": "butt-joins",
       "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED — gizmo-runtime-s"
     },
-    "gizmo:63030060612d": {
-      "char": "gizmo",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CLEARED — gizmo-front-rev"
-    },
     "gizmo:23cf22392dde": {
       "char": "gizmo",
       "class": "face-atlas",
       "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED (right side clear"
-    },
-    "gizmo:9d3986313dc6": {
-      "char": "gizmo",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CLEARED (kept) — eyes inb"
-    },
-    "gizmo:6e14c26f1cc2": {
-      "char": "gizmo",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CLEARED (kept) — lens opa"
-    },
-    "gizmo:6abd4cecd552": {
-      "char": "gizmo",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CLEARED (kept) — ring col"
-    },
-    "gizmo:dc2c20a8d3b4": {
-      "char": "gizmo",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: NON-DEFECT — the navy out"
-    },
-    "gizmo:fe2114c97711": {
-      "char": "gizmo",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: NON-DEFECT — TEAM_MASK bi"
-    },
-    "gizmo:58a93a732cdb": {
-      "char": "gizmo",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: NON-DEFECT — gizmo-front-"
-    },
-    "dex:3e3025ddb87e": {
-      "char": "dex",
-      "class": "no-defect-note",
-      "excerpt": "SCOPED HAND MIGRATION PASS: stance and contact fingers visibly wrap handle, "
     },
     "dex:d0995111cbcd": {
       "char": "dex",
@@ -1659,51 +1294,6 @@
       "char": "dex",
       "class": "hair-nyquist",
       "excerpt": "CURRENT IDENTITY POLISH: broad smooth hair sides beneath cap retain Dex silh"
-    },
-    "dex:4003b9cb39c4": {
-      "char": "dex",
-      "class": "proportions",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: 3.1: The front bill now e"
-    },
-    "dex:c2ec192f2b5f": {
-      "char": "dex",
-      "class": "hair-nyquist",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: 3.3: The hair is present "
-    },
-    "dex:5c96fd702e47": {
-      "char": "dex",
-      "class": "hems-cuffs",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: 3.4/3.1: The rear hood re"
-    },
-    "dex:2fe6729c099e": {
-      "char": "dex",
-      "class": "hems-cuffs",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: 3.4: The front kangaroo p"
-    },
-    "dex:4d60a59d22d9": {
-      "char": "dex",
-      "class": "butt-joins",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: 3.11: The front A-pose sh"
-    },
-    "dex:6ef9207b0a5c": {
-      "char": "dex",
-      "class": "decal-not-form",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: 3.5: The built nose is le"
-    },
-    "dex:83238038db4a": {
-      "char": "dex",
-      "class": "40px-read",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: 3.6: At 40px the head los"
-    },
-    "dex:8f9b47cfb99f": {
-      "char": "dex",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: NON-DEFECT: Current ankle"
-    },
-    "dex:1c3cd0014327": {
-      "char": "dex",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CLEARED: The bill no long"
     },
     "clover:d159d5bb25e7": {
       "char": "clover",
@@ -1890,11 +1480,6 @@
       "class": "butt-joins",
       "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED - swing_contact f"
     },
-    "boomer:0df93dd8957a": {
-      "char": "boomer",
-      "class": "decal-not-form",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED - shoe: lace stra"
-    },
     "boomer:7dea57d9ad0f": {
       "char": "boomer",
       "class": "decal-not-form",
@@ -1924,46 +1509,6 @@
       "char": "boomer",
       "class": "no-defect-note",
       "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: NON-DEFECT (re-checked, d"
-    },
-    "smokey:15b223723119": {
-      "char": "smokey",
-      "class": "no-defect-note",
-      "excerpt": "SCOPED HAND MIGRATION PASS: runtime hero/run/contact and all four expression"
-    },
-    "smokey:05375637fac3": {
-      "char": "smokey",
-      "class": "stance",
-      "excerpt": "SHARED POSE POLISH REOBSERVED: bunt t0.67 receiving elbow lifts beside head "
-    },
-    "smokey:7e4454d7b424": {
-      "char": "smokey",
-      "class": "other",
-      "excerpt": "CURRENT ART DEBT REOBSERVED: smooth cap-like hair, raised neckline and the c"
-    },
-    "smokey:b5e9f74f0674": {
-      "char": "smokey",
-      "class": "hair-nyquist",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: 3.3 / 3.13: Replace smoot"
-    },
-    "smokey:e72f31251555": {
-      "char": "smokey",
-      "class": "butt-joins",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: 3.2 / 3.4 / 3.11: Refine "
-    },
-    "smokey:3a325085eca2": {
-      "char": "smokey",
-      "class": "other",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: 3.4 / 4.3: Correct inheri"
-    },
-    "smokey:cd3ff1b6e93c": {
-      "char": "smokey",
-      "class": "40px-read",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: 3.6: Preserve legible red"
-    },
-    "sniffles:8d55309c678c": {
-      "char": "sniffles",
-      "class": "no-defect-note",
-      "excerpt": "SCOPED HAND MIGRATION PASS: inspected fresh runtime hero/run/contact and fou"
     },
     "sniffles:2e0d44d87d00": {
       "char": "sniffles",
@@ -2140,11 +1685,6 @@
       "class": "ears",
       "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: PARTIAL CLEAR — the profi"
     },
-    "cricket:c8b703f49730": {
-      "char": "cricket",
-      "class": "decal-not-form",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: STANDS — two symmetric da"
-    },
     "cricket:595d8e452467": {
       "char": "cricket",
       "class": "other",
@@ -2260,11 +1800,6 @@
       "class": "decal-not-form",
       "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED 3.4 — the leaf ap"
     },
-    "peaches:336066da58d2": {
-      "char": "peaches",
-      "class": "40px-read",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED 6b.2 — the sneake"
-    },
     "peaches:74929d6853ad": {
       "char": "peaches",
       "class": "stance",
@@ -2310,11 +1845,6 @@
       "class": "no-defect-note",
       "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: PASSES re-verified on the"
     },
-    "lefty:bdcd0e36120e": {
-      "char": "lefty",
-      "class": "no-defect-note",
-      "excerpt": "SCOPED HAND MIGRATION PASS: fresh runtime hero/run/contact plus four express"
-    },
     "lefty:9311ba327288": {
       "char": "lefty",
       "class": "stance",
@@ -2324,31 +1854,6 @@
       "char": "lefty",
       "class": "hair-nyquist",
       "excerpt": "CURRENT IDENTITY POLISH: the straight, slab-like blonde tail and sparse fore"
-    },
-    "lefty:714db523f9c5": {
-      "char": "lefty",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CLEARED by this build - H"
-    },
-    "lefty:7f76963a9a24": {
-      "char": "lefty",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CLEARED by this build - P"
-    },
-    "lefty:414ed3c5194c": {
-      "char": "lefty",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CLEARED by this build - P"
-    },
-    "lefty:7d4b0ba4706f": {
-      "char": "lefty",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CLEARED by the rebuild - "
-    },
-    "lefty:48fe9f6efa2e": {
-      "char": "lefty",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CLEARED by the rebuild - "
     },
     "lefty:328e8ddcc54b": {
       "char": "lefty",
@@ -2385,11 +1890,6 @@
       "class": "butt-joins",
       "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED - SHOULDER JUNCTI"
     },
-    "lefty:628904251431": {
-      "char": "lefty",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED (still cleared, r"
-    },
     "lefty:601d063fdf61": {
       "char": "lefty",
       "class": "40px-read",
@@ -2404,31 +1904,6 @@
       "char": "lefty",
       "class": "no-defect-note",
       "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED - LEG_STATIONS PR"
-    },
-    "lefty:fb625ba8c7a9": {
-      "char": "lefty",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: NON-DEFECT, re-checked: t"
-    },
-    "lefty:2d72909cf672": {
-      "char": "lefty",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: NON-DEFECT, re-checked: t"
-    },
-    "lefty:57cb00ff4c0b": {
-      "char": "lefty",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: NON-DEFECT, re-checked: t"
-    },
-    "lefty:f9a1a21c16ca": {
-      "char": "lefty",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: NON-DEFECT, re-checked: a"
-    },
-    "lefty:1d5f6084250b": {
-      "char": "lefty",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: NON-DEFECT, re-checked: t"
     },
     "moose:5db11d62b71f": {
       "char": "moose",
@@ -2464,11 +1939,6 @@
       "char": "grizz",
       "class": "hair-nyquist",
       "excerpt": "Hair has no strand grouping and reads as a cap: measure:strands gives 2.67 m"
-    },
-    "grizz:dd224849e4ff": {
-      "char": "grizz",
-      "class": "decal-not-form",
-      "excerpt": "Shoes read as hooves and carry no visible sneaker construction: greta-runtim"
     },
     "grizz:d439154814b3": {
       "char": "grizz",
@@ -2524,11 +1994,6 @@
       "char": "calls_shot",
       "class": "decal-not-form",
       "excerpt": "Shoes do not read as high-tops (mars-runtime-face-grin.png x430-620 y560-690"
-    },
-    "calls_shot:e87e49b4e3eb": {
-      "char": "calls_shot",
-      "class": "decal-not-form",
-      "excerpt": "Shared shoe-builder defect, visible on her cream shoes: a slate-navy notch o"
     },
     "calls_shot:519e61097fde": {
       "char": "calls_shot",
@@ -2744,6 +2209,361 @@
       "char": "tank",
       "class": "evidence",
       "excerpt": "GEAR: The back harness is shown by no capture or board. Capture a back view "
+    },
+    "calls_shot:9253a51d4495": {
+      "char": "calls_shot",
+      "class": "other",
+      "excerpt": "A navy jagged patch about 15x20px remains on the top of the raised shoe in m"
+    },
+    "mimi_mash:4230bb3b926a": {
+      "char": "mimi_mash",
+      "class": "other",
+      "excerpt": "NEW (minor): mimi-mash-runtime-hero.png and face-grin.png shoe crops - the c"
+    },
+    "turbo:2048230f83b1": {
+      "char": "turbo",
+      "class": "other",
+      "excerpt": "TOE CAP COLOUR BLOTCH: on the rebuilt shoes the cream toe cap blends into th"
+    },
+    "sprout:3dbedaa29913": {
+      "char": "sprout",
+      "class": "other",
+      "excerpt": "SHOE COLOUR: the shoe band mean saturation measures 24.7 against the concept"
+    },
+    "ace_kid:f55323147a4f": {
+      "char": "ace_kid",
+      "class": "other",
+      "excerpt": "SHOE COLOUR, REOBSERVED: runtime shoes read blue upper with tan toe-cap and "
+    },
+    "penny:03f753ad9aed": {
+      "char": "penny",
+      "class": "other",
+      "excerpt": "Shoes: lace bars are still two parallel raised strips rather than criss-cros"
+    },
+    "dex:8152ca83cf9e": {
+      "char": "dex",
+      "class": "face-atlas",
+      "excerpt": "3.1: The front bill now exists clearly, but its contour remains different fr"
+    },
+    "dex:770c77ba33a1": {
+      "char": "dex",
+      "class": "other",
+      "excerpt": "3.3: The hair is present and continuous but reads as broad smooth side masse"
+    },
+    "dex:896e77ca0a99": {
+      "char": "dex",
+      "class": "hems-cuffs",
+      "excerpt": "3.4/3.1: The rear hood remains a compact rounded lump below the collar in de"
+    },
+    "dex:82f97516f7a0": {
+      "char": "dex",
+      "class": "other",
+      "excerpt": "3.4: The front kangaroo pocket still reads as two hard rectangular panels, w"
+    },
+    "dex:a5788441b737": {
+      "char": "dex",
+      "class": "hems-cuffs",
+      "excerpt": "3.11: The front A-pose shoulder-to-sleeve junction remains angular and the b"
+    },
+    "dex:0c8ae001f7e1": {
+      "char": "dex",
+      "class": "face-atlas",
+      "excerpt": "3.5: The built nose is legible in profile but faint in true front; the outer"
+    },
+    "dex:f44102ef0128": {
+      "char": "dex",
+      "class": "other",
+      "excerpt": "3.6: At 40px the head loses the cap-over-curls distinction even though the h"
+    },
+    "dex:f7c3f5ca25c8": {
+      "char": "dex",
+      "class": "proportions",
+      "excerpt": "NON-DEFECT: Current ankle daylight is OFF at 14.5 versus concept 0.00 (tol 1"
+    },
+    "lefty:3caf10f6a945": {
+      "char": "lefty",
+      "class": "other",
+      "excerpt": "SHOE COLOUR DRIFT: the rebuilt shoes read tan/khaki with a pale sole (lefty-"
+    },
+    "smokey:6ff3a35b5128": {
+      "char": "smokey",
+      "class": "other",
+      "excerpt": "Replace the smooth helmet-like hair with the concept close fade and stubble "
+    },
+    "smokey:44f3f4055126": {
+      "char": "smokey",
+      "class": "hems-cuffs",
+      "excerpt": "Refine collar/shoulder construction together: raised mock-neck and deep slee"
+    },
+    "smokey:35867e102ad4": {
+      "char": "smokey",
+      "class": "other",
+      "excerpt": "Correct the central shorts flap during run: a solid third hanging garment ma"
+    },
+    "smokey:1d4d4deb3c69": {
+      "char": "smokey",
+      "class": "proportions",
+      "excerpt": "Ankle daylight is 23.5 vs 0 on the sheet (OFF, tol 12): stance is wider than"
+    },
+    "smokey:61033175c4cf": {
+      "char": "smokey",
+      "class": "other",
+      "excerpt": "Shoe toe caps are beak-pointed with a simplified black/cream pattern, a mino"
+    },
+    "smokey:f0a338dd5878": {
+      "char": "smokey",
+      "class": "other",
+      "excerpt": "Bunt t0.67 receiving elbow lifts beside the head with forearm descending tow"
+    },
+    "smokey:92f66cb7c24b": {
+      "char": "smokey",
+      "class": "other",
+      "excerpt": "Preserve the legible red/charcoal/cream palette while improving close-croppe"
+    },
+    "bend_it:cd9fe42c3c73": {
+      "char": "bend_it",
+      "class": "other",
+      "excerpt": "NEW, minor: on both shoes a small dark navy dash sits on the upper toe near "
+    },
+    "bend_it:6aefb956edcf": {
+      "char": "bend_it",
+      "class": "other",
+      "excerpt": "Shoe colour: delivered sneakers render saturated brown/orange with cream str"
+    },
+    "noodle:c6efdcb2551c": {
+      "char": "noodle",
+      "class": "face-atlas",
+      "excerpt": "CLEARED — MOUTH LATITUDE. face-specs.mjs noodle.mouthY 67 -> 78, featurelati"
+    },
+    "noodle:86fb7faa97a6": {
+      "char": "noodle",
+      "class": "other",
+      "excerpt": "CARRIED (unchanged, not re-filed) — SKIN FAILS THE WARMTH BAND ON THE DOMINA"
+    },
+    "noodle:d2bcdb012c30": {
+      "char": "noodle",
+      "class": "other",
+      "excerpt": "REVISED — EYEBROWS AT THE RIM TOPS: still there, now faithful rather than lo"
+    },
+    "noodle:22c68b922572": {
+      "char": "noodle",
+      "class": "material-light",
+      "excerpt": "REVISED — BALD DOME FACETED AT HERO: the facet kinks are measurably gone, th"
+    },
+    "noodle:9520c32c2fe8": {
+      "char": "noodle",
+      "class": "face-atlas",
+      "excerpt": "REVISED — NOSE NOW READS AS A SOFT MOUND, STILL NO NOSTRILS. nose_push is bu"
+    },
+    "noodle:d10eb6319a6d": {
+      "char": "noodle",
+      "class": "hems-cuffs",
+      "excerpt": "CLEARED (held) — SHOULDER SEAM WEDGE. noodle-front-apose-review.png 6x at x1"
+    },
+    "noodle:eb92626f85ff": {
+      "char": "noodle",
+      "class": "other",
+      "excerpt": "CARRIED — SHOE HAS NO LACING READ. Both straps ((-0.170,-0.122),(-0.060,-0.0"
+    },
+    "noodle:972a0c6b63e4": {
+      "char": "noodle",
+      "class": "other",
+      "excerpt": "CARRIED — ANKLE CUFF READS AS A NAPKIN RING. noodle-front-review.png 6x crop"
+    },
+    "noodle:3919ab074757": {
+      "char": "noodle",
+      "class": "other",
+      "excerpt": "CARRIED — GARMENT WARMTH, unchanged: noodle-front-review.png cream stripe x2"
+    },
+    "noodle:2cd5ea293820": {
+      "char": "noodle",
+      "class": "other",
+      "excerpt": "CARRIED — EARS REACH THE FRONT SILHOUETTE, UNDER-PROUD. Rightmost silhouette"
+    },
+    "noodle:310dabdf2fc9": {
+      "char": "noodle",
+      "class": "other",
+      "excerpt": "NON-DEFECT — the round 'plate' with dark marks at the shoulder on noodle-pro"
+    },
+    "noodle:8d8a8fc31753": {
+      "char": "noodle",
+      "class": "other",
+      "excerpt": "NON-DEFECT — the far lens on noodle-runtime-hero.png (4x x490-690 y110-310, "
+    },
+    "noodle:fc788faae216": {
+      "char": "noodle",
+      "class": "face-atlas",
+      "excerpt": "NON-DEFECT — the four spare atlas cells (12-15, assets/v2/source/noodle-face"
+    },
+    "noodle:699abb8a9a48": {
+      "char": "noodle",
+      "class": "hems-cuffs",
+      "excerpt": "CARRIED (stance, read via the instrument) — daylight between the ankles 13.0"
+    },
+    "noodle:fd4846e05d9a": {
+      "char": "noodle",
+      "class": "other",
+      "excerpt": "CARRIED, minor — LONG BARE NECK AT HERO. noodle-runtime-hero.png 6x x500-580"
+    },
+    "noodle:5f7d28207d0b": {
+      "char": "noodle",
+      "class": "material-light",
+      "excerpt": "NEW, minor — FINGERTIPS CLUMP INTO AN INK BLOT AT HERO. noodle-runtime-hero."
+    },
+    "noodle:b4bfe96e7c42": {
+      "char": "noodle",
+      "class": "other",
+      "excerpt": "SHOE TOES NOW CLOSED BUT STILL NO LACING READ: noodle-runtime-hero.png 5x cr"
+    },
+    "bubbles:2ae316cfa2f7": {
+      "char": "bubbles",
+      "class": "hems-cuffs",
+      "excerpt": "INHERITED CLOTHING DEFORMATION: the raised pitching thigh and the running tr"
+    },
+    "bubbles:ac92df1144fb": {
+      "char": "bubbles",
+      "class": "other",
+      "excerpt": "CURRENT HAIR IDENTITY: broad angular faceted hair panels with a hard lower p"
+    },
+    "bubbles:453c4a51761b": {
+      "char": "bubbles",
+      "class": "other",
+      "excerpt": "SHOE COLOUR (measured, worse after rebuild): the shoes read tan/orange-beige"
+    },
+    "bubbles:cacb36dcf441": {
+      "char": "bubbles",
+      "class": "other",
+      "excerpt": "SHOE DETAIL: parallel pink bars instead of the concept's criss-cross cream l"
+    },
+    "bubbles:d7d338ceff39": {
+      "char": "bubbles",
+      "class": "other",
+      "excerpt": "DARK SQUARE AT THE ANKLE OPENING (new, verifiable): the lifted trailing shoe"
+    },
+    "bubbles:ef0b8c4fe902": {
+      "char": "bubbles",
+      "class": "other",
+      "excerpt": "SHARED CONTACT CLEARANCE: lower-forearm/torso intersection in shared contact"
+    },
+    "bubbles:d6dc455c2e5b": {
+      "char": "bubbles",
+      "class": "other",
+      "excerpt": "SHARED BUNT POSE: at bunt t0.67 the lower-handle elbow rises beside the head"
+    },
+    "bubbles:fedd7ee22f89": {
+      "char": "bubbles",
+      "class": "other",
+      "excerpt": "THIN ARMS AND LEGS with abrupt shoulder joins against the concept's fuller c"
+    },
+    "bubbles:7d9bb0b04cc7": {
+      "char": "bubbles",
+      "class": "other",
+      "excerpt": "ANGULAR DARK NECKLINE WEDGES in the collar and shoulder construction in the "
+    },
+    "bubbles:0446bb49429d": {
+      "char": "bubbles",
+      "class": "other",
+      "excerpt": "SCRUNCHIE is a thin smooth washer, not the concept's ruffled, generous ring "
+    },
+    "bubbles:f172e4dd0b76": {
+      "char": "bubbles",
+      "class": "other",
+      "excerpt": "POCKET reads flat without the concept's button; the concept bow and the two "
+    },
+    "sniffles:94f3375f2db8": {
+      "char": "sniffles",
+      "class": "other",
+      "excerpt": "SHOE TOE CAPS: in the hero capture the toe cap still reads as a pointed beak"
+    },
+    "the_prof:6a84b31d86ec": {
+      "char": "the_prof",
+      "class": "face-atlas",
+      "excerpt": "The concept thick brows are still absent; FACE_ISLAND refuses brow, so angry"
+    },
+    "the_prof:7ff076e1a482": {
+      "char": "the_prof",
+      "class": "other",
+      "excerpt": "The hair is a symmetric smooth bowl with no authored strand grouping and no "
+    },
+    "the_prof:74e15bfbdb3b": {
+      "char": "the_prof",
+      "class": "face-atlas",
+      "excerpt": "GARMENT INTERPENETRATION: the cream inner tee reads as a broad light strip o"
+    },
+    "the_prof:a9fb7f527769": {
+      "char": "the_prof",
+      "class": "hems-cuffs",
+      "excerpt": "SHARED POSE CAVEAT: contact frame partly hides the far sleeve across the tor"
+    },
+    "the_prof:ad9805881cdd": {
+      "char": "the_prof",
+      "class": "other",
+      "excerpt": "Shoe toe caps taper to a pointed beak with a small blue dash mark on each to"
+    },
+    "the_prof:0015e51dbbfc": {
+      "char": "the_prof",
+      "class": "face-atlas",
+      "excerpt": "At 40px the round glasses collapse to a dark eye band; identity leans on the"
+    },
+    "the_prof:cdddf5bea0ac": {
+      "char": "the_prof",
+      "class": "other",
+      "excerpt": "Hairline fringe edge keeps a castellated notch at centre and polygon steps p"
+    },
+    "the_prof:7a4612e2f707": {
+      "char": "the_prof",
+      "class": "hems-cuffs",
+      "excerpt": "Profile depth cinch of the jacket hem is far shallower than the sheet; zip t"
+    },
+    "diva:232fb7fcd4bd": {
+      "char": "diva",
+      "class": "other",
+      "excerpt": "SHOE TOE/VAMP DARK PATCH: in the current hero (right shoe) and run captures "
+    },
+    "grizz:f9b07a40661b": {
+      "char": "grizz",
+      "class": "other",
+      "excerpt": "Shoes are smooth blocks with no sneaker construction and a residual toe face"
+    },
+    "cricket:9580db75097e": {
+      "char": "cricket",
+      "class": "other",
+      "excerpt": "STANDS, reshaped by the shoe rebuild: a short dark-blue dash still sits on t"
+    },
+    "peaches:1834a9f8143a": {
+      "char": "peaches",
+      "class": "other",
+      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED 6b.2 — the sneake"
+    },
+    "gizmo:c47c75b47516": {
+      "char": "gizmo",
+      "class": "other",
+      "excerpt": "NEW (low) - gizmo-runtime-hero.png x 440-620, y 580-690 (4x): the shoe toe c"
+    },
+    "clover:39085b4ffc7a": {
+      "char": "clover",
+      "class": "other",
+      "excerpt": "SHOE BAND SECOND TONE: after the shoe rebuild the second-tone share is 41.7%"
+    },
+    "rocket:af55d22c10d7": {
+      "char": "rocket",
+      "class": "other",
+      "excerpt": "Shoe toe cap and midsole colour boundaries are still soft painted gradients "
+    },
+    "rocket:036a0767a350": {
+      "char": "rocket",
+      "class": "other",
+      "excerpt": "NEW (measured): shoe-band mean saturation now reads 15.6 against the concept"
+    },
+    "boomer:ebd5bfd432b5": {
+      "char": "boomer",
+      "class": "other",
+      "excerpt": "Shoe toe cap is a pointed beak with a hard central crease and a dark slash p"
+    },
+    "boomer:ac60e1aca373": {
+      "char": "boomer",
+      "class": "other",
+      "excerpt": "SHOE (laces): lace straps still read as two cream diagonal bars across the n"
     }
   }
 }
