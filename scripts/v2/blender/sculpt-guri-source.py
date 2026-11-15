@@ -235,12 +235,18 @@ PATKA_LEVELS = [
 # Read off the front view (cloth edge at sheet row 214 on the centreline,
 # z 3.54; row 240 at the temple, z 3.41) and the profile (over the ear top at
 # z 3.31, behind the ear to the nape by z 3.00).
+# ★ THE EDGE SWEEPS DOWN THE TEMPLE to a point in front of each ear and only
+# then rises over it. A shallow arc that stopped above the ears left both
+# temples bare (two critics; visible face 25% of head width a side against
+# the sheet's 16%).
 PATKA_RIM = [
-    (0.0, 3.605),
-    (25.0, 3.590),
-    (50.0, 3.505),
-    (70.0, 3.390),
-    (88.0, 3.320),
+    (0.0, 3.585),
+    (22.0, 3.560),
+    (40.0, 3.470),
+    (54.0, 3.330),
+    (66.0, 3.215),     # the point in front of the ear
+    (78.0, 3.250),
+    (90.0, 3.320),     # up and over the ear's top
     (104.0, 3.300),
     (118.0, 3.160),
     (132.0, 2.990),

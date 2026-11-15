@@ -2705,60 +2705,65 @@
       "class": "other",
       "excerpt": "BODY: Tee ~9 narrow stripes vs ~5 wide, no dark collar trim. Still: grin x48"
     },
-    "big_lou:9f89aeac4251": {
+    "big_lou:c65146400f10": {
       "char": "big_lou",
       "class": "other",
-      "excerpt": "PATKA: Front edge is a shallow arc ending above the ears (guri-runtime-face-"
+      "excerpt": "BODY: Shoe toe caps end in a pinched point with a dark crease and a jagged n"
     },
-    "big_lou:210448a6e34b": {
+    "big_lou:bf672097d563": {
       "char": "big_lou",
       "class": "face-atlas",
-      "excerpt": "FACE: Brows are short blocky inward-slanted wedges in every expression, so g"
+      "excerpt": "FACE: Brows are thick blocks with a heavy squared inner end in every express"
     },
-    "big_lou:76be5d1cc7aa": {
+    "big_lou:eeef2a264efb": {
       "char": "big_lou",
       "class": "face-atlas",
-      "excerpt": "FACE: Neutral mouth decal slides onto the jaw side off-axis (guri-runtime-he"
+      "excerpt": "FACE: Neutral mouth decal is dragged along the jaw as a grey and pink streak"
     },
-    "big_lou:382b821b0fe0": {
-      "char": "big_lou",
-      "class": "other",
-      "excerpt": "BODY: Shoe toe caps are now closed but read as a cream pointed beak over a n"
-    },
-    "big_lou:f8ff49900d96": {
+    "big_lou:241978edf166": {
       "char": "big_lou",
       "class": "proportions",
-      "excerpt": "BODY: Legs are straight cylinders with a full-length gap (ankle daylight 21."
+      "excerpt": "BODY: Legs are separate columns with a full-length gap (ankle daylight 21.3 "
     },
-    "big_lou:ac3aa81ff6a3": {
+    "big_lou:eb7ea98e676a": {
       "char": "big_lou",
       "class": "proportions",
-      "excerpt": "BODY: Hands about half the sheet's size and forearms taper to thin wrists (g"
+      "excerpt": "BODY: Shorts render black (rgb 0,6,18 vs the sheet's 38,42,68), hug the thig"
     },
-    "big_lou:77fc7c2a9838": {
-      "char": "big_lou",
-      "class": "other",
-      "excerpt": "PATKA: Shell steps out from the skin as a hard rim at the temples and carrie"
-    },
-    "big_lou:3e2525193770": {
+    "big_lou:fa0a3213467d": {
       "char": "big_lou",
       "class": "face-atlas",
-      "excerpt": "FACE: Pointed almond eyes with grey-green sclera, no blush or freckles, skin"
+      "excerpt": "FACE: Eyes are tall pointed almonds with grey-green sclera, no blush or frec"
     },
-    "big_lou:aa724084411c": {
+    "big_lou:31bb7d465903": {
+      "char": "big_lou",
+      "class": "proportions",
+      "excerpt": "BODY: Hands are about half the sheet's size and forearms taper to thin wrist"
+    },
+    "big_lou:aeb0df4bd42a": {
       "char": "big_lou",
       "class": "other",
-      "excerpt": "BODY: Sleeve stripes are a blurred gradient with no cuff and the cream yoke "
+      "excerpt": "BODY: Sleeve stripes are a blurred gradient with no cuff, next to crisp body"
     },
-    "big_lou:0bcfccfed762": {
+    "big_lou:4b01ab833347": {
       "char": "big_lou",
       "class": "other",
-      "excerpt": "BODY: Shorts near-black with a boxy crotch tab (grin x460-600, y443-507); so"
+      "excerpt": "PATKA: Front edge is a straight line with a corner at each temple rather tha"
     },
-    "big_lou:6e50b975da03": {
+    "big_lou:15a8f1a3c25d": {
+      "char": "big_lou",
+      "class": "other",
+      "excerpt": "BODY: Each sock has a thin yellow ring at the top that is not on the sheet ("
+    },
+    "big_lou:8a8aeae71901": {
+      "char": "big_lou",
+      "class": "other",
+      "excerpt": "PATKA: Broad glossy highlight on dome and knot reads as a swim cap; no gathe"
+    },
+    "big_lou:fe4ec03b28a5": {
       "char": "big_lou",
       "class": "face-atlas",
-      "excerpt": "FACE: Profile is a flat vertical plane (guri-profile-review.png); add cheek "
+      "excerpt": "FACE: Profile is a near-flat plane with a small nose wedge (guri-profile-rev"
     }
   }
 }
