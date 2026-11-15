@@ -28,7 +28,7 @@ import { readdirSync, existsSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { readGlb } from './glb.mjs';
-import { checkAnimations, checkCharacter, checkContainer, checkSkeleton, makeReport } from './modelRules.mjs';
+import { checkAnimations, checkCharacter, checkContainer, checkSkeleton, makeReport, MAX_CHARACTER_BYTES } from './modelRules.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = join(here, '..', '..');
@@ -47,7 +47,6 @@ export const ASSET_DIR = join(repo, 'assets', 'v2');
  */
 export const RUNTIME_DIR = join(repo, 'public', 'v2', 'models');
 
-const MAX_CHARACTER_BYTES = 400 * 1024;
 
 /** Load the contract from the TypeScript source — its only home. */
 export async function loadContract() {

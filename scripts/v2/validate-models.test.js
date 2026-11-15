@@ -26,7 +26,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { readGlb, writeGlb, f32, triangleCount } from './glb.mjs';
-import { checkAnimations, checkCharacter, checkContainer, checkSkeleton, makeReport } from './modelRules.mjs';
+import { checkAnimations, checkCharacter, checkContainer, checkSkeleton, makeReport, MAX_CHARACTER_BYTES } from './modelRules.mjs';
 import { buildSkeletonGlb } from './export-skeleton.mjs';
 import { SAMPLE_IDS, buildProxyKidGlb, loadProxySpec } from './export-proxy-kid.mjs';
 
@@ -363,9 +363,10 @@ describe('the rules actually reject', () => {
   it('rejects a character over the size budget', () => {
     const path = join(tmp, 'kid_huge.glb');
     const json = { asset: { version: '2.0' }, scene: 0, scenes: [{ nodes: [] }], nodes: [] };
-    writeGlb(path, json, [f32(new Array(160_000).fill(1))]);
+    // Four bytes a float: just over the cap, whatever the cap is.
+    writeGlb(path, json, [f32(new Array(Math.ceil(MAX_CHARACTER_BYTES / 4) + 1024).fill(1))]);
     const report = makeReport();
-    checkContainer(readGlb(path), report, { maxBytes: 400 * 1024 });
+    checkContainer(readGlb(path), report, { maxBytes: MAX_CHARACTER_BYTES });
     expect(rules(report)).toContain('gltf.size');
   });
 });
@@ -511,7 +512,7 @@ describe('the stand-in characters this repo generates clear their own contract',
       await buildProxyKidGlb(id, path, spec);
       const gltf = readGlb(path);
       const report = makeReport();
-      checkContainer(gltf, report, { maxBytes: 400 * 1024 });
+      checkContainer(gltf, report, { maxBytes: MAX_CHARACTER_BYTES });
       checkSkeleton(gltf, contract, report);
       checkCharacter(gltf, contract, report, id);
       expect(failures(report).map((f) => `${id} ${f.rule}: ${f.message}`)).toEqual([]);
