@@ -237,8 +237,8 @@ MOP_RINGS = [
     (-24.0, (140.0, 180.0)),
 ]
 # (root, middle, tip) as multiples of the envelope, then the lobe's girth.
-MOP_REACH = (0.66, 1.00, 1.13)
-MOP_GIRTH = (0.175, 0.170, 0.075)
+MOP_REACH = (0.66, 1.00, 1.19)
+MOP_GIRTH = (0.175, 0.170, 0.050)
 # Every lobe's tip is tossed up and back a little, as the sheet's are.
 MOP_TOSS = (0.0, 0.070, 0.055)
 
@@ -252,9 +252,9 @@ HAIR_FRINGE_Z = 3.440      # the hairline, sheet row 300
 # to the brow on his right (visible face 8% of head width left of centre
 # against 23% right of it) and stops well above it on his left.
 FRINGE_LOBES = (
-    (((-0.050, -0.500, 3.620), (-0.200, -0.555, 3.430), (-0.330, -0.500, 3.275)), (0.130, 0.120, 0.050)),
-    (((-0.250, -0.460, 3.600), (-0.380, -0.480, 3.400), (-0.455, -0.400, 3.230)), (0.120, 0.110, 0.050)),
-    (((0.180, -0.500, 3.620), (0.300, -0.520, 3.490), (0.400, -0.440, 3.390)), (0.120, 0.100, 0.040)),
+    (((-0.100, -0.460, 3.500), (-0.160, -0.600, 3.660), (-0.240, -0.560, 3.840)), (0.130, 0.140, 0.060)),
+    (((-0.300, -0.400, 3.460), (-0.400, -0.520, 3.580), (-0.500, -0.460, 3.720)), (0.120, 0.125, 0.055)),
+    (((0.160, -0.460, 3.500), (0.220, -0.580, 3.640), (0.300, -0.520, 3.780)), (0.120, 0.120, 0.050)),
 )
 
 
@@ -312,7 +312,7 @@ def build_hair(builder: MeshBuilder, detail: int) -> None:
     # The lobes. LOD2 keeps the cap alone (a 40px head has no locks).
     if detail < 1:
         return
-    sides = 5 if detail >= 2 else 4
+    sides = 6 if detail >= 2 else 4
     index = 0
     for elevation, azimuths in MOP_RINGS:
         for azimuth in azimuths:
@@ -333,7 +333,7 @@ def build_hair(builder: MeshBuilder, detail: int) -> None:
                 builder.tube(spine, radii, 2, HAIR, "Head", sides, flip=mirror < 0)
 
     # The fringe: three fat lobes tumbling off the hairline onto the forehead,
-    # two swept to his right and one short on his left — the sheet's quiff is
+    # two swept UP to his right and one shorter on his left (the forehead stays open) — the sheet's quiff is
     # lopsided, and that lopsidedness is most of what makes the mop his.
     if detail >= 2:
         for spine, radii in FRINGE_LOBES:
@@ -461,30 +461,31 @@ def build_seated_legs(builder: MeshBuilder, detail: int) -> None:
             # palms 0.15ft inside them at contact.
             [(x + side * 0.012, -0.380, 1.480), (x + side * 0.015, -0.560, 1.462), (x + side * 0.016, -0.670, 1.410)],
             [0.142, 0.142, 0.124], 0, SKIN, "Root", sides)
-        # Bare shin dropping to the tucked ankle.
+        # ★ SHORT SHINS, BIG SHOES, A HIGH FOOTPLATE. Read off the sheet's front
+        # view: knees at z 1.45, sock tops 1.18, shoe tops 0.85, soles 0.56.
+        # The slot's first legs ran the shin to 0.64 over a shoe a tenth of a
+        # foot tall, which is what read as two long posts under a standing boy.
         builder.tube(
-            [(x + side * 0.015, -0.660, 1.450), (x + side * 0.018, -0.740, 1.000), (x + side * 0.018, -0.760, 0.640)],
-            [0.122, 0.112, 0.100], 0, SKIN, "Root", sides)
+            [(x + side * 0.015, -0.660, 1.450), (x + side * 0.018, -0.735, 1.200), (x + side * 0.018, -0.760, 0.920)],
+            [0.122, 0.116, 0.108], 0, SKIN, "Root", sides)
         if detail >= 2:
             # White crew socks with one teal band, proud of the shin.
             builder.tube(
-                [(x + side * 0.018, -0.746, 0.900), (x + side * 0.018, -0.760, 0.630)],
-                [0.116, 0.106], 1, WHITE, "Root", sides)
-        if detail >= 2:
+                [(x + side * 0.018, -0.742, 1.200), (x + side * 0.018, -0.760, 0.880)],
+                [0.124, 0.118], 1, WHITE, "Root", sides)
             builder.tube(
-                [(x + side * 0.018, -0.749, 0.840), (x + side * 0.018, -0.752, 0.790)],
-                [0.120, 0.118], 1, SOCK_BAND, "Root", sides)
-        # The sneaker: heel-to-toe lozenge on the footplate, sole below.
+                [(x + side * 0.018, -0.746, 1.140), (x + side * 0.018, -0.749, 1.090)],
+                [0.128, 0.127], 1, SOCK_BAND, "Root", sides)
+        # The sneaker: a chunky heel-to-toe lozenge, its toe rounded shut (a
+        # tube that ends at full girth shows as a flat disc from the front).
         builder.tube(
-            # The fourth point rounds the toe shut: a tube that ends at full
-            # girth shows its end as a flat disc from the front.
-            [(x + side * 0.018, -0.620, 0.520), (x + side * 0.018, -0.860, 0.500), (x + side * 0.018, -1.000, 0.480),
-             (x + side * 0.018, -1.050, 0.472)],
-            [0.112, 0.126, 0.090, 0.030], 1, SHOE, "Root", sides)
+            [(x + side * 0.018, -0.640, 0.760), (x + side * 0.018, -0.860, 0.740), (x + side * 0.018, -1.020, 0.700),
+             (x + side * 0.018, -1.075, 0.690)],
+            [0.135, 0.150, 0.110, 0.035], 1, SHOE, "Root", sides)
         if detail >= 1:
             builder.tube(
-                [(x + side * 0.018, -0.620, 0.435), (x + side * 0.018, -1.000, 0.415)],
-                [0.118, 0.092], 1, WHITE, "Root", sides)
+                [(x + side * 0.018, -0.640, 0.640), (x + side * 0.018, -1.020, 0.610)],
+                [0.140, 0.112], 1, WHITE, "Root", sides)
 
 
 # --- The sport chair (ROOT-weighted) -------------------------------------------
@@ -525,7 +526,7 @@ def build_chair(builder: MeshBuilder, detail: int) -> None:
     # 24 ring points at LOD0: at 16 a 0.76 wheel read as a faceted slab with
     # square-cut ends in the orthographic front view (critic, 2026-09-02).
     points = 24 if detail >= 2 else (10 if detail == 1 else 8)
-    sides = 6 if detail >= 2 else 4
+    sides = 5 if detail >= 2 else 4   # tyre and rim: a fifth of their triangles went to the hair
     for side in (1, -1):
         # Tire and team-blue push rim (the accent — the ONLY slot-3 geometry).
         builder.tube(wheel_ring(side, WHEEL_R, WHEEL_X, points),
@@ -569,14 +570,14 @@ def build_chair(builder: MeshBuilder, detail: int) -> None:
             # frame rail.
             builder.tube([(side * 0.300, 0.060, WHEEL_CENTER_Z), (side * WHEEL_X, 0.060, WHEEL_CENTER_Z)],
                          [0.046, 0.040], 1, METAL, "Root", 5)
-            builder.tube([(side * 0.300, -0.080, 1.400), (side * 0.340, -0.640, 0.300)],
+            builder.tube([(side * 0.300, -0.080, 1.400), (side * 0.340, -0.640, 0.480)],
                          [0.036, 0.036], 1, FRAME, "Root", 4)
             builder.tube([(side * 0.300, 0.020, 1.380), (side * 0.300, 0.060, WHEEL_CENTER_Z + 0.02)],
                          [0.034, 0.034], 1, FRAME, "Root", 4)
-            builder.tube([(side * 0.340, -0.640, 0.300), (side * 0.300, 0.060, WHEEL_CENTER_Z)],
+            builder.tube([(side * 0.340, -0.640, 0.480), (side * 0.300, 0.060, WHEEL_CENTER_Z)],
                          [0.030, 0.030], 1, FRAME, "Root", 4)
             if detail >= 2:
-                builder.tube([(side * 0.340, -0.640, 0.300), (side * 0.340, -0.660, 0.170)],
+                builder.tube([(side * 0.340, -0.640, 0.480), (side * 0.340, -0.660, 0.170)],
                              [0.028, 0.024], 1, FRAME, "Root", 4)
     # Seat sling, backrest and footplate.
     builder.ellipsoid((0.0, 0.020, 1.420), (0.315, 0.320, 0.058), 1, SEAT, "Root", 8, 4)
@@ -599,7 +600,7 @@ def build_chair(builder: MeshBuilder, detail: int) -> None:
         # board (continuity.lint), at 0.312 the overlap was one pixel and
         # still read loose, and at the old 0.385 it was buried inside the
         # sole (critic finding 3).
-        builder.ellipsoid((0.0, -0.800, 0.328), (0.300, 0.200, 0.038), 1, METAL, "Root", 6, 3)
+        builder.ellipsoid((0.0, -0.820, 0.505), (0.320, 0.220, 0.038), 1, FRAME, "Root", 6, 3)
 
 
 def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) -> None:

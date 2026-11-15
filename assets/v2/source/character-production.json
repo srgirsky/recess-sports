@@ -48,11 +48,11 @@
     },
     "wheelchair_ace": {
       "source": "dev-pilot.blend",
-      "sourceSha256": "196b439748575514dc76c403513be9562ef3ffffdf7e701c9593c623e61c8ff1",
+      "sourceSha256": "c3c58beaab32f45c49b2ee444414c09c4878066878aab0096f22bd7793805d5a",
       "concept": "dev-turnaround.png",
       "conceptSha256": "114667c3ebdd1a1c3d6ee206067a281d3adabd7da2f0eb2d4cac03fa025f4429",
       "output": "kid_wheelchair_ace.glb",
-      "outputSha256": "54be7e54e29593f3338941aa52cdee661669d52acc591c5865f3979794f0c9af",
+      "outputSha256": "4a2b937575c458dda1f443f6b6c16540f2701ef8c06f1752c3a4c1c193769b9e",
       "definingTraits": [
         "cambered racing chair",
         "orange push rims",
