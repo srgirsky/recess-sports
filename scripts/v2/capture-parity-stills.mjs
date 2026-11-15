@@ -236,7 +236,7 @@ async function main() {
   if (!existsSync(scopedIgnore)) writeFileSync(scopedIgnore, '*\n!.gitignore\n');
 
   const vite = await startVite();
-  const browser = await chromium.launch({ args: process.env.CI ? ['--no-sandbox'] : [] });
+  const browser = await chromium.launch({ args: ['--mute-audio', ...(process.env.CI ? ['--no-sandbox'] : [])] });
   try {
     const page = await browser.newPage({ viewport: VIEWPORT });
     await capturePlay(page);

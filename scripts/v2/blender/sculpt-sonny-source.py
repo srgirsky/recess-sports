@@ -251,8 +251,8 @@ FACE_SCALE = (
     (0.00, 1.00),
     (-0.20, 1.02),
     (-0.40, 1.06),
-    (-0.60, 1.12),
-    (-0.80, 1.19),
+    (-0.60, 1.20),
+    (-0.80, 1.34),   # jowls: his sheet's cheeks run wider than the cranium, down to the collar
     (-1.00, 1.00),
 )
 
@@ -461,10 +461,10 @@ TORSO_LEVELS = [
     (2.385, 0.590, 0.442, 0.006, "Spine1"),
     (2.500, 0.570, 0.400, 0.000, "Spine2"),  # yoke, holds the shoulder out
     (2.585, 0.480, 0.340, 0.000, "Spine2"),  # shoulder slope
-    (2.665, 0.430, 0.310, 0.000, "Spine2"),
-    (2.750, 0.372, 0.300, 0.000, "Spine2"),
-    (2.778, 0.384, 0.308, 0.000, "Spine2"),  # collar rib, proud
-    (2.800, 0.340, 0.286, 0.000, "Spine2"),  # neck hole
+    (2.665, 0.460, 0.320, 0.000, "Spine2"),
+    (2.715, 0.420, 0.304, 0.000, "Spine2"),
+    (2.740, 0.426, 0.308, 0.000, "Spine2"),  # collar rib, proud — tucked up under the jowls
+    (2.762, 0.380, 0.290, 0.000, "Spine2"),  # neck hole
 ]
 
 TEE_THIGH_SHARE = 0.85
@@ -579,15 +579,19 @@ ARM_STATIONS = [
     (0.298, 0.296, SHIRT, "Arm"),   # deltoid peak
     (0.330, 0.292, SHIRT, "Arm"),
     (ARM_SHOULDER_X, 0.270, SHIRT, "Arm"),
-    (0.560, 0.280, SHIRT, "Arm"),
-    (SLEEVE_HEM_X - 0.030, 0.272, SHIRT, "Arm"),
-    (SLEEVE_HEM_X, 0.282, SHIRT_DARK, "Arm"),          # cuff band, proud
-    (SLEEVE_HEM_X + 0.022, 0.272, SHIRT_DARK, "Arm"),
-    (SLEEVE_HEM_X + 0.036, 0.254, SHIRT_DARK, "Arm"),  # the cuff's underside
-    (SLEEVE_HEM_X + 0.050, 0.244, SKIN, "Arm"),        # the heavy bare arm
-    (ARM_ELBOW_X, 0.232, SKIN, "Arm"),
-    (1.100, 0.218, SKIN, "ForeArm"),
-    (1.240, 0.194, SKIN, "ForeArm"),
+    (0.560, 0.296, SHIRT, "Arm"),
+    (SLEEVE_HEM_X - 0.030, 0.292, SHIRT, "Arm"),
+    (SLEEVE_HEM_X, 0.302, SHIRT_DARK, "Arm"),          # cuff band, proud
+    (SLEEVE_HEM_X + 0.022, 0.292, SHIRT_DARK, "Arm"),
+    (SLEEVE_HEM_X + 0.036, 0.276, SHIRT_DARK, "Arm"),  # the cuff's underside
+    (SLEEVE_HEM_X + 0.050, 0.268, SKIN, "Arm"),        # the heavy bare arm
+    (ARM_ELBOW_X, 0.258, SKIN, "Arm"),
+    (1.100, 0.242, SKIN, "ForeArm"),
+    (1.240, 0.216, SKIN, "ForeArm"),
+    # ⚠️ THE HAND IS AS THICK AS THE BUNT ALLOWS. At 0.180 / 0.182 / 0.194 / 0.164
+    # the bat's shaft passed through it for the whole squared bunt
+    # (audit:batting --check: 73 shaft intersections); the fingers carry the
+    # extra size instead.
     (ARM_WRIST_X, 0.162, SKIN, "Hand"),
     (1.430, 0.164, SKIN, "Hand"),
     (1.500, 0.176, SKIN, "Hand"),   # knuckle line, the widest ring
@@ -617,7 +621,7 @@ SONNY_ARM = ArmSpec(
         # The tip width is the digit's own end cap, so a spine that stops at
         # 0.021 renders a blunt slab. The extra control point near the tip is
         # what rounds it.
-        finger_widths=(0.041, 0.039, 0.032, 0.012),
+        finger_widths=(0.050, 0.048, 0.040, 0.018),
         # ⚠️ FORWARD IS -y. The first cut of this authored the thumb at +0.062
         # to +0.132 — behind the hand, where the front board cannot see it and
         # no hand has one. Junebug's runs -0.056 to -0.100 for the same digit.
@@ -1189,13 +1193,18 @@ SONNY_SHOE = ShoeSpec(
     width_scale=SHOE_WIDTH_SCALE,
     height_scale=SHOE_HEIGHT_SCALE,
     sole_profile=shoe_floor_at,
-    toe_cap_edge=toe_cap_v_low,
-    heel_counter_edge=heel_counter_v_low,
+    # ★ NO HEEL COUNTER AND NO STRAPS ON HIS SHOE. His sheet draws one plain
+    # chunky cream sneaker; the counter and straps read in the game as dark
+    # bars across it (five critics: "navy slashes"), and so did the toe cap
+    # (rebuilt with it once: the bar came straight back). An edge of 2.0
+    # covers no station, so neither panel is built.
+    toe_cap_edge=lambda y_unscaled: 2.0,
+    heel_counter_edge=lambda y_unscaled: 2.0,
     collar=(0.020, 0.150),
-    straps=((-0.170, -0.120), (-0.065, -0.015)),
+    straps=(),
     strap_arc_min=0.30,
     heel_point=(0.286, 0.126 + 0.030),
-    toe_point=(-0.470, 0.050 + 0.052),
+    toe_point=(-0.480, 0.140),
     upper=SHOE,
     trim=SOLE,
     midsole=WHITE,
@@ -1380,17 +1389,35 @@ SHIN_ROWS = [
     (0.700, 0.296),
     (0.760, 0.280),
 ]
-SHIN_ANGLES = (-78.0, -44.0, 0.0, 44.0, 78.0)
-# The knee cap: a rounded boss on the bare knee, its top under the shorts cuff.
-# not-traceable: as above. (z, radius) up a vertical spine 0.15 ahead of the leg.
-KNEE_CAP = [
-    (0.740, 0.040),
-    (0.800, 0.160),
-    (0.890, 0.190),
-    (0.970, 0.160),
-    (1.020, 0.050),
+SHIN_ANGLES = (-120.0, -104.0, -54.0, 0.0, 54.0, 104.0, 120.0)
+# The knee cap: a domed plate over the front of the knee, overlapping the shin
+# plate's top edge and riding the SAME bone, so the two never part in a stride
+# (as two pieces — a ball on the knee above a plate on the shin — they did).
+# (z, radius, half-angle in degrees)
+# not-traceable: drawn on sonny-turnaround.png's front view between sheet rows
+# 694 and 738 (z 1.03 to 0.75); sized 0.05 proud of this script's own leg.
+KNEE_PLATE = [
+    (0.740, 0.300, 64.0),
+    (0.800, 0.326, 62.0),
+    (0.880, 0.338, 56.0),
+    (0.950, 0.322, 46.0),
+    (0.985, 0.290, 30.0),
 ]
-KNEE_FORWARD = -0.215
+KNEE_COLUMNS = (-1.0, -0.86, -0.42, 0.0, 0.42, 0.86, 1.0)
+
+# The shoulder caps: a pad over each shoulder at the protector's top corners,
+# on a cream piped base. (centre, radii) for the +x side.
+# not-traceable: drawn on sonny-turnaround.png, which shows them standing
+# proud of the tee from collar to sleeve seam on the front and 3/4 views.
+SHOULDER_CAP = ((0.450, -0.060, 2.640), (0.270, 0.270, 0.095))
+SHOULDER_PIPING = ((0.450, -0.060, 2.608), (0.296, 0.296, 0.060))
+
+
+def build_shoulder_cap(builder: MeshBuilder, side: int, detail: int) -> None:
+    (cx, cy, cz), radii = SHOULDER_PIPING
+    builder.ellipsoid((side * cx, cy, cz), radii, GEAR_SLOT, GEAR_TRIM, "Spine2", 8, 3)
+    (cx, cy, cz), radii = SHOULDER_CAP
+    builder.ellipsoid((side * cx, cy, cz), radii, GEAR_SLOT, GEAR, "Spine2", 8 if detail >= 2 else 5, 4 if detail >= 2 else 3)
 
 
 def build_shin_guard(builder: MeshBuilder, side: int, detail: int) -> None:
@@ -1403,7 +1430,7 @@ def build_shin_guard(builder: MeshBuilder, side: int, detail: int) -> None:
         row = []
         for index, angle in enumerate(angles):
             edge = index in (0, len(angles) - 1)
-            r = radius - (0.035 if edge else 0.0)
+            r = radius - (0.030 if edge else 0.0)
             phi = radians(angle)
             at = (centre_x + r * sin(phi), -r * 0.95 * cos(phi), z)
             row.append(builder.vertex(at, GEAR_TRIM if edge else GEAR, bone))
@@ -1411,8 +1438,24 @@ def build_shin_guard(builder: MeshBuilder, side: int, detail: int) -> None:
     for lower, upper in zip(rows, rows[1:]):
         for c in range(len(angles) - 1):
             builder.face((lower[c], lower[c + 1], upper[c + 1], upper[c]), GEAR_SLOT)
-    spine = [(side * leg_x(z), KNEE_FORWARD, z) for z, _ in KNEE_CAP]
-    builder.tube(spine, [r for _, r in KNEE_CAP], GEAR_SLOT, GEAR, bone, 6 if detail >= 2 else 4)
+    if detail < 2:
+        table, columns = [KNEE_PLATE[0], KNEE_PLATE[2], KNEE_PLATE[-1]], (-1.0, 0.0, 1.0)
+    else:
+        table, columns = KNEE_PLATE, KNEE_COLUMNS
+    rows = []
+    for z, radius, half in table:
+        centre_x = side * leg_x(z)
+        row = []
+        for u in columns:
+            edge = abs(u) >= 0.999
+            r = radius - (0.040 if edge else 0.0)
+            phi = radians(u * half)
+            at = (centre_x + r * sin(phi), -r * 0.98 * cos(phi), z)
+            row.append(builder.vertex(at, GEAR_TRIM if abs(u) >= 0.85 else GEAR, bone))
+        rows.append(row)
+    for lower, upper in zip(rows, rows[1:]):
+        for c in range(len(columns) - 1):
+            builder.face((lower[c], lower[c + 1], upper[c + 1], upper[c]), GEAR_SLOT)
 
 
 def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) -> None:
@@ -1460,6 +1503,7 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
             build_shin_guard(builder, side, detail)
         if detail >= 2:
             build_harness(builder, side)
+            build_shoulder_cap(builder, side, detail)
 
 
 def build_lod(name: str, armature: bpy.types.Object, segments: int, rings: int, detail: int) -> bpy.types.Object:

@@ -62,8 +62,8 @@ HAIR = rgba("2F3F7C")        # the patka's navy — on the hair slot, his own co
 HAIR_DARK = rgba("1F2B5A")   # the cloth's folds and the knot's underside
 GOLD = rgba("F29A00")        # tee stripe gold
 CREAM = rgba("FBE8CE")       # tee stripe cream
-SHORTS = rgba("232838")
-SHORTS_DARK = rgba("171B28")
+SHORTS = rgba("343C5E")
+SHORTS_DARK = rgba("232A44")
 SOCK = rgba("FFF6E4")
 SHOE = rgba("38405C")        # navy upper
 WHITE = rgba("F8E8C4")       # warm cupsole and toe - chroma clears the band saturation floor
@@ -235,12 +235,18 @@ PATKA_LEVELS = [
 # Read off the front view (cloth edge at sheet row 214 on the centreline,
 # z 3.54; row 240 at the temple, z 3.41) and the profile (over the ear top at
 # z 3.31, behind the ear to the nape by z 3.00).
+# ★ THE EDGE SWEEPS DOWN THE TEMPLE to a point in front of each ear and only
+# then rises over it. A shallow arc that stopped above the ears left both
+# temples bare (two critics; visible face 25% of head width a side against
+# the sheet's 16%).
 PATKA_RIM = [
-    (0.0, 3.605),
-    (25.0, 3.590),
-    (50.0, 3.505),
-    (70.0, 3.390),
-    (88.0, 3.320),
+    (0.0, 3.585),
+    (22.0, 3.575),
+    (40.0, 3.500),
+    (54.0, 3.345),
+    (66.0, 3.215),     # the point in front of the ear
+    (78.0, 3.250),
+    (90.0, 3.320),     # up and over the ear's top
     (104.0, 3.300),
     (118.0, 3.160),
     (132.0, 2.990),
@@ -483,10 +489,10 @@ ARM_STATIONS = [
     (0.780, 0.162, SKIN, "Arm"),
     (ARM_ELBOW_X, 0.154, SKIN, "ForeArm"),
     (1.150, 0.144, SKIN, "ForeArm"),
-    (1.300, 0.124, SKIN, "Hand"),
-    (1.400, 0.104, SKIN, "Hand"),
-    (1.460, 0.110, SKIN, "Hand"),   # knuckle line
-    (1.512, 0.088, SKIN, "Hand"),
+    (1.300, 0.136, SKIN, "Hand"),
+    (1.400, 0.120, SKIN, "Hand"),
+    (1.460, 0.128, SKIN, "Hand"),   # knuckle line
+    (1.512, 0.102, SKIN, "Hand"),
 ]
 
 GURI_ARM = ArmSpec(
@@ -502,7 +508,7 @@ GURI_ARM = ArmSpec(
         finger_root=1.502,
         finger_offsets=((-0.048, 0.0, 0.048), (-0.032, 0.032)),
         finger_lengths=((0.098, 0.112, 0.100), (0.104, 0.109)),
-        finger_widths=(0.035, 0.034, 0.028, 0.022),
+        finger_widths=(0.042, 0.041, 0.034, 0.026),
         # ⚠️ FORWARD IS -y.
         thumb_spine=(
             (1.390, -0.036, -0.017),
@@ -535,22 +541,22 @@ def inseam_half(z: float) -> float:
 LEG_STATIONS = [
     (1.700, 0.262, 1.08, SHORTS, "UpLeg"),
     (1.560, 0.266, 1.07, SHORTS, "UpLeg"),
-    (1.420, 0.272, 1.05, SHORTS, "UpLeg"),
-    (1.300, 0.280, 1.03, SHORTS, "UpLeg"),
-    (1.215, 0.286, 1.02, SHORTS_DARK, "UpLeg"),   # hem lip
-    (1.175, 0.250, 1.00, SKIN, "UpLeg"),          # the sturdy bare leg: the
-    (1.030, 0.244, 1.00, SKIN, "UpLeg"),          # sheet's thighs touch
-    (0.900, 0.234, 1.00, SKIN, "Leg"),
-    (0.760, 0.224, 1.00, SKIN, "Leg"),
-    (0.625, 0.212, 1.00, SKIN, "Leg"),
+    (1.420, 0.290, 1.05, SHORTS, "UpLeg"),
+    (1.300, 0.304, 1.03, SHORTS, "UpLeg"),
+    (1.215, 0.312, 1.02, SHORTS_DARK, "UpLeg"),   # hem lip
+    (1.175, 0.282, 1.00, SKIN, "UpLeg"),          # the sturdy bare leg: the
+    (1.030, 0.274, 1.00, SKIN, "UpLeg"),          # sheet's thighs touch
+    (0.900, 0.262, 1.00, SKIN, "Leg"),
+    (0.760, 0.250, 1.00, SKIN, "Leg"),
+    (0.625, 0.238, 1.00, SKIN, "Leg"),
     # ⚠️ The leg builder emits a slot-3 face only when BOTH rows of a pair
     # carry the team_mask colour — a single accent ring emits nothing and
     # the accent gate fires (the M_Accessory-dropped class).
-    (0.600, 0.220, 1.00, TEAM_MASK, "Leg"),       # sock roll-top — THE accent
-    (0.584, 0.218, 1.00, TEAM_MASK, "Leg"),
-    (0.568, 0.214, 1.00, SOCK, "Leg"),
-    (0.480, 0.204, 1.00, SOCK, "Leg"),
-    (0.400, 0.192, 1.00, SOCK, "Foot"),
+    (0.600, 0.246, 1.00, TEAM_MASK, "Leg"),       # sock roll-top — THE accent
+    (0.584, 0.244, 1.00, TEAM_MASK, "Leg"),
+    (0.568, 0.240, 1.00, SOCK, "Leg"),
+    (0.480, 0.228, 1.00, SOCK, "Leg"),
+    (0.400, 0.212, 1.00, SOCK, "Foot"),
     (0.300, 0.172, 0.98, SOCK, "Foot"),
     (0.180, 0.158, 0.95, SOCK, "Foot"),
 ]
@@ -688,7 +694,7 @@ GURI_SHOE = ShoeSpec(
     straps=((-0.170, -0.122), (-0.060, -0.012)),
     strap_arc_min=0.55,
     heel_point=(0.286, 0.106 + 0.025),
-    toe_point=(-0.470, 0.044 + 0.042),
+    toe_point=(-0.452, 0.150),   # a blunt nose at mid-height: low and far out, the end fan made a beak
     upper=SHOE,
     trim=SOLE,
     midsole=WHITE,

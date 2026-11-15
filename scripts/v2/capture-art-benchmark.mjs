@@ -25,7 +25,7 @@ async function main() {
     server.on('error', e => { clearTimeout(timer); fail(e); });
     server.on('exit', code => { clearTimeout(timer); fail(new Error(`Vite exited ${code}`)); });
   });
-  browser = await chromium.launch({ args: process.env.CI ? ['--no-sandbox'] : [] });
+  browser = await chromium.launch({ args: ['--mute-audio', ...(process.env.CI ? ['--no-sandbox'] : [])] });
   for (const [size, viewport] of Object.entries(VIEWPORTS)) for (const light of ['day', 'night']) {
     const id = `${size}-${light}`;
     if (profile && id !== profile) continue;

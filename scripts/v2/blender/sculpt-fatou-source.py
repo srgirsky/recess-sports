@@ -234,16 +234,18 @@ HIJAB_LEVELS = [
     (3.152, 0.452, 0.445, 0.030),
     (3.063, 0.393, 0.370, 0.030),
     (2.974, 0.312, 0.285, 0.024),
-    (2.929, 0.257, 0.238, 0.014),
-    (2.884, 0.226, 0.212, 0.012),
-    (2.862, 0.200, 0.196, 0.014),   # a gather: in
-    (2.840, 0.188, 0.190, 0.014),   # the pinch: a clear 2px under both neighbours
-    (2.812, 0.214, 0.206, 0.016),   # the cloth swells over the first gather
-    (2.770, 0.224, 0.212, 0.016),
-    (2.742, 0.206, 0.200, 0.014),   # a second, lower gather: in
-    (2.712, 0.228, 0.214, 0.010),
-    (2.660, 0.222, 0.208, 0.004),   # and the hem turns IN, under the tee's collar
-    (2.610, 0.200, 0.190, 0.000),
+    # ★ ONE DRAPE FROM JAW TO COLLAR. Two gathers and a hard pinch read as a
+    # light bulb on three stacked rings (four critics). The cloth now narrows
+    # once under the chin — still a clear 2px under both neighbours, which is
+    # what the head box needs — and falls gently outward onto the collar.
+    (2.929, 0.264, 0.246, 0.016),
+    (2.884, 0.240, 0.228, 0.014),
+    (2.840, 0.228, 0.220, 0.014),   # the one soft narrowing under the chin
+    (2.790, 0.238, 0.226, 0.014),
+    (2.740, 0.254, 0.234, 0.012),
+    (2.690, 0.272, 0.242, 0.008),   # one shallow fold line, where the drape meets the shoulders
+    (2.640, 0.284, 0.246, 0.004),
+    (2.610, 0.262, 0.230, 0.000),   # and the hem turns in, under the tee's collar
 ]
 
 # The face opening: the skin's own half-width by height on the front view, a
@@ -288,11 +290,11 @@ BAND_LOWER = [
 # first build as a hood partly because nothing on it folded. Each `in` row
 # above is 0.01-0.02 narrower than its neighbours and painted the fold tone.
 # Two, unevenly spaced: four even ones read as a ribbed turtleneck.
-HIJAB_FOLD_ROWS = (2.862, 2.742)
+HIJAB_FOLD_ROWS = (2.690,)
 # How far the crown may stand proud of the skull under it, ft. Left to the
 # outline ellipse the crown's front ran 0.10 ahead of the forehead and then
 # stepped back to the rim: a brim, on every still.
-HIJAB_CROWN_PROUD = 0.055
+HIJAB_CROWN_PROUD = 0.042
 
 # How far the rim stands proud of the face it frames, ft.
 HIJAB_RIM_PROUD = 0.032
@@ -432,7 +434,7 @@ def build_hijab(builder: MeshBuilder, detail: int) -> None:
                     lower_z = z0 + (z1 - z0) * (ax - x0) / (x1 - x0)
                     break
             lower_z = min(lower_z, upper_z - 0.01)
-            upper_row.append(builder.vertex((x, face_y(x, upper_z, HIJAB_RIM_PROUD - 0.012), upper_z), BAND, "Head"))
+            upper_row.append(builder.vertex((x, face_y(x, upper_z, HIJAB_RIM_PROUD - 0.002), upper_z), BAND, "Head"))
             lower_row.append(builder.vertex((x, face_y(x, lower_z, 0.016), lower_z), BAND, "Head"))
         for column in range(columns - 1):
             builder.face((lower_row[column], lower_row[column + 1], upper_row[column + 1], upper_row[column]), 2)
@@ -808,7 +810,7 @@ FATOU_SHOE = ShoeSpec(
     straps=((-0.170, -0.122), (-0.060, -0.012)),
     strap_arc_min=0.55,
     heel_point=(0.286, 0.106 + 0.025),
-    toe_point=(-0.470, 0.044 + 0.042),
+    toe_point=(-0.452, 0.150),   # a blunt nose at mid-height: low and far out, the end fan made a beak
     upper=SHOE,
     trim=SOLE,
     midsole=WHITE,

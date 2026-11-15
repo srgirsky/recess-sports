@@ -63,11 +63,11 @@
     },
     "big_lou": {
       "source": "guri-pilot.blend",
-      "sourceSha256": "45cd3bc7d9dcd381470c704a46de940455ced5c10dece22583d636a12479bd96",
+      "sourceSha256": "72c15d3014e9b0b3458acb54364c727121084d6157ef486b4b546ca0f0192181",
       "concept": "guri-turnaround.png",
       "conceptSha256": "19328d11d53e58c3a870ed80ca930b91a4ae5617fb301d0744a328935d6e9eb4",
       "output": "kid_big_lou.glb",
-      "outputSha256": "49227dfd24e0fccb232029f409392285bf9bb5ed1d7eeb61a7644088a4c6d7f7",
+      "outputSha256": "2a9884ead062cd68079fe45ee9055b02540dbfd94d47e2c6f443bd21b46c7af1",
       "definingTraits": [
         "navy patka with a topknot",
         "tallest boy, broad and gentle",
@@ -78,11 +78,11 @@
     },
     "tank": {
       "source": "sonny-pilot.blend",
-      "sourceSha256": "0a635e692fe1ce608fa5e31b60f9e93373b8e12cd7a8531544eae395bb0ccd36",
+      "sourceSha256": "77164cc8ebf1e18acd11d2790256230f7d6143b71208ae4405cd2ac039d6009c",
       "concept": "sonny-turnaround.png",
       "conceptSha256": "ad26d51d48ad7f02a2a3e9ad1aa8b0930527b0f2945c0fdee012819a76c435c2",
       "output": "kid_tank.glb",
-      "outputSha256": "9b29de4147bf813d0eaa37fceff61058dabb244f31ed9f11b74fb7533c884b36",
+      "outputSha256": "c51bc5eb031f79894c6bcccf530428cda859d58bf3d331d3232dd6b670feaf6d",
       "definingTraits": [
         "low wide silhouette",
         "backwards skull cap",
@@ -183,11 +183,11 @@
     },
     "zippy": {
       "source": "fatou-pilot.blend",
-      "sourceSha256": "dcad110fd4277de37f1c165a45ec03534929948940256634dc4fde742cc1c3e5",
+      "sourceSha256": "21e6dec9d36b4723aa75f236fe0fb55fad04b24c879e2101e974bc336d86e7db",
       "concept": "fatou-turnaround.png",
       "conceptSha256": "6ee0f2242bdf5d42f4a73ff658fe7037e203753858acfa6934f389bc29a0e9f4",
       "output": "kid_zippy.glb",
-      "outputSha256": "40b3a27759ffa93e6ec6691c066116c4cf39aeda74346c6b484b90951f9fd164",
+      "outputSha256": "279c321ea228cfc39dcfc76d4f4c303513a60f14dee5b9aa597201370cd0dc11",
       "definingTraits": [
         "teal sport hijab",
         "deep brown skin",
