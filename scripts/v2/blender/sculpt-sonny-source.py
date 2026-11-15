@@ -251,8 +251,8 @@ FACE_SCALE = (
     (0.00, 1.00),
     (-0.20, 1.02),
     (-0.40, 1.06),
-    (-0.60, 1.12),
-    (-0.80, 1.19),
+    (-0.60, 1.20),
+    (-0.80, 1.34),   # jowls: his sheet's cheeks run wider than the cranium, down to the collar
     (-1.00, 1.00),
 )
 
@@ -461,10 +461,10 @@ TORSO_LEVELS = [
     (2.385, 0.590, 0.442, 0.006, "Spine1"),
     (2.500, 0.570, 0.400, 0.000, "Spine2"),  # yoke, holds the shoulder out
     (2.585, 0.480, 0.340, 0.000, "Spine2"),  # shoulder slope
-    (2.665, 0.430, 0.310, 0.000, "Spine2"),
-    (2.750, 0.372, 0.300, 0.000, "Spine2"),
-    (2.778, 0.384, 0.308, 0.000, "Spine2"),  # collar rib, proud
-    (2.800, 0.340, 0.286, 0.000, "Spine2"),  # neck hole
+    (2.665, 0.460, 0.320, 0.000, "Spine2"),
+    (2.715, 0.420, 0.304, 0.000, "Spine2"),
+    (2.740, 0.426, 0.308, 0.000, "Spine2"),  # collar rib, proud — tucked up under the jowls
+    (2.762, 0.380, 0.290, 0.000, "Spine2"),  # neck hole
 ]
 
 TEE_THIGH_SHARE = 0.85
@@ -617,7 +617,7 @@ SONNY_ARM = ArmSpec(
         # The tip width is the digit's own end cap, so a spine that stops at
         # 0.021 renders a blunt slab. The extra control point near the tip is
         # what rounds it.
-        finger_widths=(0.041, 0.039, 0.032, 0.012),
+        finger_widths=(0.050, 0.048, 0.040, 0.018),
         # ⚠️ FORWARD IS -y. The first cut of this authored the thumb at +0.062
         # to +0.132 — behind the hand, where the front board cannot see it and
         # no hand has one. Junebug's runs -0.056 to -0.100 for the same digit.
@@ -1189,13 +1189,18 @@ SONNY_SHOE = ShoeSpec(
     width_scale=SHOE_WIDTH_SCALE,
     height_scale=SHOE_HEIGHT_SCALE,
     sole_profile=shoe_floor_at,
-    toe_cap_edge=toe_cap_v_low,
-    heel_counter_edge=heel_counter_v_low,
+    # ★ NO HEEL COUNTER AND NO STRAPS ON HIS SHOE. His sheet draws one plain
+    # chunky cream sneaker; the counter and straps read in the game as dark
+    # bars across it (five critics: "navy slashes"), and so did the toe cap
+    # (rebuilt with it once: the bar came straight back). An edge of 2.0
+    # covers no station, so neither panel is built.
+    toe_cap_edge=lambda y_unscaled: 2.0,
+    heel_counter_edge=lambda y_unscaled: 2.0,
     collar=(0.020, 0.150),
-    straps=((-0.170, -0.120), (-0.065, -0.015)),
+    straps=(),
     strap_arc_min=0.30,
     heel_point=(0.286, 0.126 + 0.030),
-    toe_point=(-0.470, 0.050 + 0.052),
+    toe_point=(-0.480, 0.140),
     upper=SHOE,
     trim=SOLE,
     midsole=WHITE,
@@ -1380,7 +1385,7 @@ SHIN_ROWS = [
     (0.700, 0.296),
     (0.760, 0.280),
 ]
-SHIN_ANGLES = (-80.0, -70.0, -36.0, 0.0, 36.0, 70.0, 80.0)
+SHIN_ANGLES = (-120.0, -104.0, -54.0, 0.0, 54.0, 104.0, 120.0)
 # The knee cap: a domed plate over the front of the knee, overlapping the shin
 # plate's top edge and riding the SAME bone, so the two never part in a stride
 # (as two pieces — a ball on the knee above a plate on the shin — they did).
@@ -1400,15 +1405,15 @@ KNEE_COLUMNS = (-1.0, -0.86, -0.42, 0.0, 0.42, 0.86, 1.0)
 # on a cream piped base. (centre, radii) for the +x side.
 # not-traceable: drawn on sonny-turnaround.png, which shows them standing
 # proud of the tee from collar to sleeve seam on the front and 3/4 views.
-SHOULDER_CAP = ((0.415, -0.070, 2.630), (0.205, 0.215, 0.078))
-SHOULDER_PIPING = ((0.415, -0.070, 2.606), (0.226, 0.236, 0.050))
+SHOULDER_CAP = ((0.450, -0.060, 2.640), (0.270, 0.270, 0.095))
+SHOULDER_PIPING = ((0.450, -0.060, 2.608), (0.296, 0.296, 0.060))
 
 
 def build_shoulder_cap(builder: MeshBuilder, side: int, detail: int) -> None:
     (cx, cy, cz), radii = SHOULDER_PIPING
-    builder.ellipsoid((side * cx, cy, cz), radii, GEAR_SLOT, GEAR_TRIM, "Spine2", 6, 3)
+    builder.ellipsoid((side * cx, cy, cz), radii, GEAR_SLOT, GEAR_TRIM, "Spine2", 8, 3)
     (cx, cy, cz), radii = SHOULDER_CAP
-    builder.ellipsoid((side * cx, cy, cz), radii, GEAR_SLOT, GEAR, "Spine2", 6 if detail >= 2 else 5, 3)
+    builder.ellipsoid((side * cx, cy, cz), radii, GEAR_SLOT, GEAR, "Spine2", 8 if detail >= 2 else 5, 4 if detail >= 2 else 3)
 
 
 def build_shin_guard(builder: MeshBuilder, side: int, detail: int) -> None:

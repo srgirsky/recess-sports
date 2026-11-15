@@ -2710,80 +2710,75 @@
       "class": "face-atlas",
       "excerpt": "FACE: Profile is still a flat vertical plane (guri-profile-review.png, guri-"
     },
-    "tank:f5474bbb3b93": {
+    "tank:58e1ed7515a8": {
       "char": "tank",
       "class": "other",
-      "excerpt": "GEAR: Shoulder caps now exist but are small hex chips about a quarter of the"
+      "excerpt": "BODY: Torso is about a quarter too shallow in profile and flat-backed: depth"
     },
-    "tank:57dc3b817b87": {
-      "char": "tank",
-      "class": "other",
-      "excerpt": "GEAR: Shin guard is a front half-shell: plain dark band in front (grin y558-"
-    },
-    "tank:8f03eabbecdc": {
+    "tank:71d2a5463555": {
       "char": "tank",
       "class": "proportions",
-      "excerpt": "BODY: Head is a flat-sided box with no cheeks or jowls on a visible purple n"
+      "excerpt": "BODY: Head is a flat-sided box with a flat jaw and no cheeks or jowls, on a "
     },
-    "tank:81f3f79e5295": {
+    "tank:989fb8415785": {
       "char": "tank",
       "class": "proportions",
-      "excerpt": "BODY: Forearms taper to hands smaller than the wrist with three spike finger"
+      "excerpt": "GEAR: Shin guards are a plain dark band (grin y575-598) with no piping, plat"
     },
-    "tank:6ab909cd1d8d": {
+    "tank:d71ad4cfea48": {
       "char": "tank",
       "class": "other",
-      "excerpt": "GEAR: Shoes carry navy slashes and triangular toe notches (hero x547-580, y5"
+      "excerpt": "GEAR: Cap front edge is a ruler-straight cut that overhangs the skull as a l"
     },
-    "tank:c1eef8adca3d": {
-      "char": "tank",
-      "class": "other",
-      "excerpt": "GEAR: Tee hem throws a pointed purple tongue over the shorts at swing contac"
-    },
-    "tank:2ba557094b62": {
-      "char": "tank",
-      "class": "other",
-      "excerpt": "GEAR: Cap hem is a straight horizontal cut flaring past the skull as a lip ("
-    },
-    "tank:6d9e82671be1": {
+    "tank:36d8b7a038d5": {
       "char": "tank",
       "class": "proportions",
-      "excerpt": "GEAR: Chest plate ridges are blurred shading stripes with no segment breaks;"
+      "excerpt": "BODY: Hands are narrower than the wrist with three thin spike fingers (hero "
     },
-    "tank:df803fbaa73d": {
+    "tank:388e6f5aa56e": {
       "char": "tank",
-      "class": "proportions",
-      "excerpt": "GEAR: Knee caps are attached now but are unpiped lumps no wider than the leg"
+      "class": "other",
+      "excerpt": "GEAR: Swing contact breaks the gear: an angular skin wedge crosses the plate"
     },
-    "tank:204eaa9e7678": {
+    "tank:da98ad030d6c": {
+      "char": "tank",
+      "class": "other",
+      "excerpt": "GEAR: Shoes: toe slits are closed (cleared), but each toe comes to a creased"
+    },
+    "tank:7ca2e9913950": {
       "char": "tank",
       "class": "face-atlas",
-      "excerpt": "FACE: Brows are thin black arcs (grin x488-513 and x552-577, y239-248); the "
+      "excerpt": "FACE: Brows are thin black arcs (grin x488-513 and x552-577, y239-248) and t"
     },
-    "tank:6403c50a24b2": {
+    "tank:f7434c36e4fc": {
+      "char": "tank",
+      "class": "other",
+      "excerpt": "GEAR: Shoulder caps are about half the sheet's pad with cream on the undersi"
+    },
+    "tank:791fcd346fea": {
+      "char": "tank",
+      "class": "other",
+      "excerpt": "GEAR: Chest plate ridges are soft shading bands with no segment breaks; pipi"
+    },
+    "tank:689ebc6c4abc": {
+      "char": "tank",
+      "class": "face-atlas",
+      "excerpt": "FACE: Tongue and cheer are near-identical at hero size (tongue mouth x515-54"
+    },
+    "tank:000b51405e51": {
       "char": "tank",
       "class": "face-atlas",
       "excerpt": "FACE: Skin is saturated orange against the sheet's warm brown and the face p"
     },
-    "tank:01ea753c2d1e": {
-      "char": "tank",
-      "class": "face-atlas",
-      "excerpt": "FACE: Tongue is a few pixels and close to cheer at hero size (sonny-runtime-"
-    },
-    "tank:027ef7d9351a": {
+    "tank:5dc5439a4472": {
       "char": "tank",
       "class": "other",
-      "excerpt": "GEAR: Shorts lack the cream side stripe, and bare thigh shows above the guar"
+      "excerpt": "GEAR: Shorts lack the cream side stripe (carried)."
     },
-    "tank:e38f64e5967a": {
-      "char": "tank",
-      "class": "other",
-      "excerpt": "BODY: Torso is a straight-sided tube from the front and flat-backed in profi"
-    },
-    "tank:e42405b1c5f9": {
+    "tank:dd516c627952": {
       "char": "tank",
       "class": "evidence",
-      "excerpt": "GEAR: Back harness is still shown in no capture or board (carried, unverifie"
+      "excerpt": "GEAR: Back harness is shown by no capture or board; only one strap edge is v"
     }
   }
 }
