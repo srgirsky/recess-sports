@@ -360,6 +360,17 @@ FRINGE_LOCKS = [
 ]
 
 
+# ★ THE LOCKS DRAW NO CONTOUR OF THEIR OWN. The runtime outline is an inverted
+# hull per surface, so forty separate locks drew forty outlines, and three
+# critics in a row read the mop at hero scale as "faceted plates, each with
+# its own contour line: a pine cone". The hull's width is scaled by the vertex
+# colour's alpha (`materials/outline.ts`; the arm and leg creases already use
+# it), so the locks carry a low alpha and the mop is outlined once, by the
+# scalp under them.
+LOCK_OUTLINE_ALPHA = 0.20
+LOCK_HAIR = (HAIR[0], HAIR[1], HAIR[2], LOCK_OUTLINE_ALPHA)
+
+
 def cap_ring_point(azimuth_deg: float, z: float, share: float, side: int):
     table = CAP_LEVELS
     row = table[0][1:] if z > table[0][0] else table[-1][1:]
@@ -393,12 +404,12 @@ def build_hair(builder: MeshBuilder, detail: int) -> None:
                 girth = [g * wobble for g in LOCK_GIRTH]
                 if detail == 1:
                     spine, girth = spine[:2] + spine[3:], girth[:2] + girth[3:]
-                builder.tube(spine, girth, 2, HAIR, "Head", 5 if detail >= 2 else 4, flip=side < 0)
+                builder.tube(spine, girth, 2, LOCK_HAIR, "Head", 5 if detail >= 2 else 4, flip=side < 0)
     if detail >= 2:
         for spine in CROWN_LOCKS:
             builder.tube(list(spine), [0.130, 0.110, 0.018], 2, HAIR, "Head", sides)
         for spine in FRINGE_LOCKS:
-            builder.tube(list(spine), [0.095, 0.105, 0.020], 2, HAIR, "Head", 5, flip=spine[0][0] < 0)
+            builder.tube(list(spine), [0.095, 0.105, 0.020], 2, LOCK_HAIR, "Head", 5, flip=spine[0][0] < 0)
 
 
 # --- The glasses ---------------------------------------------------------------
