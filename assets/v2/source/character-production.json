@@ -318,11 +318,11 @@
     },
     "gizmo": {
       "source": "gizmo-pilot.blend",
-      "sourceSha256": "3f6001675c2e21f48be0f7e7c860ca072e7cf84ab85642829ca2e5363eb69a5f",
+      "sourceSha256": "172491ffa05aca04f52f2e2ac36a0c39dfbbf7eede599a0b98c29aaf88f88493",
       "concept": "gizmo-turnaround.png",
       "conceptSha256": "3d133b007e6af158eea9ef446fe962af27d95a9828d922a6a96f66a65c0e1400",
       "output": "kid_gizmo.glb",
-      "outputSha256": "33a33ceaff47f3a12dd5aeb92607374e726ceb4fa8fdbbd7864b8b69c5e22a54",
+      "outputSha256": "017765bed0eef93ed64390717183551b951557623b14646dc47e9ebf0f60b420",
       "definingTraits": [
         "round wire glasses",
         "brown spiky mop",
