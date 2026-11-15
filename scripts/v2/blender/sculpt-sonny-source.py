@@ -588,10 +588,14 @@ ARM_STATIONS = [
     (ARM_ELBOW_X, 0.258, SKIN, "Arm"),
     (1.100, 0.242, SKIN, "ForeArm"),
     (1.240, 0.216, SKIN, "ForeArm"),
-    (ARM_WRIST_X, 0.180, SKIN, "Hand"),
-    (1.430, 0.182, SKIN, "Hand"),
-    (1.500, 0.194, SKIN, "Hand"),   # knuckle line, the widest ring
-    (1.556, 0.164, SKIN, "Hand"),
+    # ⚠️ THE HAND IS AS THICK AS THE BUNT ALLOWS. At 0.180 / 0.182 / 0.194 / 0.164
+    # the bat's shaft passed through it for the whole squared bunt
+    # (audit:batting --check: 73 shaft intersections); the fingers carry the
+    # extra size instead.
+    (ARM_WRIST_X, 0.162, SKIN, "Hand"),
+    (1.430, 0.164, SKIN, "Hand"),
+    (1.500, 0.176, SKIN, "Hand"),   # knuckle line, the widest ring
+    (1.556, 0.150, SKIN, "Hand"),
 ]
 
 
