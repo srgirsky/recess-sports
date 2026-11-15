@@ -2580,136 +2580,6 @@
       "class": "face-atlas",
       "excerpt": "Eyes are almond with pointed corners and a dull off-white sclera (187,188,16"
     },
-    "zippy:87e551983d72": {
-      "char": "zippy",
-      "class": "other",
-      "excerpt": "HIJAB: The neck pinch makes a light-bulb. The wrap narrows hard under the ch"
-    },
-    "zippy:079f97eb9c02": {
-      "char": "zippy",
-      "class": "other",
-      "excerpt": "HIJAB: Neck gathers still read as stacked horizontal rings (3 ridges), i.e. "
-    },
-    "zippy:95ea05b61b0d": {
-      "char": "zippy",
-      "class": "other",
-      "excerpt": "HIJAB: Crown lip in three-quarter and profile. From the front the crown is n"
-    },
-    "zippy:fe1166de6b74": {
-      "char": "zippy",
-      "class": "other",
-      "excerpt": "HIJAB: Skin-coloured dot on the forehead band, her left side, about 5px, in "
-    },
-    "zippy:81a7dd3a78cc": {
-      "char": "zippy",
-      "class": "other",
-      "excerpt": "HIJAB: A sliver of bare skin remains between the band's outer end and the cl"
-    },
-    "zippy:2c3d56d009bc": {
-      "char": "zippy",
-      "class": "material-light",
-      "excerpt": "HIJAB: Cloth has no drape. The surface is a uniform glossy shell; the sheet "
-    },
-    "zippy:313e59c01f58": {
-      "char": "zippy",
-      "class": "other",
-      "excerpt": "HIJAB: The band's lower edge is a faceted trapezoid from the front (straight"
-    },
-    "zippy:74aec81cacfa": {
-      "char": "zippy",
-      "class": "decal-not-form",
-      "excerpt": "BODY: Shoes. Each toe has a large cream cap with jagged navy triangular wedg"
-    },
-    "zippy:c4de8d0d09a8": {
-      "char": "zippy",
-      "class": "material-light",
-      "excerpt": "BODY: Face is a different girl from the sheet. Skin renders orange-brown whe"
-    },
-    "zippy:762e73d5d4c5": {
-      "char": "zippy",
-      "class": "hems-cuffs",
-      "excerpt": "BODY: Shorts are a navy ring with a cream bottom hem; the dolphin cut (white"
-    },
-    "zippy:85d4bf9b3752": {
-      "char": "zippy",
-      "class": "proportions",
-      "excerpt": "BODY: Limbs are thin near-parallel tubes; the sheet's arms and legs are thic"
-    },
-    "zippy:5b56e9b7ba84": {
-      "char": "zippy",
-      "class": "hems-cuffs",
-      "excerpt": "BODY: Tee has roughly nine narrow stripes where the sheet has about five wid"
-    },
-    "big_lou:a3bf2bd6caba": {
-      "char": "big_lou",
-      "class": "other",
-      "excerpt": "PATKA: Front edge is a shallow arc that stops at the temples above the ears "
-    },
-    "big_lou:99dffd4763f8": {
-      "char": "big_lou",
-      "class": "other",
-      "excerpt": "BODY: Shoe toes are ragged navy V-notches on a cream blob with no toe cap, l"
-    },
-    "big_lou:a28eebe873b5": {
-      "char": "big_lou",
-      "class": "face-atlas",
-      "excerpt": "FACE: Brows are short blocky wedges slanted inward in every expression (face"
-    },
-    "big_lou:9ffc15c48f5b": {
-      "char": "big_lou",
-      "class": "face-atlas",
-      "excerpt": "FACE: Face decal slides off-axis - in guri-runtime-hero.png the mouth sits o"
-    },
-    "big_lou:855b3d400b8f": {
-      "char": "big_lou",
-      "class": "proportions",
-      "excerpt": "BODY: Legs still leave a full-length gap (measured ankle daylight 21.3 vs 0,"
-    },
-    "big_lou:4cc424f50fec": {
-      "char": "big_lou",
-      "class": "proportions",
-      "excerpt": "BODY: Hands are about half the sheet's size and forearms taper to thin wrist"
-    },
-    "big_lou:f6e4e2f9e246": {
-      "char": "big_lou",
-      "class": "other",
-      "excerpt": "PATKA: The shell still steps out from the skin as a hard corner at each temp"
-    },
-    "big_lou:045f43bff50d": {
-      "char": "big_lou",
-      "class": "material-light",
-      "excerpt": "PATKA: Surface is glossy with a broad highlight and no wrap line (grin x535-"
-    },
-    "big_lou:8bc3fd92b494": {
-      "char": "big_lou",
-      "class": "face-atlas",
-      "excerpt": "FACE: Eyes are pointed almonds with grey-green sclera (faces x487-515, x540-"
-    },
-    "big_lou:e84b041b49c4": {
-      "char": "big_lou",
-      "class": "hems-cuffs",
-      "excerpt": "BODY: Sleeve stripes are a blurred gradient with no cuff (grin x443-473, y31"
-    },
-    "big_lou:a5a93afcbc4a": {
-      "char": "big_lou",
-      "class": "other",
-      "excerpt": "BODY: Tee's cream yoke is too deep (grin x475-585, y285-330). Reduce it to a"
-    },
-    "big_lou:fd2a8e25901f": {
-      "char": "big_lou",
-      "class": "material-light",
-      "excerpt": "BODY: Shorts render near-black in game (grin x460-600, y443-507) with a boxy"
-    },
-    "big_lou:367296c5c646": {
-      "char": "big_lou",
-      "class": "hems-cuffs",
-      "excerpt": "BODY: Socks still carry a yellow top ring (grin y573; hero y575-585) that is"
-    },
-    "big_lou:a9ed2ae83ccc": {
-      "char": "big_lou",
-      "class": "face-atlas",
-      "excerpt": "FACE: Profile is still a flat vertical plane (guri-profile-review.png, guri-"
-    },
     "tank:58e1ed7515a8": {
       "char": "tank",
       "class": "other",
@@ -2779,6 +2649,116 @@
       "char": "tank",
       "class": "evidence",
       "excerpt": "GEAR: Back harness is shown by no capture or board; only one strap edge is v"
+    },
+    "zippy:bf914983c32b": {
+      "char": "zippy",
+      "class": "other",
+      "excerpt": "HIJAB: Neck pinch under the chin makes a light bulb; start the drape at chin"
+    },
+    "zippy:6267740afc98": {
+      "char": "zippy",
+      "class": "other",
+      "excerpt": "HIJAB: Neck gathers are three stacked horizontal rings; replace with one or "
+    },
+    "zippy:f40cdf611329": {
+      "char": "zippy",
+      "class": "other",
+      "excerpt": "HIJAB: Crown front overhangs the band as a lip with a hard corner in 3/4; pu"
+    },
+    "zippy:c24f691cc3bc": {
+      "char": "zippy",
+      "class": "other",
+      "excerpt": "HIJAB: Skin-coloured dot on the band at her left, ~5px, in every front still"
+    },
+    "zippy:3b7742bf9e4d": {
+      "char": "zippy",
+      "class": "other",
+      "excerpt": "BODY: Shoes: closed ends now, but each ends in a big cream pointed toe cap t"
+    },
+    "zippy:71e804f9739a": {
+      "char": "zippy",
+      "class": "other",
+      "excerpt": "HIJAB: Cloth is a uniform glossy shell with no temple-to-chin folds; add sha"
+    },
+    "zippy:6caed2462ba6": {
+      "char": "zippy",
+      "class": "other",
+      "excerpt": "HIJAB: Temple skin sliver between band end and rim in 3/4 (hero x576-585 y19"
+    },
+    "zippy:f25a04385e49": {
+      "char": "zippy",
+      "class": "face-atlas",
+      "excerpt": "FACE: Different girl from the sheet: orange-brown skin vs deep cool brown, s"
+    },
+    "zippy:a55e2bbdeea0": {
+      "char": "zippy",
+      "class": "other",
+      "excerpt": "BODY: Shorts are a navy ring with cream hem only; no dolphin piping, dark ma"
+    },
+    "zippy:2a6f7e34ec37": {
+      "char": "zippy",
+      "class": "proportions",
+      "excerpt": "BODY: Limbs thin near-parallel tubes with leg gap (ankle daylight 27.3 vs 11"
+    },
+    "zippy:6171fc9f6d76": {
+      "char": "zippy",
+      "class": "other",
+      "excerpt": "BODY: Tee ~9 narrow stripes vs ~5 wide, no dark collar trim. Still: grin x48"
+    },
+    "big_lou:9f89aeac4251": {
+      "char": "big_lou",
+      "class": "other",
+      "excerpt": "PATKA: Front edge is a shallow arc ending above the ears (guri-runtime-face-"
+    },
+    "big_lou:210448a6e34b": {
+      "char": "big_lou",
+      "class": "face-atlas",
+      "excerpt": "FACE: Brows are short blocky inward-slanted wedges in every expression, so g"
+    },
+    "big_lou:76be5d1cc7aa": {
+      "char": "big_lou",
+      "class": "face-atlas",
+      "excerpt": "FACE: Neutral mouth decal slides onto the jaw side off-axis (guri-runtime-he"
+    },
+    "big_lou:382b821b0fe0": {
+      "char": "big_lou",
+      "class": "other",
+      "excerpt": "BODY: Shoe toe caps are now closed but read as a cream pointed beak over a n"
+    },
+    "big_lou:f8ff49900d96": {
+      "char": "big_lou",
+      "class": "proportions",
+      "excerpt": "BODY: Legs are straight cylinders with a full-length gap (ankle daylight 21."
+    },
+    "big_lou:ac3aa81ff6a3": {
+      "char": "big_lou",
+      "class": "proportions",
+      "excerpt": "BODY: Hands about half the sheet's size and forearms taper to thin wrists (g"
+    },
+    "big_lou:77fc7c2a9838": {
+      "char": "big_lou",
+      "class": "other",
+      "excerpt": "PATKA: Shell steps out from the skin as a hard rim at the temples and carrie"
+    },
+    "big_lou:3e2525193770": {
+      "char": "big_lou",
+      "class": "face-atlas",
+      "excerpt": "FACE: Pointed almond eyes with grey-green sclera, no blush or freckles, skin"
+    },
+    "big_lou:aa724084411c": {
+      "char": "big_lou",
+      "class": "other",
+      "excerpt": "BODY: Sleeve stripes are a blurred gradient with no cuff and the cream yoke "
+    },
+    "big_lou:0bcfccfed762": {
+      "char": "big_lou",
+      "class": "other",
+      "excerpt": "BODY: Shorts near-black with a boxy crotch tab (grin x460-600, y443-507); so"
+    },
+    "big_lou:6e50b975da03": {
+      "char": "big_lou",
+      "class": "face-atlas",
+      "excerpt": "FACE: Profile is a flat vertical plane (guri-profile-review.png); add cheek "
     }
   }
 }
