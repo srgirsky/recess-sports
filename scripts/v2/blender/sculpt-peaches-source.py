@@ -38,7 +38,7 @@ from sculptlib.head import HeadSpec, head_surface
 from sculptlib.leg import LegSpec, build_leg, leg_x
 from sculptlib.mesh import MeshBuilder, thin_for_lod
 from sculptlib.palette import Palette
-from sculptlib.rig import ARM_ELBOW_X, ARM_SHOULDER_X, LEG_ANKLE_Z, limb_bone
+from sculptlib.rig import ARM_ELBOW_X, ARM_SHOULDER_X, LEG_ANKLE_Z, hem_follows_thighs, limb_bone
 from sculptlib.shoe import ShoeSpec, build_shoe
 
 REPO = Path.cwd()
@@ -369,9 +369,8 @@ def build_petal_hem(builder: MeshBuilder, detail: int) -> None:
             theta = 2 * pi * column / segments
             scallop = 0.5 + 0.5 * cos(6 * theta)
             z = z0 - dip * 0.055 * (1.0 - scallop)
-            ring.append(builder.vertex(
-                (half_x * cos(theta) * 1.018, half_y * sin(theta) * 1.018, z),
-                col, "Hips"))
+            at = (half_x * cos(theta) * 1.018, half_y * sin(theta) * 1.018, z)
+            ring.append(builder.vertex(at, col, skirt_weight(at, "Hips")))
         rows.append(ring)
     for lower, upper in zip(rows, rows[1:]):
         for column in range(segments):
@@ -709,6 +708,29 @@ PEACHES_SHOE = ShoeSpec(
 )
 
 
+
+# ★ THE SKIRT IS CARRIED BY THE THIGHS, NOT THE PELVIS ALONE. Every ring of it
+# rode `Hips`, so a lifted thigh came straight through the cloth above the hem
+# in the run and the pitch windup (recorded on three kids as "inherited
+# garment interpenetration"). Below the hip each skirt vertex now passes this
+# share of its weight to the thigh on its own side (`hem_follows_thighs`), as
+# the long tops do. Weights only: the bind pose and every board are unchanged.
+# ★ HALF THE SHARE, AND IT TAKES HOLD 0.2ft BELOW THE HIP. At the tops' own
+# 0.85, ramping all the way down to the hem, three critics saw the same two
+# things: the hem yanked into spikes and a pinwheel in the stride (and split
+# in two at swing contact), while just under the waistband the cloth still
+# barely moved and the thigh's top showed through. A skirt stands 0.19ft off
+# the thigh at the hem, so half the thigh's travel is enough to stay ahead
+# of it; and reaching that half by z 1.40 covers the hip.
+# not-traceable: skin-weight numbers, not form numbers.
+SKIRT_THIGH_SHARE = 0.55
+SKIRT_FULL_SHARE_Z = 1.400
+
+
+def skirt_weight(at, bone):
+    return hem_follows_thighs(at, bone, SKIRT_FULL_SHARE_Z, SKIRT_THIGH_SHARE)
+
+
 def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) -> None:
     face_columns = 27 if detail >= 2 else (9 if detail == 1 else 5)
     back_columns = 6 if detail >= 2 else (2 if detail == 1 else 1)
@@ -730,7 +752,8 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
     if detail >= 1:
         builder.loft(CROTCH_LEVELS, 0, SKIN, 8 if detail >= 2 else 6)
     builder.loft(TORSO_LEVELS if detail >= 2 else thin_for_lod(TORSO_LEVELS, detail),
-                 1, SHIRT, 18 if detail >= 2 else segments, color_fn=dress_color)
+                 1, SHIRT, 18 if detail >= 2 else segments, color_fn=dress_color,
+                 weight_fn=skirt_weight)
     build_petal_hem(builder, detail)
     if detail >= 1:
         # The leaf appliqué at the hip — the dress's signature detail.
