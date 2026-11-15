@@ -2625,75 +2625,75 @@
       "class": "evidence",
       "excerpt": "GEAR: Back harness (Y-strap, waist strap) appears in no runtime capture or b"
     },
-    "wheelchair_ace:aec6ba97517f": {
+    "wheelchair_ace:a2ad1a4fab26": {
+      "char": "wheelchair_ace",
+      "class": "material-light",
+      "excerpt": "HAIR: still a smooth glossy cap with a few stick blades on the crown and fla"
+    },
+    "wheelchair_ace:7333f706f02e": {
       "char": "wheelchair_ace",
       "class": "other",
-      "excerpt": "HAIR: smooth dome cap with five or six flat blades pointing straight back of"
+      "excerpt": "HAIR: a flat navy-blue face shows under the front tuft in 3/4 (hero x 575-60"
     },
-    "wheelchair_ace:5e235f44c757": {
+    "wheelchair_ace:da9a942a819e": {
       "char": "wheelchair_ace",
       "class": "other",
       "excerpt": "BODY: the seated pose does not read from the front: trunk about half the hea"
     },
-    "wheelchair_ace:1ff3cfa60b26": {
+    "wheelchair_ace:07bf24c49375": {
       "char": "wheelchair_ace",
       "class": "other",
       "excerpt": "CHAIR: seat much wider than the rider, leaving open dirt between shins and w"
     },
-    "wheelchair_ace:01e659884321": {
+    "wheelchair_ace:1f2980372a7e": {
+      "char": "wheelchair_ace",
+      "class": "proportions",
+      "excerpt": "TEE/LEGS: navy wedges between each sleeve and the trunk (hero x 540-565, y 3"
+    },
+    "wheelchair_ace:0c123c9113c0": {
       "char": "wheelchair_ace",
       "class": "other",
       "excerpt": "TEE/SHORTS: tee is a tube to the crotch that hides the shorts from the front"
     },
-    "wheelchair_ace:9bf373ebbcd4": {
-      "char": "wheelchair_ace",
-      "class": "proportions",
-      "excerpt": "TEE/LEGS: slate-blue wedges between each sleeve and the trunk (face-grin x 4"
-    },
-    "wheelchair_ace:4c60bb53af0c": {
+    "wheelchair_ace:e07236e58a28": {
       "char": "wheelchair_ace",
       "class": "other",
       "excerpt": "SHOES: orange and white only, no teal (second shoe tone 0.82% against 29.4%)"
     },
-    "wheelchair_ace:9b635261c514": {
+    "wheelchair_ace:31125e013131": {
       "char": "wheelchair_ace",
-      "class": "face-atlas",
-      "excerpt": "FACE: ears oversized and at mouth-to-jaw level, reading as jowls (face-grin "
+      "class": "proportions",
+      "excerpt": "HANDS: in idle the far hand hangs in open air (hero x 600-640, y 430-460) an"
     },
-    "wheelchair_ace:0cb9a1cb948a": {
+    "wheelchair_ace:f750ed4a24db": {
       "char": "wheelchair_ace",
       "class": "face-atlas",
-      "excerpt": "FACE: brows are short fixed blocks; angry is neutral plus a faint brown mout"
+      "excerpt": "FACE: ears oversized and set from mouth level to below the chin, reading as "
+    },
+    "wheelchair_ace:6ab4ccb49bcd": {
+      "char": "wheelchair_ace",
+      "class": "face-atlas",
+      "excerpt": "FACE: brows are short blocks identical in every expression; angry is a frown"
     },
     "wheelchair_ace:60be00fd6814": {
       "char": "wheelchair_ace",
       "class": "face-atlas",
       "excerpt": "FACE: in the 3/4 neutral the smile line wraps under the nose into a ring tha"
     },
-    "wheelchair_ace:68641d57dd02": {
-      "char": "wheelchair_ace",
-      "class": "proportions",
-      "excerpt": "HANDS: in idle both palms hover in open air outboard of the wheels (face-gri"
-    },
-    "wheelchair_ace:b8e2359569f0": {
+    "wheelchair_ace:bd6698a5e604": {
       "char": "wheelchair_ace",
       "class": "other",
-      "excerpt": "CHAIR: camber shallower than the sheet's; lean the wheel tops in further so "
+      "excerpt": "CHAIR: hubs teal-green, footplate and cross bars light grey, two front caste"
     },
     "wheelchair_ace:263e99acf9ba": {
       "char": "wheelchair_ace",
       "class": "proportions",
       "excerpt": "BODY: no neck, thin arms, small hands; the sheet has stocky arms and large h"
     },
-    "wheelchair_ace:38582383f141": {
+    "wheelchair_ace:8dec9977024d": {
       "char": "wheelchair_ace",
       "class": "other",
-      "excerpt": "CHAIR: hubs teal-green, footplate light grey, a second caster visible behind"
-    },
-    "wheelchair_ace:41d7261adcc6": {
-      "char": "wheelchair_ace",
-      "class": "other",
-      "excerpt": "HAIR: a thin dark seam line crosses the cap above the temple in the hero (x "
+      "excerpt": "HAIR: crown tabs light up pale grey-beige from the front (face-grin x 505-57"
     }
   }
 }

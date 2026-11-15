@@ -220,6 +220,18 @@ HAIR_OPEN_BOTTOM = 2.700
 HAIR_FRINGE_Z = 3.440      # the hairline, sheet row 300
 
 
+# (spine, radii) — forward is -y; his right is -x.
+# not-traceable: interior marks on the front view — the fringe lies inside the
+# head's silhouette. Read off dev-turnaround.png: the hair covers the forehead
+# to the brow on his right (visible face 8% of head width left of centre
+# against 23% right of it) and stops well above it on his left.
+FRINGE_LOBES = (
+    (((-0.050, -0.500, 3.620), (-0.200, -0.555, 3.430), (-0.330, -0.500, 3.275)), (0.130, 0.120, 0.050)),
+    (((-0.250, -0.460, 3.600), (-0.380, -0.480, 3.400), (-0.455, -0.400, 3.230)), (0.120, 0.110, 0.050)),
+    (((0.180, -0.500, 3.620), (0.300, -0.520, 3.490), (0.400, -0.440, 3.390)), (0.120, 0.100, 0.040)),
+)
+
+
 def hair_window_z(x_signed: float) -> float:
     x_abs = abs(x_signed)
     # 0.28/0.40 (was 0.30/0.42): the 16-column shell re-quantized the window
@@ -313,7 +325,14 @@ def build_hair(builder: MeshBuilder, detail: int) -> None:
         p2 = tuple(m + 0.55 * (t - m) for m, t in zip(p1, p2))
         spine = (p0, p1, p2)
         radii = (radii[0] * 1.70, radii[1] * 1.95, radii[2] * 3.20)
-        builder.tube(list(spine), list(radii), 2, HAIR, "Head", 7, flip=spine[0][0] < 0)
+        builder.tube(list(spine), list(radii), 2, HAIR, "Head", 5, flip=spine[0][0] < 0)
+
+    # The fringe: three fat lobes tumbling off the hairline onto the forehead,
+    # two swept to his right and one short on his left — the sheet's quiff is
+    # lopsided, and that lopsidedness is most of what makes the mop his.
+    # (`FRINGE_LOBES` is module-level so the provenance gate can see it.)
+    for spine, radii in FRINGE_LOBES:
+        builder.tube(list(spine), list(radii), 2, HAIR, "Head", 5, flip=spine[0][0] < 0)
 
 
 # --- The navy tee (torso) with teal trim ---------------------------------------
@@ -322,13 +341,13 @@ def build_hair(builder: MeshBuilder, detail: int) -> None:
 # torso in every view; halves bounded off the shoulder run above the chair
 # (front z≈2.15 measures 0.67 arm-to-arm) minus the drawn sleeve girth.
 TORSO_LEVELS = [
-    (1.590, 0.347, 0.276, "Hips"),
-    (1.640, 0.352, 0.279, "Hips"),
-    (1.750, 0.344, 0.274, "Spine"),
-    (1.950, 0.333, 0.266, "Spine"),
-    (2.150, 0.320, 0.254, "Spine1"),
-    (2.300, 0.302, 0.240, "Spine1"),
-    (2.430, 0.275, 0.217, "Spine2"),
+    (1.590, 0.361, 0.276, "Hips"),
+    (1.640, 0.366, 0.279, "Hips"),
+    (1.750, 0.357, 0.274, "Spine"),
+    (1.950, 0.346, 0.266, "Spine"),
+    (2.150, 0.333, 0.254, "Spine1"),
+    (2.300, 0.330, 0.240, "Spine1"),
+    (2.430, 0.305, 0.217, "Spine2"),
     (2.490, 0.226, 0.177, "Spine2"),
     (2.545, 0.178, 0.143, "Spine2"),
     (2.595, 0.158, 0.128, "Spine2"),
@@ -424,7 +443,7 @@ DEV_ARM = ArmSpec(
 def build_seated_legs(builder: MeshBuilder, detail: int) -> None:
     sides = 8 if detail >= 2 else 6
     for side in (1, -1):
-        x = side * 0.195
+        x = side * 0.165
         # Thigh: hip forward and slightly up to the raised knee (sport tuck).
         builder.tube(
             [(x, -0.020, 1.480), (x + side * 0.008, -0.200, 1.495), (x + side * 0.012, -0.360, 1.490)],
@@ -437,11 +456,6 @@ def build_seated_legs(builder: MeshBuilder, detail: int) -> None:
             # palms 0.15ft inside them at contact.
             [(x + side * 0.012, -0.380, 1.480), (x + side * 0.015, -0.560, 1.462), (x + side * 0.016, -0.670, 1.410)],
             [0.122, 0.122, 0.108], 0, SKIN, "Root", sides)
-        if detail >= 2:
-            # Shorts hem lip at the knee.
-            builder.tube(
-                [(x + side * 0.012, -0.350, 1.490), (x + side * 0.012, -0.395, 1.488)],
-                [0.136, 0.126], 1, SHORTS_DARK, "Root", sides)
         # Bare shin dropping to the tucked ankle.
         builder.tube(
             [(x + side * 0.015, -0.660, 1.450), (x + side * 0.018, -0.740, 1.000), (x + side * 0.018, -0.760, 0.640)],
@@ -561,7 +575,7 @@ def build_chair(builder: MeshBuilder, detail: int) -> None:
                 builder.tube([(side * 0.340, -0.640, 0.300), (side * 0.340, -0.660, 0.170)],
                              [0.028, 0.024], 1, FRAME, "Root", 4)
     # Seat sling, backrest and footplate.
-    builder.ellipsoid((0.0, 0.020, 1.420), (0.345, 0.320, 0.058), 1, SEAT, "Root", 8, 4)
+    builder.ellipsoid((0.0, 0.020, 1.420), (0.315, 0.320, 0.058), 1, SEAT, "Root", 8, 4)
     builder.ellipsoid((0.0, 0.300, 1.900), (0.425, 0.065, 0.340), 1, SEAT, "Root", 8, 4)
     if detail >= 2:
         # Back posts: the frame's uprights, standing just outside the torso so
