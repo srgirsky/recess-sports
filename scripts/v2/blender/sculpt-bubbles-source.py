@@ -303,8 +303,8 @@ BUN_LEVELS = [
 ]
 
 SCRUNCHIE_Z = 3.745
-SCRUNCHIE_RADIUS = 0.170
-SCRUNCHIE_TUBE = 0.052
+SCRUNCHIE_RADIUS = 0.185
+SCRUNCHIE_TUBE = 0.072   # the sheet's is a generous ruffled ring; 0.052 read as a washer
 
 # The fringe arc — her hairline is HIGH (a big open forehead under the curls):
 # the skin opening starts ~z 3.42 at the centre; the curtains close beside the
@@ -359,6 +359,56 @@ CURL_Z_WIDTH = 0.120
 CURL_TROUGH = 0.018
 
 
+# ★ THE CURL CLOUD (2026-11-14). Four critics in a row read the mass as "a
+# smooth helmet with a hard angular lower perimeter". The curl field textured
+# the shell's FACE on 24 columns, but a field on one loft cannot break the
+# OUTLINE, and the sheet's outline is curls all the way round. So the shell
+# is a plain scalp on 10 columns and the curls are separate ROUND BLOBS half
+# sunk into it in staggered rings, overlapping so no scalp shows between.
+# Two attempts lost on the way and are recorded so nobody repeats them: long
+# straight locks hung from the hem read as strands; cone-ended tube lobes on
+# a darker shell read as "faceted studs with a dark dot at the pole, bolted
+# to a bald head" (the tube's end cap, and HAIR_DARK renders close to skin).
+# not-traceable: each blob is the artist's reading of a curl cloud; the sheet
+# fixes the envelope (the HAIR_LEVELS rows above), not a curl. Each ring is
+# (z, azimuths in degrees off straight-ahead for the +x side and mirrored,
+# blob radius, drop of the blob's centre below the ring).
+# ★ THE TWO LOWER RINGS ARE CAPPED BY THE BAT. At radius 0.27/0.28 the bat's
+# shaft passed through them in the swing's load and follow-through (36 hits in
+# `audit:batting`, which only CI runs); 0.225/0.195 is the largest that clears.
+# Grow the upper rings if the cloud needs more, not these.
+CURL_RINGS = [
+    (3.560, (38.0, 105.0, 165.0), 0.235, 0.000),
+    (3.240, (72.0, 122.0, 168.0), 0.250, 0.000),
+    (2.900, (64.0, 110.0, 156.0), 0.225, 0.020),
+    (2.620, (84.0, 150.0), 0.195, 0.020),   # the hem, hanging to the shoulders
+]
+# Sunk deep and sized to overlap by a third: at 0.96 and radius ~0.2 each blob
+# stood clear as its own ball with the scalp showing between ("a cap with
+# balls stuck on", "a grape bunch"); deeper and bigger they merge into one
+# lumpy mass whose outline is the curls.
+CURL_SINK = 0.88      # the blob's centre as a share of the shell's radius
+CURL_SQUASH = 0.88    # blob height : width
+# Curls over the top of the forehead, which the sheet has and the shell's
+# high hairline left bare: (x, z, radius), seated proud of the skull.
+# z 3.45, not higher: at 3.52 the skull has no front surface to seat on and
+# the blobs landed inside the head.
+FRINGE_CURLS = ((-0.130, 3.460, 0.180), (0.130, 3.460, 0.180))
+
+
+def hair_ring_point(azimuth_deg: float, z: float, share: float, side: int):
+    table = HAIR_LEVELS
+    row = table[-1][1:]
+    for (za, *a), (zb, *b) in zip(table, table[1:]):
+        if zb <= z <= za:
+            t = (za - z) / (za - zb)
+            row = tuple(u + t * (v - u) for u, v in zip(a, b))
+            break
+    half_x, half_y, y_centre = row
+    az = azimuth_deg * pi / 180.0
+    return (side * half_x * share * sin(az), y_centre - half_y * share * cos(az), z)
+
+
 def fringe_z_at(x_abs: float) -> float:
     """The hair's lower edge over the face at lateral offset |x|."""
     table = HAIR_FRINGE
@@ -373,7 +423,7 @@ def fringe_z_at(x_abs: float) -> float:
 def build_hair(builder: MeshBuilder, detail: int) -> None:
     """The curl mass, the bun and the scrunchie."""
     # 24 even columns keep mirror columns and give eight lobes three samples.
-    segments = 24 if detail >= 2 else (10 if detail == 1 else 8)
+    segments = 10 if detail >= 2 else (10 if detail == 1 else 8)   # the scalp under the curl cloud
 
     def ring_loft(levels, seeds, columns=None):
         segs = columns or segments
@@ -393,7 +443,7 @@ def build_hair(builder: MeshBuilder, detail: int) -> None:
                     theta, z, seeds,
                     theta_width=CURL_THETA_WIDTH,
                     z_width=CURL_Z_WIDTH,
-                ) if detail >= 2 else 0.0
+                ) if detail >= 2 and seeds is not CURL_SEEDS else 0.0
                 clump = 1.0 + f
                 x = half_x * clump * cos(theta)
                 y = y_centre + half_y * clump * sin(theta)
@@ -404,7 +454,7 @@ def build_hair(builder: MeshBuilder, detail: int) -> None:
                         y = max(y, skull_front_y(x, z) - 0.085)
                     if seeds is CURL_SEEDS and FACE_BAND[0] < z < FACE_BAND[1]:
                         y = max(y, FACE_BAND_FLOOR_Y)
-                tone = HAIR if f > CURL_TROUGH else HAIR_DARK
+                tone = HAIR if (f > CURL_TROUGH or seeds is CURL_SEEDS) else HAIR_DARK
                 ring.append(builder.vertex((x, y, z), tone, "Head"))
             rows.append(ring)
         bottom = builder.vertex((0.0, ascending[0][3], ascending[0][0] - 0.02), HAIR, "Head")
@@ -424,7 +474,10 @@ def build_hair(builder: MeshBuilder, detail: int) -> None:
     if detail >= 1:
         for side in (1, -1):
             build_ear(builder, side, detail, palette=PALETTE, skull_at=skull_surface_x, spec=EAR_SPEC)
-    ring_loft(HAIR_LEVELS, CURL_SEEDS)
+    # The scalp is mostly hidden under the cloud now: two interior rows that
+    # sit within 0.03 of their neighbours' interpolation pay for curl tips.
+    scalp = [row for row in HAIR_LEVELS if row[0] not in (3.690, 3.060)] if detail >= 2 else HAIR_LEVELS
+    ring_loft(scalp, CURL_SEEDS)
     # The six sculpted ringlet tubes that rode the lower mass are gone: they
     # were the earlier answer to "the cloud needs real curl-clump geometry",
     # and the curl field IS that geometry now, in every band rather than
@@ -433,18 +486,41 @@ def build_hair(builder: MeshBuilder, detail: int) -> None:
     # triangles pay for the ringlet lobes that do survive 40px.
     if detail >= 1:
         # 12 columns: the bun is a fist-sized mass; its columns paid for the ears.
-        ring_loft(BUN_LEVELS, BUN_SEEDS, columns=12 if detail >= 2 else None)
+        ring_loft(BUN_LEVELS, BUN_SEEDS, columns=11 if detail >= 2 else None)
+
+    # The curl cloud. LOD2 keeps the shell alone.
+    if detail >= 1:
+        blob_segments, blob_rings = (6, 4) if detail >= 2 else (5, 3)
+        index = 0
+        for z, azimuths, radius, drop in CURL_RINGS:
+            for azimuth in azimuths:
+                for side in (1, -1):
+                    index += 1
+                    if detail == 1 and index % 2:
+                        continue
+                    # Mirrored twins share a wobble, so the cloud stays symmetric.
+                    wobble = 0.92 + 0.16 * ((azimuth * 7.0 + z * 31.0) % 10.0) / 10.0
+                    cx, cy, cz = hair_ring_point(azimuth, z, CURL_SINK, side)
+                    r = radius * wobble
+                    builder.ellipsoid((cx, cy, cz - drop), (r, r, r * CURL_SQUASH), 2, HAIR,
+                                      "Head", blob_segments, blob_rings)
+        if detail >= 2:
+            for x, z, r in FRINGE_CURLS:
+                front = skull_front_y(x, z)
+                assert front > -9.0, "a fringe curl needs a skull surface to sit on"
+                builder.ellipsoid((x, front - 0.050, z), (r, r * 0.80, r * CURL_SQUASH),
+                                  2, HAIR, "Head", blob_segments, blob_rings)
 
     # The scrunchie: a pink torus at the bun's base — the team-accent surface,
     # on M_Accessory (slot 3).
     if detail >= 1:
         ring = []
         spine = []
-        sides = 12 if detail >= 2 else 8
+        sides = 10 if detail >= 2 else 8
         for i in range(sides):
             a = 2 * pi * i / sides
             spine.append((SCRUNCHIE_RADIUS * cos(a), 0.03 + SCRUNCHIE_RADIUS * sin(a) * 0.85, SCRUNCHIE_Z))
-        builder.tube(spine, [SCRUNCHIE_TUBE] * sides, 3, TEAM_MASK, "Head", 6,
+        builder.tube(spine, [SCRUNCHIE_TUBE] * sides, 3, TEAM_MASK, "Head", 5,
                      cyclic=True, axis=Vector((0.0, 0.0, 1.0)))
         del ring
 
@@ -965,7 +1041,7 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
     build_hair(builder, detail)
 
     builder.loft(NECK_LEVELS, 0, SKIN, segments)
-    torso_segments = 22 if detail >= 2 else segments   # 26 -> 22, 2026-09-12: LOD0 budget for the crown dome
+    torso_segments = 20 if detail >= 2 else segments   # 26 -> 22, 2026-09-12: LOD0 budget for the crown dome; -> 20, 2026-11-14, for the curl cloud
     dress_loft(builder, thin_for_lod(TORSO_LEVELS, detail), 1, SHIRT, torso_segments,
                color_fn=dress_color)
     build_dress_details(builder, detail)

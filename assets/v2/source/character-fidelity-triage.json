@@ -915,11 +915,6 @@
       "class": "stance",
       "excerpt": "SHARED POSE POLISH, REOBSERVED: bunt-2-2.png at t=0.67 raises lead elbow bes"
     },
-    "ace_kid:25c037e1db67": {
-      "char": "ace_kid",
-      "class": "interpenetration",
-      "excerpt": "INHERITED GARMENT DEFECT, REOBSERVED: upset_goofy-2-2.png t=1.2 has a large "
-    },
     "ace_kid:b6fc33b71e67": {
       "char": "ace_kid",
       "class": "proportions",
@@ -1580,36 +1575,6 @@
       "class": "stance",
       "excerpt": "SHARED POSE POLISH REOBSERVED: bunt t0.67 receiving elbow rises beside the h"
     },
-    "lefty:e982c01b9dfd": {
-      "char": "lefty",
-      "class": "hair-nyquist",
-      "excerpt": "CURRENT IDENTITY POLISH: the straight, slab-like blonde tail and sparse fore"
-    },
-    "lefty:328e8ddcc54b": {
-      "char": "lefty",
-      "class": "hair-nyquist",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED - NO HAIRLINE FRO"
-    },
-    "lefty:4950711429f2": {
-      "char": "lefty",
-      "class": "hair-nyquist",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED - BARE-SKULL READ"
-    },
-    "lefty:498e91bc24a3": {
-      "char": "lefty",
-      "class": "hair-nyquist",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED - HAIR IS FLAT CA"
-    },
-    "lefty:7166c9255b96": {
-      "char": "lefty",
-      "class": "interpenetration",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED - PONYTAIL INTERP"
-    },
-    "lefty:d16022779e8e": {
-      "char": "lefty",
-      "class": "decal-not-form",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED - THE NAVY HOOD I"
-    },
     "lefty:b55133c42d79": {
       "char": "lefty",
       "class": "sheared-edges",
@@ -1619,21 +1584,6 @@
       "char": "lefty",
       "class": "butt-joins",
       "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED - SHOULDER JUNCTI"
-    },
-    "lefty:601d063fdf61": {
-      "char": "lefty",
-      "class": "40px-read",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED - TEAM_MASK EXTEN"
-    },
-    "lefty:e6a20aa798a8": {
-      "char": "lefty",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED - RECORDED INSTRU"
-    },
-    "lefty:7d2868909f76": {
-      "char": "lefty",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED - LEG_STATIONS PR"
     },
     "moose:5db11d62b71f": {
       "char": "moose",
@@ -2010,11 +1960,6 @@
       "class": "proportions",
       "excerpt": "NON-DEFECT: Current ankle daylight is OFF at 14.5 versus concept 0.00 (tol 1"
     },
-    "lefty:3caf10f6a945": {
-      "char": "lefty",
-      "class": "other",
-      "excerpt": "SHOE COLOUR DRIFT: the rebuilt shoes read tan/khaki with a pale sole (lefty-"
-    },
     "smokey:44f3f4055126": {
       "char": "smokey",
       "class": "hems-cuffs",
@@ -2130,25 +2075,10 @@
       "class": "hems-cuffs",
       "excerpt": "INHERITED CLOTHING DEFORMATION: the raised pitching thigh and the running tr"
     },
-    "bubbles:ac92df1144fb": {
-      "char": "bubbles",
-      "class": "other",
-      "excerpt": "CURRENT HAIR IDENTITY: broad angular faceted hair panels with a hard lower p"
-    },
-    "bubbles:453c4a51761b": {
-      "char": "bubbles",
-      "class": "other",
-      "excerpt": "SHOE COLOUR (measured, worse after rebuild): the shoes read tan/orange-beige"
-    },
     "bubbles:cacb36dcf441": {
       "char": "bubbles",
       "class": "other",
       "excerpt": "SHOE DETAIL: parallel pink bars instead of the concept's criss-cross cream l"
-    },
-    "bubbles:d7d338ceff39": {
-      "char": "bubbles",
-      "class": "other",
-      "excerpt": "DARK SQUARE AT THE ANKLE OPENING (new, verifiable): the lifted trailing shoe"
     },
     "bubbles:ef0b8c4fe902": {
       "char": "bubbles",
@@ -2164,21 +2094,6 @@
       "char": "bubbles",
       "class": "other",
       "excerpt": "THIN ARMS AND LEGS with abrupt shoulder joins against the concept's fuller c"
-    },
-    "bubbles:7d9bb0b04cc7": {
-      "char": "bubbles",
-      "class": "other",
-      "excerpt": "ANGULAR DARK NECKLINE WEDGES in the collar and shoulder construction in the "
-    },
-    "bubbles:0446bb49429d": {
-      "char": "bubbles",
-      "class": "other",
-      "excerpt": "SCRUNCHIE is a thin smooth washer, not the concept's ruffled, generous ring "
-    },
-    "bubbles:f172e4dd0b76": {
-      "char": "bubbles",
-      "class": "other",
-      "excerpt": "POCKET reads flat without the concept's button; the concept bow and the two "
     },
     "sniffles:94f3375f2db8": {
       "char": "sniffles",
@@ -2479,6 +2394,116 @@
       "char": "smokey",
       "class": "other",
       "excerpt": "Bunt t0.67 receiving elbow lifts beside the head with forearm descending tow"
+    },
+    "lefty:b531f1bc1ffb": {
+      "char": "lefty",
+      "class": "face-atlas",
+      "excerpt": "NEW - BANGS READ AS FOLDED STRAPS, NOT HAIR: front-apose-head.png and grin-h"
+    },
+    "lefty:8003a0149db9": {
+      "char": "lefty",
+      "class": "other",
+      "excerpt": "NEW - PONYTAIL TAPER IS INVERTED AND ENDS IN SPIKES: profile-head.png (4x): "
+    },
+    "lefty:bc199f512845": {
+      "char": "lefty",
+      "class": "other",
+      "excerpt": "NEW - BRIM IS UNDERSIZED AND RUNS THROUGH THE PONYTAIL: hero-tail-brim.png ("
+    },
+    "lefty:7b0e784b9112": {
+      "char": "lefty",
+      "class": "material-light",
+      "excerpt": "NEW - CAP STRAP IS A FLAT RECTANGLE WITH NO OPENING: front-apose-head.png: t"
+    },
+    "lefty:f2408e0c1bb3": {
+      "char": "lefty",
+      "class": "material-light",
+      "excerpt": "NEW - HAIR COLOUR IS MUSTARD/OLIVE, NOT HONEY BLONDE: lefty-runtime-hero.png"
+    },
+    "lefty:12e24d8deae9": {
+      "char": "lefty",
+      "class": "other",
+      "excerpt": "SHOE COLOUR DRIFT: the rebuilt shoes read tan/khaki with a pale sole (lefty-"
+    },
+    "lefty:2f8d5c70637c": {
+      "char": "lefty",
+      "class": "other",
+      "excerpt": "CARRIED - THE NAVY HOOD IS A BALL ON THE NAPE AND INVISIBLE FROM THE FRONT: "
+    },
+    "lefty:c7c5c459e5c5": {
+      "char": "lefty",
+      "class": "hems-cuffs",
+      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED - RECORDED INSTRU"
+    },
+    "lefty:39ccd808ad8b": {
+      "char": "lefty",
+      "class": "other",
+      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED - LEG_STATIONS PR"
+    },
+    "bubbles:910ff3467c4d": {
+      "char": "bubbles",
+      "class": "hems-cuffs",
+      "excerpt": "SOLID NAVY WEDGES AT THE NECK: filled triangles of the outline colour sit be"
+    },
+    "bubbles:2b695f38efd4": {
+      "char": "bubbles",
+      "class": "other",
+      "excerpt": "BUN is a small flattened dome with a pointed tip, not the concept's round ba"
+    },
+    "bubbles:86eb5cc93a72": {
+      "char": "bubbles",
+      "class": "other",
+      "excerpt": "SCRUNCHIE is a thin smooth band half buried behind the top ring of blobs, no"
+    },
+    "bubbles:840a6002e221": {
+      "char": "bubbles",
+      "class": "other",
+      "excerpt": "SHOE COLOUR (measured): the shoes read tan/orange-beige with a pale sole. Ba"
+    },
+    "bubbles:b5f25db8bf96": {
+      "char": "bubbles",
+      "class": "other",
+      "excerpt": "POCKET reads as a flat cream bar without the concept's flap and button (the "
+    },
+    "ace_kid:e76cd321b70a": {
+      "char": "ace_kid",
+      "class": "hems-cuffs",
+      "excerpt": "SWING HEM NOTCH (pre-existing, byte-for-byte the same in the committed captu"
+    },
+    "ace_kid:77a98aa64d7e": {
+      "char": "ace_kid",
+      "class": "hems-cuffs",
+      "excerpt": "UPSET HEM, MINOR, OBSERVED: in the forward lean (upset_goofy t=1.0-1.3) the "
+    },
+    "ace_kid:56a1b8da05cf": {
+      "char": "ace_kid",
+      "class": "hems-cuffs",
+      "excerpt": "UPSET FRONT EDGE, MINOR, ONE FRAME: a 1x4px grass-green sliver shows between"
+    },
+    "ace_kid:61b1eb50dbd9": {
+      "char": "ace_kid",
+      "class": "hems-cuffs",
+      "excerpt": "CLEARED (was: INHERITED GARMENT DEFECT, large angular cream patch over the l"
+    },
+    "bubbles:8bd026b9a959": {
+      "char": "bubbles",
+      "class": "other",
+      "excerpt": "HAIR BLOBS ARE FACETED AND INDIVIDUALLY OUTLINED: each blob is a low-polygon"
+    },
+    "bubbles:0d2ed40f54fe": {
+      "char": "bubbles",
+      "class": "other",
+      "excerpt": "HAIR BLOBS ARE TOO LARGE AND TOO FEW: about two dozen large balls in two siz"
+    },
+    "bubbles:98306bb7b59d": {
+      "char": "bubbles",
+      "class": "face-atlas",
+      "excerpt": "HAIR ENVELOPE: in the front view the cloud is widest at eye/cheek level and "
+    },
+    "bubbles:5336479c7891": {
+      "char": "bubbles",
+      "class": "other",
+      "excerpt": "DARK SQUARE AT THE ANKLE OPENING: the lifted trailing shoe in the run captur"
     }
   }
 }
