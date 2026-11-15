@@ -63,11 +63,11 @@
     },
     "big_lou": {
       "source": "guri-pilot.blend",
-      "sourceSha256": "ed4130b8a87c33320907ea1e685e0ca552eca2828cc3212c57168a2ebd45794c",
+      "sourceSha256": "72c15d3014e9b0b3458acb54364c727121084d6157ef486b4b546ca0f0192181",
       "concept": "guri-turnaround.png",
       "conceptSha256": "19328d11d53e58c3a870ed80ca930b91a4ae5617fb301d0744a328935d6e9eb4",
       "output": "kid_big_lou.glb",
-      "outputSha256": "24d93f400b8788fb7f0885b89d7c262a06eefd37ef61c968686e246dc8b264f0",
+      "outputSha256": "2a9884ead062cd68079fe45ee9055b02540dbfd94d47e2c6f443bd21b46c7af1",
       "definingTraits": [
         "navy patka with a topknot",
         "tallest boy, broad and gentle",
