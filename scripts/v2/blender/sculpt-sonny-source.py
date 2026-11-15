@@ -452,11 +452,11 @@ def skull_surface_x(y: float, z: float) -> float:
 # (1.32ft between the hands, row 650) and the shoulder run above the sleeves.
 TORSO_LEVELS = [
     (1.280, 0.600, 0.480, -0.008, "Hips"),   # hem underside — SHIRT_DARK via tee_color
-    (1.302, 0.642, 0.528, -0.014, "Hips"),   # hem lip, proud
-    (1.420, 0.656, 0.600, -0.022, "Hips"),
-    (1.620, 0.662, 0.618, -0.034, "Spine"),  # the belly
-    (1.820, 0.652, 0.596, -0.030, "Spine"),
-    (2.020, 0.632, 0.552, -0.020, "Spine"),
+    (1.302, 0.632, 0.520, -0.012, "Hips"),   # hem lip, proud
+    (1.420, 0.640, 0.548, -0.012, "Hips"),
+    (1.620, 0.644, 0.542, -0.014, "Spine"),  # the belly — held inside the swing's palm path (audit:batting palmTorsoClear)
+    (1.820, 0.636, 0.538, -0.012, "Spine"),
+    (2.020, 0.622, 0.522, -0.010, "Spine"),
     (2.220, 0.610, 0.500, -0.008, "Spine1"),
     (2.385, 0.590, 0.442, 0.006, "Spine1"),
     (2.500, 0.570, 0.400, 0.000, "Spine2"),  # yoke, holds the shoulder out
@@ -1309,15 +1309,15 @@ def build_cap(builder: MeshBuilder, detail: int) -> None:
 # not measure; it spans collar to belly and about 60% of the tee's front width.
 PROTECTOR_ROWS = [
     (1.550, 22.0, -0.012, "trim"),
-    (1.600, 36.0, 0.040, "trim"),
-    (1.720, 50.0, 0.074, "pad"),
-    (1.860, 55.0, 0.040, "groove"),
-    (2.000, 57.0, 0.074, "pad"),
-    (2.140, 57.0, 0.040, "groove"),
-    (2.270, 55.0, 0.074, "pad"),
-    (2.380, 51.0, 0.042, "groove"),
-    (2.480, 48.0, 0.064, "pad"),
-    (2.560, 44.0, 0.040, "trim"),
+    (1.600, 36.0, 0.024, "trim"),
+    (1.720, 50.0, 0.036, "pad"),
+    (1.860, 55.0, 0.018, "groove"),
+    (2.000, 57.0, 0.036, "pad"),
+    (2.140, 57.0, 0.018, "groove"),
+    (2.270, 55.0, 0.040, "pad"),
+    (2.380, 51.0, 0.020, "groove"),
+    (2.480, 48.0, 0.040, "pad"),
+    (2.560, 44.0, 0.026, "trim"),
     (2.610, 40.0, -0.012, "trim"),
 ]
 PROTECTOR_COLUMNS = (-1.0, -0.94, -0.84, -0.28, 0.28, 0.84, 0.94, 1.0)

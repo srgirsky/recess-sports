@@ -2710,70 +2710,75 @@
       "class": "face-atlas",
       "excerpt": "FACE: Profile is still a flat vertical plane (guri-profile-review.png, guri-"
     },
-    "tank:a091780c0664": {
+    "tank:5be4744f9d0b": {
       "char": "tank",
       "class": "other",
-      "excerpt": "GEAR: Shoulder caps are absent. The sheet's broad cream-piped pads over each"
+      "excerpt": "GEAR: Shoulder caps are absent (carried from round 3). The sheet's broad cre"
     },
-    "tank:9c4d0004098b": {
+    "tank:ab696ca0ec0c": {
       "char": "tank",
       "class": "proportions",
-      "excerpt": "GEAR: Knee caps are loose faceted balls, not part of the guard: hidden behin"
+      "excerpt": "GEAR: Knee caps are loose faceted balls, not part of the guard (carried): hi"
     },
-    "tank:e3d0320152bc": {
+    "tank:e4a5c38ab132": {
       "char": "tank",
       "class": "other",
-      "excerpt": "GEAR: Shin guard is a front half-shell with a pale olive-cream side face (he"
+      "excerpt": "GEAR: Shin guard is a plain front half-shell whose side face is pale olive-c"
     },
-    "tank:950df05885f3": {
+    "tank:8338432f450c": {
       "char": "tank",
       "class": "proportions",
       "excerpt": "BODY: Arms are about half the sheet's thickness and taper to points with thr"
     },
-    "tank:c9b003cc0500": {
+    "tank:8c523a9392b1": {
       "char": "tank",
       "class": "proportions",
       "excerpt": "BODY: Head is a flat-sided box with no cheeks on a visible neck collar (grin"
     },
-    "tank:2c74fff6a517": {
+    "tank:3089eb62b118": {
       "char": "tank",
       "class": "other",
-      "excerpt": "GEAR: Cap hem is a dead-straight cut flaring past the skull like a bowl (gri"
+      "excerpt": "GEAR: Tee hem throws a pointed purple tongue down over the shorts at swing c"
     },
-    "tank:62a79065e0c9": {
+    "tank:2571b3a98f8a": {
       "char": "tank",
       "class": "other",
-      "excerpt": "GEAR: Shoes carry navy slashes and triangular notches on the toes (grin x447"
+      "excerpt": "GEAR: Shoes carry navy slashes and triangular notches (hero x545-585, y598-6"
     },
-    "tank:39f581df118d": {
+    "tank:e88dd42859e9": {
       "char": "tank",
       "class": "other",
-      "excerpt": "GEAR: Chest plate is a single bib with blurred shading stripes for ridges an"
+      "excerpt": "GEAR: Cap hem is a straight cut flaring past the skull like a bowl (grin x44"
     },
-    "tank:e276dae07073": {
+    "tank:0d423fba2b7d": {
+      "char": "tank",
+      "class": "proportions",
+      "excerpt": "GEAR: Chest plate is a narrow bib about half the chest wide with blurred sha"
+    },
+    "tank:8f02624bca4c": {
       "char": "tank",
       "class": "face-atlas",
       "excerpt": "FACE: Brows are thin black arcs; the sheet's thick soft brown brows are a si"
     },
-    "tank:48b7a85afc88": {
+    "tank:95029d10d929": {
       "char": "tank",
       "class": "face-atlas",
-      "excerpt": "FACE: Front-lit face is darker than its own ears and edge (grin x450-560, y2"
+      "excerpt": "FACE: Skin is saturated orange against the sheet's warm brown and the front "
     },
-    "tank:4260ae7f2be2": {
+    "tank:a136949529ff": {
       "char": "tank",
       "class": "face-atlas",
-      "excerpt": "FACE: Tongue expression is close to cheer at hero size; the tongue is only a"
+      "excerpt": "FACE: Tongue expression is close to cheer at hero size; the tongue is a few "
     },
-    "tank:6916bc191877": {
+    "tank:f7bbf7474c1b": {
       "char": "tank",
       "class": "other",
-      "excerpt": "GEAR: Shorts lack the cream side stripe and stop short of the knee, leaving "
+      "excerpt": "GEAR: Shorts lack the cream side stripe and stop well short of the knee, lea"
     },
-    "tank:8db662a4ed32": {
+    "tank:2abf0a168346": {
       "char": "tank",
       "class": "evidence",
-      "excerpt": "GEAR: Back harness (Y-strap, waist strap) appears in no runtime capture and "
+      "excerpt": "GEAR: Back harness (Y-strap, waist strap) appears in no runtime capture or b"
     }
   }
 }
