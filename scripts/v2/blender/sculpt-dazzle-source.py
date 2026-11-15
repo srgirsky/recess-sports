@@ -39,7 +39,7 @@ from sculptlib.head import HeadSpec, head_surface
 from sculptlib.leg import LegSpec, build_leg, leg_x
 from sculptlib.mesh import MeshBuilder, thin_for_lod
 from sculptlib.palette import Palette
-from sculptlib.rig import ARM_ELBOW_X, ARM_SHOULDER_X, LEG_ANKLE_Z, hem_follows_thighs, limb_bone
+from sculptlib.rig import ARM_ELBOW_X, ARM_SHOULDER_X, LEG_ANKLE_Z, LEG_HIP_X, hem_follows_thighs, limb_bone
 from sculptlib.shoe import ShoeSpec, build_shoe
 
 REPO = Path.cwd()
@@ -508,8 +508,19 @@ SKIRT_THIGH_SHARE = 0.55
 SKIRT_FULL_SHARE_Z = 1.400
 
 
+# Outboard of the hip the cloth has one thigh under it, not two, so it can
+# follow that thigh more without splitting between the legs. Yui's values
+# (2026-11-14): at 0.55 all round the swing's front thigh came out through the
+# skirt's side; at 0.92 the skirt split into two lobes, culottes; 0.74 over a
+# 0.32 reach gave one skirt with both legs under it.
+SKIRT_SIDE_SHARE = 0.74
+SKIRT_SIDE_REACH = 0.320   # feet outboard of the hip joint by which the side share is whole
+
+
 def skirt_weight(at, bone):
-    return hem_follows_thighs(at, bone, SKIRT_FULL_SHARE_Z, SKIRT_THIGH_SHARE)
+    out = max(0.0, min(1.0, (abs(at[0]) - abs(LEG_HIP_X)) / SKIRT_SIDE_REACH))
+    share = SKIRT_THIGH_SHARE + (SKIRT_SIDE_SHARE - SKIRT_THIGH_SHARE) * out * out * (3 - 2 * out)
+    return hem_follows_thighs(at, bone, SKIRT_FULL_SHARE_Z, share)
 
 
 def pleated_loft(builder: MeshBuilder, levels, material: int, color, segments: int,

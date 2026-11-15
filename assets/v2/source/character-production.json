@@ -123,11 +123,11 @@
     },
     "bubbles": {
       "source": "bubbles-pilot.blend",
-      "sourceSha256": "0eba0f777f244926ca408e49ad9104e92fa55e850c3cec6940416d67d5a4dc45",
+      "sourceSha256": "c72ce706ef8d937127e7595ec0fa4b52b2f8687d04f93dd01cb641a2cb02faea",
       "concept": "bubbles-turnaround.png",
       "conceptSha256": "b4b3ec04e975bf1f2d85b449073afbd71edb99af3f17579fe24050bc5edcd9db",
       "output": "kid_bubbles.glb",
-      "outputSha256": "e84b4f1d3480d3a901eb7170f275c885bd7330844f9cd6dc215131d4384982df",
+      "outputSha256": "f50ceb6ac320a5c84d577ec7b9ca6db36f9190f3a84b520c47d42c508fbf04b2",
       "definingTraits": [
         "golden ringlet cloud",
         "topknot bun and scrunchie",
@@ -198,11 +198,11 @@
     },
     "diva": {
       "source": "dazzle-pilot.blend",
-      "sourceSha256": "68a8c53d40a6a918a8033ccaa304d38d5906115911c5fbcd8ca92579444f77bc",
+      "sourceSha256": "a57bef800aec0f0f7d3a55d74d515de4fce43abbded67490f73b5393035cb9fd",
       "concept": "dazzle-turnaround.png",
       "conceptSha256": "3eb499fa87bff373ae457d620ef72ae54de5c0636b605ed24022aeca7523f8df",
       "output": "kid_diva.glb",
-      "outputSha256": "f9367f496056097e47a9b6947307c3c871e1f41e176d45ea282f1e3dae125253",
+      "outputSha256": "fea89ecb7fee6924b47c7139023396b17ae1afdc86d28d0bb185010249971257",
       "definingTraits": [
         "long wavy auburn mane",
         "cream headband",

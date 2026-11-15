@@ -2070,11 +2070,6 @@
       "class": "other",
       "excerpt": "SHOE TOES NOW CLOSED BUT STILL NO LACING READ: noodle-runtime-hero.png 5x cr"
     },
-    "bubbles:2ae316cfa2f7": {
-      "char": "bubbles",
-      "class": "hems-cuffs",
-      "excerpt": "INHERITED CLOTHING DEFORMATION: the raised pitching thigh and the running tr"
-    },
     "bubbles:cacb36dcf441": {
       "char": "bubbles",
       "class": "other",
@@ -2229,11 +2224,6 @@
       "char": "wheelchair_ace",
       "class": "face-atlas",
       "excerpt": "COLOUR: skin is saturated orange (about #713d0a forearm against the sheet's "
-    },
-    "diva:45dc6b028807": {
-      "char": "diva",
-      "class": "hems-cuffs",
-      "excerpt": "THIGH THROUGH SKIRT IN THE SWING, HEM SPLIT: dazzle-runtime-swing.png (swing"
     },
     "diva:32d63fe94e9f": {
       "char": "diva",
@@ -2504,6 +2494,26 @@
       "char": "bubbles",
       "class": "other",
       "excerpt": "DARK SQUARE AT THE ANKLE OPENING: the lifted trailing shoe in the run captur"
+    },
+    "bubbles:d448f2095009": {
+      "char": "bubbles",
+      "class": "hems-cuffs",
+      "excerpt": "SKIN THROUGH THE SKIRT IN THE SWING: at swing_contact frame 7 a 22-pixel ski"
+    },
+    "bubbles:ee59ab1ce189": {
+      "char": "bubbles",
+      "class": "hems-cuffs",
+      "excerpt": "RUN SKIRT FACET: in the run capture the swept skirt shows one hard straight "
+    },
+    "diva:80f1ea9c080c": {
+      "char": "diva",
+      "class": "hems-cuffs",
+      "excerpt": "SWING: SMALL SKIN FLECK THROUGH THE SKIRT FRONT (was a full thigh column; he"
+    },
+    "diva:b0071b8f4021": {
+      "char": "diva",
+      "class": "hems-cuffs",
+      "excerpt": "SWING HEM FOLD, minor: in the same frame the lower-left hem carries a heavy "
     }
   }
 }
