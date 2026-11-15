@@ -52,7 +52,7 @@ from sculptlib.head import HeadSpec, head_surface
 from sculptlib.leg import LegSpec, build_leg, leg_x
 from sculptlib.mesh import MeshBuilder, thin_for_lod
 from sculptlib.palette import Palette
-from sculptlib.rig import ARM_ELBOW_X, ARM_SHOULDER_X, LEG_ANKLE_Z, limb_bone
+from sculptlib.rig import ARM_ELBOW_X, ARM_SHOULDER_X, hem_follows_thighs, LEG_ANKLE_Z, LEG_HIP_X, limb_bone
 from sculptlib.shoe import ShoeSpec, build_shoe
 
 REPO = Path.cwd()
@@ -602,6 +602,29 @@ def hem_drop(cos_t: float, z: float) -> float:
     return HEM_TILT_X * max(-1.0, min(1.0, cos_t)) * w ** 1.6
 
 
+# The skirt is carried on the thighs (`hem_follows_thighs`), as Roz's,
+# Clover's and Peaches's are: every ring of it was on `Hips`, so in the run
+# the trailing thigh swung out through the cloth above the hem (clothing held
+# at 2 on it). Their values: a 0.55 share, whole by z 1.40; 0.85 to the hem
+# spiked and split it.
+SKIRT_THIGH_SHARE = 0.55
+SKIRT_FULL_SHARE_Z = 1.400
+
+
+# Outboard of the hip the cloth has one thigh under it, not two, so it can
+# follow that thigh almost wholly without the split the 0.85 hem showed
+# between the legs. It has to: in the swing's wide stance the front thigh
+# came out through the skirt's side at a 0.55 share.
+SKIRT_SIDE_SHARE = 0.74
+SKIRT_SIDE_REACH = 0.320   # feet outboard of the hip joint by which the side share is whole
+
+
+def skirt_weight(at, bone):
+    out = max(0.0, min(1.0, (abs(at[0]) - abs(LEG_HIP_X)) / SKIRT_SIDE_REACH))
+    share = SKIRT_THIGH_SHARE + (SKIRT_SIDE_SHARE - SKIRT_THIGH_SHARE) * out * out * (3 - 2 * out)
+    return hem_follows_thighs(at, bone, SKIRT_FULL_SHARE_Z, share)
+
+
 def dress_loft(builder: MeshBuilder, levels, material: int, color, segments: int,
                color_fn=None) -> None:
     """`MeshBuilder.loft` with the hem's z(theta) shear — winding, caps and
@@ -618,7 +641,7 @@ def dress_loft(builder: MeshBuilder, levels, material: int, color, segments: int
             theta = 2 * pi * column / segments
             at = (rx * cos(theta), ry * sin(theta), z + hem_drop(cos(theta), z))
             vertex_color = color_fn(theta, z) if color_fn else color
-            row.append(builder.vertex(at, vertex_color, bone))
+            row.append(builder.vertex(at, vertex_color, skirt_weight(at, bone)))
         rows.append(row)
     bottom = builder.vertex((0.0, 0.0, levels[0][0]), color, levels[0][3])
     top = builder.vertex((0.0, 0.0, levels[-1][0]), color, levels[-1][3])
