@@ -453,6 +453,14 @@ def tee_color(theta: float, z: float):
         return JACKET_DARK
     if z <= TEE_HEM_LIP_Z:
         return SHIRT
+    # ★ THE TEE'S BACK WEARS THE JACKET'S COLOURS (2026-11-14). Nobody ever
+    # sees the back of the tee: the jacket shell covers it 0.026 proud. But in
+    # a deep bend (upset_goofy at t=1.2) that clearance is not enough and the
+    # tee came through the jacket's lower back as "a large angular cream
+    # patch" (two critics held clothing at 2 on it). Painted like the jacket
+    # behind the side seams, a poke-through is the jacket's own colour.
+    if sin(theta) > 0.0 and z > JACKET_LEVELS[0][0]:
+        return jacket_color(z)
     if z <= TEE_BAND_Z:
         return SHIRT_DARK
     return SHIRT
@@ -513,7 +521,10 @@ def build_jacket(builder: MeshBuilder, detail: int) -> None:
     rows = []
     for (z, hx, hy) in JACKET_LEVELS:
         colour = jacket_color(z)
-        bone = "Hips" if z < 1.7 else ("Spine" if z < 2.1 else "Spine2")
+        # The tee's own bone bands (TORSO_LEVELS), so shell and tee bend as one
+        # garment: the old bands (Hips to 1.7, Spine to 2.1, then Spine2) put
+        # the shell's lower back on a different bone from the tee under it.
+        bone = "Hips" if z < 1.44 else ("Spine" if z < 1.86 else ("Spine1" if z < 2.24 else "Spine2"))
         row = []
         # Fold-back inner vertex at the leading front edge.
         t0 = start
