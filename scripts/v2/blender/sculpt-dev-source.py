@@ -305,8 +305,14 @@ def build_hair(builder: MeshBuilder, detail: int) -> None:
         # glint's other half.
         # Dev's crown is bigger and thicker than the table's first owner's:
         # every lock is carried out to the new shell and fattened.
-        spine = tuple((x * 1.06, y * 1.42, z + 0.350) for x, y, z in spine)
-        radii = tuple(r * 1.60 for r in radii)
+        # They are also SHORTER and BLUNTER: his sheet draws chunky tousled
+        # lumps, where the table's long tapers read as blades raked off the
+        # back of a helmet. The tip is pulled 45% of the way back to the
+        # middle point and left fat.
+        p0, p1, p2 = ((x * 1.06, y * 1.26, z + 0.350) for x, y, z in spine)
+        p2 = tuple(m + 0.55 * (t - m) for m, t in zip(p1, p2))
+        spine = (p0, p1, p2)
+        radii = (radii[0] * 1.70, radii[1] * 1.95, radii[2] * 3.20)
         builder.tube(list(spine), list(radii), 2, HAIR, "Head", 7, flip=spine[0][0] < 0)
 
 
@@ -316,16 +322,16 @@ def build_hair(builder: MeshBuilder, detail: int) -> None:
 # torso in every view; halves bounded off the shoulder run above the chair
 # (front z≈2.15 measures 0.67 arm-to-arm) minus the drawn sleeve girth.
 TORSO_LEVELS = [
-    (1.500, 0.403, 0.325, "Hips"),
-    (1.560, 0.409, 0.329, "Hips"),
-    (1.750, 0.400, 0.322, "Spine"),
-    (1.950, 0.388, 0.313, "Spine"),
-    (2.150, 0.372, 0.299, "Spine1"),
-    (2.300, 0.351, 0.282, "Spine1"),
-    (2.430, 0.320, 0.255, "Spine2"),
-    (2.490, 0.262, 0.209, "Spine2"),
-    (2.545, 0.207, 0.168, "Spine2"),
-    (2.595, 0.183, 0.151, "Spine2"),
+    (1.590, 0.347, 0.276, "Hips"),
+    (1.640, 0.352, 0.279, "Hips"),
+    (1.750, 0.344, 0.274, "Spine"),
+    (1.950, 0.333, 0.266, "Spine"),
+    (2.150, 0.320, 0.254, "Spine1"),
+    (2.300, 0.302, 0.240, "Spine1"),
+    (2.430, 0.275, 0.217, "Spine2"),
+    (2.490, 0.226, 0.177, "Spine2"),
+    (2.545, 0.178, 0.143, "Spine2"),
+    (2.595, 0.158, 0.128, "Spine2"),
 ]
 
 
@@ -421,18 +427,21 @@ def build_seated_legs(builder: MeshBuilder, detail: int) -> None:
         x = side * 0.195
         # Thigh: hip forward and slightly up to the raised knee (sport tuck).
         builder.tube(
-            [(x, -0.020, 1.500), (x + side * 0.008, -0.200, 1.520), (x + side * 0.012, -0.360, 1.515)],
-            [0.172, 0.166, 0.160], 1, SHORTS, "Root", sides)
+            [(x, -0.020, 1.480), (x + side * 0.008, -0.200, 1.495), (x + side * 0.012, -0.360, 1.490)],
+            [0.146, 0.138, 0.130], 1, SHORTS, "Root", sides)
         # The sheet's shorts stop mid-thigh: a bare thigh and a round knee
         # carry the lap forward to the shin.
         builder.tube(
-            [(x + side * 0.012, -0.380, 1.512), (x + side * 0.015, -0.560, 1.500), (x + side * 0.016, -0.670, 1.440)],
-            [0.150, 0.152, 0.126], 0, SKIN, "Root", sides)
+            # ⚠️ The lap's TOP is the seated swing's floor: audit:batting's
+            # palm ray reads the knees as body, and thighs 0.17 thick put the
+            # palms 0.15ft inside them at contact.
+            [(x + side * 0.012, -0.380, 1.480), (x + side * 0.015, -0.560, 1.462), (x + side * 0.016, -0.670, 1.410)],
+            [0.122, 0.122, 0.108], 0, SKIN, "Root", sides)
         if detail >= 2:
             # Shorts hem lip at the knee.
             builder.tube(
-                [(x + side * 0.012, -0.350, 1.515), (x + side * 0.012, -0.395, 1.512)],
-                [0.168, 0.158], 1, SHORTS_DARK, "Root", sides)
+                [(x + side * 0.012, -0.350, 1.490), (x + side * 0.012, -0.395, 1.488)],
+                [0.136, 0.126], 1, SHORTS_DARK, "Root", sides)
         # Bare shin dropping to the tucked ankle.
         builder.tube(
             [(x + side * 0.015, -0.660, 1.450), (x + side * 0.018, -0.740, 1.000), (x + side * 0.018, -0.760, 0.640)],
@@ -448,8 +457,11 @@ def build_seated_legs(builder: MeshBuilder, detail: int) -> None:
                 [0.120, 0.118], 1, SOCK_BAND, "Root", sides)
         # The sneaker: heel-to-toe lozenge on the footplate, sole below.
         builder.tube(
-            [(x + side * 0.018, -0.620, 0.520), (x + side * 0.018, -0.860, 0.500), (x + side * 0.018, -1.000, 0.480)],
-            [0.112, 0.126, 0.084], 1, SHOE, "Root", sides)
+            # The fourth point rounds the toe shut: a tube that ends at full
+            # girth shows its end as a flat disc from the front.
+            [(x + side * 0.018, -0.620, 0.520), (x + side * 0.018, -0.860, 0.500), (x + side * 0.018, -1.000, 0.480),
+             (x + side * 0.018, -1.050, 0.472)],
+            [0.112, 0.126, 0.090, 0.030], 1, SHOE, "Root", sides)
         if detail >= 1:
             builder.tube(
                 [(x + side * 0.018, -0.620, 0.435), (x + side * 0.018, -1.000, 0.415)],
@@ -458,26 +470,24 @@ def build_seated_legs(builder: MeshBuilder, detail: int) -> None:
 
 # --- The sport chair (ROOT-weighted) -------------------------------------------
 #
-# Proxy-proven geometry, authored: cambered wheels with blue push rims (the
-# team accent), hubs, front casters, three frame rails a side, upholstered
-# seat and backrest, a footplate closing the chassis.
-# measured: front z=0.50 halfWidth=1.188
-# measured: view2 z=1.30 halfWidth=1.056
-# The chair, sized to the sheet (2026-09-12). Front view: the figure is 1.188
-# half-wide from z 0.2 to 0.7 and the outermost runs at both ends are tyre
-# (#030302/#16191a) — the drive wheels span 2.38ft, 59% of figure height,
-# where WHEEL_X 0.58 + tyre + camber delivered 1.5ft (the critic's "43.4% of
-# figure height against ~60%"). Profile: one dark centre run 0.97 / 0.84 /
-# 1.20 / 1.34 wide at z 1.3 / 1.4 / 1.5 / 1.6 is the wheel meeting the seat
-# and tucked legs — the wheel's diameter is ~1.55ft (r 0.76, centred at
-# 0.78), not 1.1. The backrest reaches z ~2.2 (the "chair top 44.9% down"
-# read; the old backrest topped out at 2.03 and its VISIBLE top in the front
-# board was the seat at 1.56). The seat and the kid do not move: a sport
-# chair's cambered wheels come up beside the hips, which is the whole read.
+# Cambered drive wheels with orange push rims, hubs (the team accent), front
+# casters, three frame rails a side, an upholstered seat and backrest with
+# two back posts, a footplate closing the chassis.
+# not-traceable: the wheels are drawn through the kid's hands and legs in every
+# view, so no run is tyre alone. Bounded off dev-turnaround.png's front view
+# (2026-11-14): the figure's box is 1.86ft wide and its outermost runs at the
+# floor are tyre, so the tyres stand 0.93 out; the wheel tops come up beside
+# the hips at about 0.62. That is a wheel centred 0.76 out with 0.184 of
+# camber per foot of height — far more lean than the slot's first chair
+# (0.98 out, 0.115), which is why that chair read from the front as two posts
+# standing clear of him. The wheel's size is unchanged (r 0.76 at 0.78).
+# ⚠️ `proceduralClips.ts`'s ZOOM_RIM mirrors WHEEL_X + 0.048, WHEEL_CAMBER,
+# RIM_R and WHEEL_CENTER_Z (seatedPropulsion.test.ts holds them equal), and
+# his baked take must be re-exported after any change here.
 WHEEL_CENTER_Z = 0.780
 WHEEL_R = 0.760
-WHEEL_X = 0.980
-WHEEL_CAMBER = 0.115         # top of the wheel leans inboard
+WHEEL_X = 0.760
+WHEEL_CAMBER = 0.184         # the sheet's racing camber: tops at 0.62, tyres on the ground at 0.90
 RIM_R = 0.660
 
 
@@ -513,7 +523,7 @@ def build_chair(builder: MeshBuilder, detail: int) -> None:
             # 2586 background pixels in the profile board against the 1200
             # silhouette.lint had recorded for the old wheel; eight left one
             # sector at 1201. 2026-09-12.
-            spokes = 12 if detail >= 2 else 4
+            spokes = 10 if detail >= 2 else 4
             for k in range(spokes):
                 theta = pi * k / spokes + pi / (2 * spokes)
                 y1 = 0.060 + (WHEEL_R - 0.07) * sin(theta)
@@ -552,7 +562,18 @@ def build_chair(builder: MeshBuilder, detail: int) -> None:
                              [0.028, 0.024], 1, FRAME, "Root", 4)
     # Seat sling, backrest and footplate.
     builder.ellipsoid((0.0, 0.020, 1.420), (0.345, 0.320, 0.058), 1, SEAT, "Root", 8, 4)
-    builder.ellipsoid((0.0, 0.300, 1.900), (0.360, 0.065, 0.340), 1, SEAT, "Root", 8, 4)
+    builder.ellipsoid((0.0, 0.300, 1.900), (0.425, 0.065, 0.340), 1, SEAT, "Root", 8, 4)
+    if detail >= 2:
+        # Back posts: the frame's uprights, standing just outside the torso so
+        # the chair shows from the front (the sheet's black frame at the hips).
+        for side in (1, -1):
+            builder.tube([(side * 0.400, 0.270, 1.380), (side * 0.404, 0.300, 2.200)],
+                         [0.040, 0.036], 1, FRAME, "Root", 4)
+            # The camber strut: seat rail down and out to the axle by the hub.
+            # It is the frame member the sheet draws under each hand, and it
+            # divides the opening between the seat and the leaning wheel.
+            builder.tube([(side * 0.390, 0.200, 1.400), (side * 0.700, 0.060, WHEEL_CENTER_Z + 0.03)],
+                         [0.032, 0.030], 1, FRAME, "Root", 4)
     if detail >= 1:
         # The footplate sits UNDER the sole and MEETS it: top z 0.366, 0.02
         # into a sole tube whose bottom is 0.343-0.345 — at 0.300 the soles

@@ -2555,81 +2555,6 @@
       "class": "face-atlas",
       "excerpt": "FACE: Profile is still a flat vertical plane (guri-profile-review.png, guri-"
     },
-    "wheelchair_ace:5f2c4d5b7892": {
-      "char": "wheelchair_ace",
-      "class": "other",
-      "excerpt": "CHAIR: from the front there is no backrest, seat or side frame, and the whee"
-    },
-    "wheelchair_ace:9d2f99a98e3a": {
-      "char": "wheelchair_ace",
-      "class": "other",
-      "excerpt": "CHAIR: the orange push rim sits inside the tyre plane and is a hairline sliv"
-    },
-    "wheelchair_ace:5d0b80d9c336": {
-      "char": "wheelchair_ace",
-      "class": "material-light",
-      "excerpt": "HAIR: smooth glossy helmet with a row of thin straight rods projecting backw"
-    },
-    "wheelchair_ace:629811b4c0da": {
-      "char": "wheelchair_ace",
-      "class": "proportions",
-      "excerpt": "BODY: the seated pose does not read from the front; the legs hang as straigh"
-    },
-    "wheelchair_ace:aa380dae165a": {
-      "char": "wheelchair_ace",
-      "class": "other",
-      "excerpt": "TEE/SHORTS: the tee is a tube to the crotch with a zig-zag hem and hides the"
-    },
-    "wheelchair_ace:7d477faf1a59": {
-      "char": "wheelchair_ace",
-      "class": "proportions",
-      "excerpt": "LEGS: dark navy faces cap each knee (face-grin x 487-520 and 537-575, y 492-"
-    },
-    "wheelchair_ace:2ad869f2b8c7": {
-      "char": "wheelchair_ace",
-      "class": "other",
-      "excerpt": "SHOES: orange blocks with dark navy toe ends and no teal (face-grin x 488-51"
-    },
-    "wheelchair_ace:69bcaf4606b8": {
-      "char": "wheelchair_ace",
-      "class": "other",
-      "excerpt": "HAIR: pale grey slits in the cap (face-grin about (531,225) and (517-547,187"
-    },
-    "wheelchair_ace:4c79a02d0741": {
-      "char": "wheelchair_ace",
-      "class": "proportions",
-      "excerpt": "HANDS: in idle the near hand hovers above the tyre and the far hand is held "
-    },
-    "wheelchair_ace:9bdc338e1edd": {
-      "char": "wheelchair_ace",
-      "class": "other",
-      "excerpt": "TEE: dark navy wedges between sleeve and torso (hero x 543-560, y 337-360; f"
-    },
-    "wheelchair_ace:a9eb4b693ae9": {
-      "char": "wheelchair_ace",
-      "class": "other",
-      "excerpt": "CHAIR: in dev-runtime-swing.png a black panel sticks out behind the ribs (x "
-    },
-    "wheelchair_ace:ba4aadc379e6": {
-      "char": "wheelchair_ace",
-      "class": "face-atlas",
-      "excerpt": "FACE: ears are oversized and sit at jaw level, reading as jowls (face-grin x"
-    },
-    "wheelchair_ace:9fd13f114006": {
-      "char": "wheelchair_ace",
-      "class": "face-atlas",
-      "excerpt": "FACE: in the 3/4 neutral the mouth merges with the nose into a moustache-lik"
-    },
-    "wheelchair_ace:054df4145dd3": {
-      "char": "wheelchair_ace",
-      "class": "proportions",
-      "excerpt": "BODY: no neck, thin long arms, small mitten hands. Thicken the forearms and "
-    },
-    "wheelchair_ace:d50276db2e10": {
-      "char": "wheelchair_ace",
-      "class": "other",
-      "excerpt": "CHAIR: hubs are teal-green (hero (458,592)) and there are two small front ca"
-    },
     "tank:5be4744f9d0b": {
       "char": "tank",
       "class": "other",
@@ -2699,6 +2624,76 @@
       "char": "tank",
       "class": "evidence",
       "excerpt": "GEAR: Back harness (Y-strap, waist strap) appears in no runtime capture or b"
+    },
+    "wheelchair_ace:aec6ba97517f": {
+      "char": "wheelchair_ace",
+      "class": "other",
+      "excerpt": "HAIR: smooth dome cap with five or six flat blades pointing straight back of"
+    },
+    "wheelchair_ace:5e235f44c757": {
+      "char": "wheelchair_ace",
+      "class": "other",
+      "excerpt": "BODY: the seated pose does not read from the front: trunk about half the hea"
+    },
+    "wheelchair_ace:1ff3cfa60b26": {
+      "char": "wheelchair_ace",
+      "class": "other",
+      "excerpt": "CHAIR: seat much wider than the rider, leaving open dirt between shins and w"
+    },
+    "wheelchair_ace:01e659884321": {
+      "char": "wheelchair_ace",
+      "class": "other",
+      "excerpt": "TEE/SHORTS: tee is a tube to the crotch that hides the shorts from the front"
+    },
+    "wheelchair_ace:9bf373ebbcd4": {
+      "char": "wheelchair_ace",
+      "class": "proportions",
+      "excerpt": "TEE/LEGS: slate-blue wedges between each sleeve and the trunk (face-grin x 4"
+    },
+    "wheelchair_ace:4c60bb53af0c": {
+      "char": "wheelchair_ace",
+      "class": "other",
+      "excerpt": "SHOES: orange and white only, no teal (second shoe tone 0.82% against 29.4%)"
+    },
+    "wheelchair_ace:9b635261c514": {
+      "char": "wheelchair_ace",
+      "class": "face-atlas",
+      "excerpt": "FACE: ears oversized and at mouth-to-jaw level, reading as jowls (face-grin "
+    },
+    "wheelchair_ace:0cb9a1cb948a": {
+      "char": "wheelchair_ace",
+      "class": "face-atlas",
+      "excerpt": "FACE: brows are short fixed blocks; angry is neutral plus a faint brown mout"
+    },
+    "wheelchair_ace:60be00fd6814": {
+      "char": "wheelchair_ace",
+      "class": "face-atlas",
+      "excerpt": "FACE: in the 3/4 neutral the smile line wraps under the nose into a ring tha"
+    },
+    "wheelchair_ace:68641d57dd02": {
+      "char": "wheelchair_ace",
+      "class": "proportions",
+      "excerpt": "HANDS: in idle both palms hover in open air outboard of the wheels (face-gri"
+    },
+    "wheelchair_ace:b8e2359569f0": {
+      "char": "wheelchair_ace",
+      "class": "other",
+      "excerpt": "CHAIR: camber shallower than the sheet's; lean the wheel tops in further so "
+    },
+    "wheelchair_ace:263e99acf9ba": {
+      "char": "wheelchair_ace",
+      "class": "proportions",
+      "excerpt": "BODY: no neck, thin arms, small hands; the sheet has stocky arms and large h"
+    },
+    "wheelchair_ace:38582383f141": {
+      "char": "wheelchair_ace",
+      "class": "other",
+      "excerpt": "CHAIR: hubs teal-green, footplate light grey, a second caster visible behind"
+    },
+    "wheelchair_ace:41d7261adcc6": {
+      "char": "wheelchair_ace",
+      "class": "other",
+      "excerpt": "HAIR: a thin dark seam line crosses the cap above the temple in the hero (x "
     }
   }
 }
