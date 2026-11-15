@@ -51,14 +51,14 @@
     },
     "tank": {
       "name": "Sonny Fifita",
-      "slug": "tank",
-      "source": "tank-pilot.blend",
+      "slug": "sonny",
+      "source": "sonny-pilot.blend",
       "traits": [
         "low wide silhouette",
-        "bald round crown",
-        "massive tee",
-        "short planted legs",
-        "sleepy compact face"
+        "backwards skull cap",
+        "ridged chest protector",
+        "shin guards under knee caps",
+        "calm warm face"
       ]
     },
     "mimi_mash": {

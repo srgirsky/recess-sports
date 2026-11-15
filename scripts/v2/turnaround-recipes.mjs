@@ -40,19 +40,24 @@
 /** @typedef {{ hex: string, paired?: boolean }} Material */
 
 export const RECIPES = {
+  // ★ SONNY FIFITA TOOK TANK'S SLOT IN THE WORLD 1 RE-CAST. Same big kid, a
+  // different drawing: wider, a hip-length tee, and catcher's gear over it —
+  // which is why there is no torso sweep (the chest protector covers the tee's
+  // centre run at every height the arms leave clear).
+  // ⚠️ THE COMMITTED SHEET IS RE-SPACED. As drawn, his five views overlap in
+  // x (a wide kid: view 1's hand touches view 2's, and view 3's cap brim sits
+  // over view 2's arm), so the sheet split into three. Each figure was moved
+  // sideways as one connected component — no pixel inside a figure changed —
+  // with views 1 and 2 cut apart at the emptiest column between them.
   tank: {
-    slug: 'tank',
-    views: ['front', 'threeQuarter', 'profile', 'back', 'action'],
+    slug: 'sonny',
+    views: ['front', 'threeQuarter', 'profile', 'back', 'threeQuarter'],
     materials: {
-      shirt: { hex: '#65437c' },
-      skin: { hex: '#cb824d' },
-      shoe: { hex: '#f6e9d9', paired: true },
+      shirt: { hex: '#5c2a82' },
+      skin: { hex: '#b9683a' },
+      shoe: { hex: '#ecdcc4', paired: true },
       pants: { hex: '#24242b', paired: true },
     },
-    // Below z 1.71 his hands cross the tee's edge, so the run's outer edge is a
-    // hand and not the garment; above z 2.23 the sleeve covers it. The sculpt
-    // header records both, which is why the sweep is bounded rather than full.
-    sweeps: { torso: { view: 'front', material: 'shirt', role: 'centre', from: 1.80, to: 2.30, step: 0.06 } },
     bands: { shoe: { view: 'front', material: 'shoe' } },
   },
 

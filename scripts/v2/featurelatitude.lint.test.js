@@ -114,12 +114,16 @@ const latitudeOfCell = (cellY, low, span) => low + (1 - cellY / 128) * span;
  * clear a change — the change is what moved.
  */
 const TURNAROUND = {
+  // Sonny Fifita took this slot in the World 1 re-cast; the face targets are
+  // his. Bounded dark-row traces on sonny-turnaround.png (crown row 234 = the
+  // cap's top, neck row 427): brows rows 301-316, eyes rows 340-358, the
+  // closed smile at row 385; the ears' widest row is 370.
   tank: {
-    slug: 'tank',
-    brow: 36.7,
-    eye: 56.5,
-    mouth: 78.3,
-    earLine: 64.3,
+    slug: 'sonny',
+    brow: 38.3,
+    eye: 59.6,
+    mouth: 78.2,
+    earLine: 70.5,
     tolerance: 2.5,
     // ★ THE SHOE IS THE SAME PROBLEM ONE LIMB DOWN, so it is gated the same way.
     //

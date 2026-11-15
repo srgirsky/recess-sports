@@ -71,7 +71,7 @@ const concepts = join(repo, 'docs', 'v2', 'concepts');
 // direct pixel sample) and they are demonstrably right on both characters.
 const GOVERNED = [
   { id: 'nostrike', script: 'sculpt-junebug-source.py' },
-  { id: 'tank', script: 'sculpt-tank-source.py' },
+  { id: 'tank', script: 'sculpt-sonny-source.py' },
   { id: 'grizz', script: 'sculpt-greta-source.py' },
   { id: 'sprout', script: 'sculpt-sprout-source.py' },
   { id: 'bubbles', script: 'sculpt-bubbles-source.py' },
@@ -207,21 +207,21 @@ describe('a sculpt script says where its form numbers came from', () => {
   // and this one has three edges, so it is broken three ways.
   it('fires on a form table with no provenance at all', async () => {
     const errors = await provenanceErrors({
-      'sculpt-tank-source.py': 'FAKE_LEVELS = [\n    (1.0, 0.5, 0.5, "Hips"),\n]\n',
+      'sculpt-sonny-source.py': 'FAKE_LEVELS = [\n    (1.0, 0.5, 0.5, "Hips"),\n]\n',
     });
     expect(errors.some((error) => error.includes('FAKE_LEVELS') && error.includes('has no provenance'))).toBe(true);
   });
 
   it('fires on a citation the concept sheet does not support', async () => {
     const errors = await provenanceErrors({
-      'sculpt-tank-source.py': '# measured: front z=2.00 halfWidth=0.100\nFAKE_LEVELS = [\n    (1.0, 0.5),\n]\n',
+      'sculpt-sonny-source.py': '# measured: front z=2.00 halfWidth=0.100\nFAKE_LEVELS = [\n    (1.0, 0.5),\n]\n',
     });
     expect(errors.some((error) => error.includes('but the sheet measures'))).toBe(true);
   });
 
   it('accepts a declared-untraceable landmark, which is the case that was silent', async () => {
     const errors = await provenanceErrors({
-      'sculpt-tank-source.py':
+      'sculpt-sonny-source.py':
         '# not-traceable: his arms rest against the body in all five views, so a\n' +
         '# centre run is arm plus torso. Depth is taken from the profile instead.\n' +
         'FAKE_LEVELS = [\n    (1.0, 0.5),\n]\n',

@@ -77,18 +77,18 @@
       ]
     },
     "tank": {
-      "source": "tank-pilot.blend",
-      "sourceSha256": "d57dfbb9a5657fb41b70edeb4318a1fd60560a8e7ca1cea60a90e17b35918e0e",
-      "concept": "tank-turnaround.png",
-      "conceptSha256": "32d3e55d0bb1f56fa6edacf9d87f7d53cc516cd3877740042f9c82e0c5756bd4",
+      "source": "sonny-pilot.blend",
+      "sourceSha256": "0a635e692fe1ce608fa5e31b60f9e93373b8e12cd7a8531544eae395bb0ccd36",
+      "concept": "sonny-turnaround.png",
+      "conceptSha256": "ad26d51d48ad7f02a2a3e9ad1aa8b0930527b0f2945c0fdee012819a76c435c2",
       "output": "kid_tank.glb",
-      "outputSha256": "64ab9aad1f8d88e103bed6107ca4b9d9c1ac9bc8e40de3c427738776c604114d",
+      "outputSha256": "9b29de4147bf813d0eaa37fceff61058dabb244f31ed9f11b74fb7533c884b36",
       "definingTraits": [
         "low wide silhouette",
-        "bald round crown",
-        "massive tee",
-        "short planted legs",
-        "sleepy compact face"
+        "backwards skull cap",
+        "ridged chest protector",
+        "shin guards under knee caps",
+        "calm warm face"
       ]
     },
     "grizz": {
