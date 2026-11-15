@@ -1154,7 +1154,7 @@ export const FACE_SPECS = {
     irisInward: 3,
     eyeX: [31, 97],
     eyeY: 56,
-    browThick: 6.4,
+    browThick: 5.4,
     browThin: 2.8,
     browHalf: 22,
     browX: [31, 97],
@@ -1163,7 +1163,7 @@ export const FACE_SPECS = {
     alignOpenMouth: true,
     tongueOut: true,
     tongueReach: 1.4,
-    mouthScale: 1.0,
+    mouthScale: 0.86,
     mouthY: 80,
     // A closed, gentle smile (Guri Sandhu took this slot; his sheet's face sits
     // lower on a smaller head than the previous kid's, so every Y anchor moved).

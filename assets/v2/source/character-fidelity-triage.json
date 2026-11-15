@@ -2705,60 +2705,55 @@
       "class": "other",
       "excerpt": "BODY: Tee ~9 narrow stripes vs ~5 wide, no dark collar trim. Still: grin x48"
     },
-    "big_lou:c65146400f10": {
-      "char": "big_lou",
-      "class": "other",
-      "excerpt": "BODY: Shoe toe caps end in a pinched point with a dark crease and a jagged n"
-    },
-    "big_lou:bf672097d563": {
+    "big_lou:ed992e610644": {
       "char": "big_lou",
       "class": "face-atlas",
-      "excerpt": "FACE: Brows are thick blocks with a heavy squared inner end in every express"
+      "excerpt": "FACE: In the captures labelled neutral the mouth is open with a tongue hangi"
     },
-    "big_lou:eeef2a264efb": {
+    "big_lou:9f13e6821e07": {
+      "char": "big_lou",
+      "class": "other",
+      "excerpt": "BODY: Shoe toe caps pinch to a point at the sole tip with a notch facet and "
+    },
+    "big_lou:32ce3c7d144c": {
       "char": "big_lou",
       "class": "face-atlas",
-      "excerpt": "FACE: Neutral mouth decal is dragged along the jaw as a grey and pink streak"
+      "excerpt": "FACE: Eyes are tall pointed almonds with a heavy outline and grey sclera (br"
     },
-    "big_lou:241978edf166": {
+    "big_lou:3e54eed3a286": {
       "char": "big_lou",
       "class": "proportions",
-      "excerpt": "BODY: Legs are separate columns with a full-length gap (ankle daylight 21.3 "
+      "excerpt": "BODY: Legs are separate columns with a full-length gap (ankle daylight 16.7 "
     },
-    "big_lou:eb7ea98e676a": {
+    "big_lou:252dc75e0f79": {
+      "char": "big_lou",
+      "class": "other",
+      "excerpt": "BODY: The tee has no collar and no neck; the cream yoke rises as a cone into"
+    },
+    "big_lou:0d375c947ca3": {
       "char": "big_lou",
       "class": "proportions",
-      "excerpt": "BODY: Shorts render black (rgb 0,6,18 vs the sheet's 38,42,68), hug the thig"
+      "excerpt": "BODY: Hands are about half the sheet's size with thin prong fingers, and for"
     },
-    "big_lou:fa0a3213467d": {
+    "big_lou:dd359dd81689": {
       "char": "big_lou",
       "class": "face-atlas",
-      "excerpt": "FACE: Eyes are tall pointed almonds with grey-green sclera, no blush or frec"
+      "excerpt": "FACE: Brows are thick bars with a squared heavy inner end and blurry edges i"
     },
-    "big_lou:31bb7d465903": {
+    "big_lou:90fe05f097ee": {
+      "char": "big_lou",
+      "class": "other",
+      "excerpt": "PATKA: At 3/4 the shell thickness shows as a grey-blue slab at the far templ"
+    },
+    "big_lou:53c5c13d9b48": {
       "char": "big_lou",
       "class": "proportions",
-      "excerpt": "BODY: Hands are about half the sheet's size and forearms taper to thin wrist"
+      "excerpt": "BODY: Socks render grey-olive (mean rgb 113,118,97 vs 233,217,207) and reach"
     },
-    "big_lou:aeb0df4bd42a": {
+    "big_lou:de91d2ec7a63": {
       "char": "big_lou",
       "class": "other",
-      "excerpt": "BODY: Sleeve stripes are a blurred gradient with no cuff, next to crisp body"
-    },
-    "big_lou:4b01ab833347": {
-      "char": "big_lou",
-      "class": "other",
-      "excerpt": "PATKA: Front edge is a straight line with a corner at each temple rather tha"
-    },
-    "big_lou:15a8f1a3c25d": {
-      "char": "big_lou",
-      "class": "other",
-      "excerpt": "BODY: Each sock has a thin yellow ring at the top that is not on the sheet ("
-    },
-    "big_lou:8a8aeae71901": {
-      "char": "big_lou",
-      "class": "other",
-      "excerpt": "PATKA: Broad glossy highlight on dome and knot reads as a swim cap; no gathe"
+      "excerpt": "PATKA: Knot is a flattened ellipsoid about a third of the dome width with no"
     },
     "big_lou:fe4ec03b28a5": {
       "char": "big_lou",
