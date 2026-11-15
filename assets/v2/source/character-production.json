@@ -363,11 +363,11 @@
     },
     "boomer": {
       "source": "boomer-pilot.blend",
-      "sourceSha256": "4978719b9cc5308aab16739b1bddd8ccb1bfc9f74bc50d66ebf2d74e50031ef4",
+      "sourceSha256": "f9bc4807b3e18fd2b14d1311a2b24071829ac7db277f90a9e23e799122903f5a",
       "concept": "boomer-turnaround.png",
       "conceptSha256": "3748d36bff3ab7120b26edf7d5cea8da733140f40a0ac8adeccc0b88f55ca732",
       "output": "kid_boomer.glb",
-      "outputSha256": "81d3d8d7393151bee4484fa20b04cf1253a21d6f67c3900181cc955d496fcd9e",
+      "outputSha256": "7a4c0079a41fa5e0d0a16d79cf89cd6703f456f40954ce914219f328ae085df8",
       "definingTraits": [
         "tall black mohawk crest",
         "gold-and-cream striped tee",

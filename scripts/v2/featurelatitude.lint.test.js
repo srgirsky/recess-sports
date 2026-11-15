@@ -413,15 +413,20 @@ const TURNAROUND = {
   },
   // ★ BOOMER'S EARS SIT LOW ON THE BIG HEAD — earLine 75.1 is real (widest
   // row z 2.88 where the ears break the jaw line, not hair). Bounded traces
-  // on boomer-turnaround.png (mohawk-top crown row 118, neck row 363):
-  // brows rows 224-232 centred ~227 (the widow's peak between them scans as
-  // a third brow), eyes rows 246-260 centred ~252, the grin outline rows
-  // 272-290 centred ~280.
+  // on boomer-turnaround.png (mohawk-top crown row 118, neck row 363).
+  // ★ CORRECTED 2026-11-15: the first trace filed each feature ONE FEATURE
+  // TOO HIGH (44.5 / 54.7 / 66.0). Luminance scans down columns 169, 176,
+  // 202 and 236 of the front view: rows 224-232 are the widow's peak of the
+  // HAIRLINE, the brows are the dark run at rows 246-255 (centre 251), the
+  // eyes run 273-297 (lid line 273, sclera 276-282, iris 285-294; centre
+  // 285), and the teeth are the white run at rows 333-339 inside a mouth
+  // 327-345 (centre 336). This is a correction to a wrong measurement, shown
+  // with the scan, not a tolerance widened to pass a sculpt.
   boomer: {
     slug: 'boomer',
-    brow: 44.5,
-    eye: 54.7,
-    mouth: 66.0,
+    brow: 54.3,
+    eye: 68.2,
+    mouth: 89.0,
     earLine: 75.1,
     span: { crownZ: 3.99, neckZ: 2.51 },
     tolerance: 2.5,
