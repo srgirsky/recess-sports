@@ -1100,11 +1100,6 @@
       "class": "decal-not-form",
       "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: NEW (low) — turnaround fr"
     },
-    "gizmo:c34f82777d46": {
-      "char": "gizmo",
-      "class": "hair-nyquist",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED — gizmo-profile-r"
-    },
     "gizmo:3d1e3af929b0": {
       "char": "gizmo",
       "class": "ears",
@@ -1114,11 +1109,6 @@
       "char": "gizmo",
       "class": "butt-joins",
       "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED — gizmo-runtime-s"
-    },
-    "gizmo:23cf22392dde": {
-      "char": "gizmo",
-      "class": "face-atlas",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED (right side clear"
     },
     "dex:d0995111cbcd": {
       "char": "dex",
@@ -2524,6 +2514,41 @@
       "char": "boomer",
       "class": "face-atlas",
       "excerpt": "HEAD: nose is a smooth bump with a highlight, no nostrils or breadth; no che"
+    },
+    "gizmo:babd48886827": {
+      "char": "gizmo",
+      "class": "face-atlas",
+      "excerpt": "UPDATED - measure:fidelity visible face at brow: left 21.1 vs 9.59 OFF (+11."
+    },
+    "gizmo:18dfeca22363": {
+      "char": "gizmo",
+      "class": "hems-cuffs",
+      "excerpt": "(hair, high) - sweep-crops/gizmo-hair-r4/face-grin-head-4x.png x 440-720, y "
+    },
+    "gizmo:9bf3057ba7b7": {
+      "char": "gizmo",
+      "class": "other",
+      "excerpt": "(hair, high) - sweep-crops/gizmo-hair-r4/hero-head-4x.png, run-head-4x.png, "
+    },
+    "gizmo:166617c2a4d8": {
+      "char": "gizmo",
+      "class": "other",
+      "excerpt": "(hair, medium) - sweep-crops/gizmo-hair-r4/hero-head-4x.png x 940-1080, y 70"
+    },
+    "gizmo:bc517ca1d24e": {
+      "char": "gizmo",
+      "class": "face-atlas",
+      "excerpt": "(hair, medium) - sweep-crops/gizmo-hair-r4/face-grin-head-4x.png x 290-880, "
+    },
+    "gizmo:3aca55bfcbd1": {
+      "char": "gizmo",
+      "class": "other",
+      "excerpt": "(hair, low) - sweep-crops/gizmo-hair-r4/hero-head-4x.png x 540-760, y 760-96"
+    },
+    "gizmo:eeadaf620624": {
+      "char": "gizmo",
+      "class": "material-light",
+      "excerpt": "NEW (hair, low) - sweep-crops/gizmo-hair-r4/hero-head-4x.png x 400-560, y 64"
     }
   }
 }
