@@ -63,7 +63,7 @@ sculpt library. A build change (slim → wide, short → tallest) is a rebuild.
 | Ezra Bloom (T1) | `bend_it` | boy, the curve | tall and slouchy, bun → short, drop glasses, tzitzit | partial |
 | Ollie Nowak | `turbo` | small boy, speed 10 | name and lines | strong |
 | Fatou Diallo | `zippy` | the body and outfit; re-sculpted against her own sheet (slug `fatou`) with the sport hijab modelled on the hair slot, November 2026 | — | sculpted |
-| Guri Sandhu | `big_lou` | boy, power 10 | tallest (height up), patka under helmet | partial |
+| Guri Sandhu | `big_lou` | the striped tee and shorts; re-sculpted against his own sheet (slug `guri`) with the patka and topknot modelled on the hair slot, November 2026 | — | sculpted |
 | Yaz Rahman | `mimi_mash` | girl, power 9 | eyes-closed swing face | strong |
 | Toby Okonkwo ★ | `chip` | small boy | power way up (the joke is the stat line) | strong |
 | Roz Achterberg | `diva` | girl, long hair | pitching up to 9+, age 10 | partial |

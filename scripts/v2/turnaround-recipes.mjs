@@ -442,18 +442,18 @@ export const RECIPES = {
     bands: {},
   },
 
-  // ★ LOU'S GOLD AND CREAM STRIPES SIT ONE WARM STEP APART and his deep
-  // brown skin is the roster's darkest — the skin/hair boundary needs the
-  // declared anchors (his buzz cut clusters two steps from his own shadow
-  // tone), and the stripe pair is declared as ONE tee lane.
+  // ★ GURI'S FIFTH VIEW IS A SECOND THREE-QUARTER (no action pose), and his
+  // patka is declared as `hair`: it is the head's covering and owns the rows
+  // hair would. Navy shorts and navy shoe uppers are one cluster, so no shoe
+  // band is declared. The gold and cream stripes are ONE tee lane, as before.
   big_lou: {
-    slug: 'big-lou',
-    views: ['front', 'threeQuarter', 'profile', 'back', 'action'],
+    slug: 'guri',
+    views: ['front', 'threeQuarter', 'profile', 'back', 'threeQuarter'],
     materials: {
-      skin: { hex: '#944b25' },
-      hair: { hex: '#030202' },
-      tee: { hex: '#e8b04a' },
-      shorts: { hex: '#20242e' },
+      skin: { hex: '#cf7244' },
+      hair: { hex: '#324072' },
+      tee: { hex: '#f5a410' },
+      shorts: { hex: '#262a40' },
     },
     sweeps: {},
     bands: {},
