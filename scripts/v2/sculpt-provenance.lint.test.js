@@ -98,7 +98,7 @@ const GOVERNED = [
   { id: 'lefty', script: 'sculpt-lefty-source.py' },
   { id: 'mimi_mash', script: 'sculpt-mimi-mash-source.py' },
   { id: 'calls_shot', script: 'sculpt-mars-source.py' },
-  { id: 'wheelchair_ace', script: 'sculpt-zoom-source.py' },
+  { id: 'wheelchair_ace', script: 'sculpt-dev-source.py' },
   { id: 'big_lou', script: 'sculpt-guri-source.py' },
 ];
 

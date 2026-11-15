@@ -47,18 +47,18 @@
       ]
     },
     "wheelchair_ace": {
-      "source": "zoom-pilot.blend",
-      "sourceSha256": "ea1d2f6988c1c155fdb150ac15bcbb215883f77f42b8fdfa216ebd6226e1783d",
-      "concept": "zoom-turnaround.png",
-      "conceptSha256": "ab2ddf9b07a00ad095b4583046164edb23c26e542465ab4b2f7663fe8a38b296",
+      "source": "dev-pilot.blend",
+      "sourceSha256": "ae1d3b31efda4949556db71aaf3133c899c5590c1e1410bb02a1d34c56398542",
+      "concept": "dev-turnaround.png",
+      "conceptSha256": "114667c3ebdd1a1c3d6ee206067a281d3adabd7da2f0eb2d4cac03fa025f4429",
       "output": "kid_wheelchair_ace.glb",
-      "outputSha256": "8be432c8d94446b8f5c867e17600e28e67bbaaa66e1db09698a819d63bdb03d0",
+      "outputSha256": "3d12554a913c95e7c5c10a5c1a7a798a28c290ea04c2f2ca19256c67349198dd",
       "definingTraits": [
-        "compact sport chair",
-        "cambered wheels",
-        "bright push rims",
-        "swept spiky crown",
-        "forward athletic posture"
+        "cambered racing chair",
+        "orange push rims",
+        "teal tee",
+        "big tousled black crown",
+        "teal and orange sneakers"
       ]
     },
     "big_lou": {

@@ -112,7 +112,11 @@ const DEBT = {
   // to hover, and the flood walked in under it) and above by the seat —
   // 4965 px at (255,455). The sheet encloses the same space. Geometry found
   // under the pixels before the number moved, as the rule above asks.
-  zoom: 5000,
+  // 2026-11-14: Dev Raghunathan took the slot (slug `dev`); the chair is the
+  // same chair, so the entry moved to his slug and SHRANK with his thicker
+  // shins: the between-the-shins pocket now measures 4070 at (258,455), the
+  // wheel interior 746 at (278,554).
+  dev: 4100,
 };
 
 const VIEWS = ['front', 'profile', 'front-apose', 'profile-apose'];

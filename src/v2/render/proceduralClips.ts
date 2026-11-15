@@ -967,21 +967,29 @@ const ZOOM_CONTACT_END: Pose = /* @__PURE__ */ shift(ZOOM_STANCE_POSE, {
 });
 
 function zoomIdle(spec: ClipSpec): AnimationClip {
+  // His hands REST ON THE RIMS, a little ahead of the top. With the arms
+  // hanging free the front view read as a boy standing between two poles
+  // (five critic rounds running); a palm on each rim is what seats him in it.
+  const onRims = (pose: Pose): Pose => palmTo(palmTo(pose, -1, zoomRimPoint(-1, -14)), 1, zoomRimPoint(1, -14));
+  return buildZoomIdle(spec, onRims);
+}
+
+function buildZoomIdle(spec: ClipSpec, rest: (pose: Pose) => Pose): AnimationClip {
   return build(spec, [
-    { f: 0, pose: ZOOM_IDLE_POSE },
-    { f: 16, pose: shift(ZOOM_IDLE_POSE, { sp: [2, 0, 0], s2: [3, 0, 0], hd: [-1, -5, 0], la: [3, 0, -3], ra: [3, 0, 3] }) },
-    { f: 31, pose: shift(ZOOM_IDLE_POSE, { hd: [0, 12, -1], lf: [0, 5, 0], rf: [0, -5, 0] }) },
-    { f: 45, pose: shift(ZOOM_IDLE_POSE, { sp: [1, 0, 0], s2: [2, 0, 0], hd: [0, -6, 0] }) },
-    { f: spec.frames, pose: ZOOM_IDLE_POSE },
+    { f: 0, pose: rest(ZOOM_IDLE_POSE) },
+    { f: 16, pose: rest(shift(ZOOM_IDLE_POSE, { sp: [2, 0, 0], s2: [3, 0, 0], hd: [-1, -5, 0] })) },
+    { f: 31, pose: rest(shift(ZOOM_IDLE_POSE, { hd: [0, 12, -1] })) },
+    { f: 45, pose: rest(shift(ZOOM_IDLE_POSE, { sp: [1, 0, 0], s2: [2, 0, 0], hd: [0, -6, 0] })) },
+    { f: spec.frames, pose: rest(ZOOM_IDLE_POSE) },
   ]);
 }
 
 /**
- * Zoom's push rims, mirrored from `sculpt-zoom-source.py` (WHEEL_CENTER_Z,
+ * Zoom's push rims, mirrored from `sculpt-dev-source.py` (WHEEL_CENTER_Z,
  * RIM_R, WHEEL_X + 0.048, WHEEL_CAMBER) through the exporter's Z-up -> Y-up
  * swap. `seatedPropulsion.test.ts` parses the sculpt so the two cannot drift.
  */
-export const ZOOM_RIM = { centerY: 0.78, hubBack: 0.06, radius: 0.66, x: 1.028, camber: 0.115 } as const;
+export const ZOOM_RIM = { centerY: 0.78, hubBack: 0.06, radius: 0.66, x: 0.808, camber: 0.184 } as const;
 
 /** A point on a push rim's centreline; 0 degrees is the top, negative is toward the front. */
 export function zoomRimPoint(side: -1 | 1, deg: number): Vector3 {
@@ -1061,7 +1069,10 @@ function palmTo(pose: Pose, side: -1 | 1, target: Vector3, maxReach = 0.999): Po
  * side pushes. `direction` -1 pulls the rims backward for `jog_back`.
  */
 function zoomPush(spec: ClipSpec, direction: 1 | -1 = 1): AnimationClip {
-  const LEAN = 32, FORWARD = 10, CLAVICLE = 15, CATCH = 20, RELEASE = -30, STROKE = 0.28;
+  // LEAN was 32 for rims 1.03ft out; Dev's cambered rims sit 0.81 out and lean in
+  // to 0.69 at the top, so the trunk needs far less roll to keep a palm on one
+  // (at 26 the far hand left its rim early; seatedPropulsion.test.ts holds this).
+  const LEAN = 18, FORWARD = 10, CLAVICLE = 15, CATCH = 20, RELEASE = -30, STROKE = 0.28;
   const strokeOf = (phase: number, start: number) => ((phase - start) % 1 + 1) % 1;
   const keys: Key[] = [];
   for (let f = 0; f <= spec.frames; f++) {

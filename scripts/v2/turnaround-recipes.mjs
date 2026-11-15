@@ -470,19 +470,21 @@ export const RECIPES = {
   // landmarks stay valid; nothing else does. His navy tee and navy shorts
   // sit one cluster step apart; the teal trim and the blue push rims are
   // the two saturated anchors.
+  // ★ DEV RAGHUNATHAN TOOK THIS SLOT IN THE WORLD 1 RE-CAST, and he is seated
+  // in every view like the kid before him: the rule above holds for his
+  // sheet too.
   wheelchair_ace: {
-    slug: 'zoom',
-    // The 3q, profile and action figures MERGE through their overlapping
-    // wheels — the sheet splits into three regions and the middle one is
-    // only silhouette-and-colour (declared action).
-    views: ['front', 'action', 'back'],
-    // Tee, trim and shorts hold one navy cluster on this sheet, and the
-    // blue push rims blend into the tire ink at cluster scale — only the
-    // three separable lanes are declared.
+    slug: 'dev',
+    // His five views stand clear of one another (the previous kid's merged
+    // through their wheels), so all five are declared.
+    views: ['front', 'threeQuarter', 'profile', 'back', 'threeQuarter'],
+    // The orange rims and the orange shoe panels are one cluster and the
+    // black shorts sit in the chair's own ink, so only the three separable
+    // lanes are declared.
     materials: {
-      skin: { hex: '#e8934e' },
-      hair: { hex: '#24201e' },
-      tee: { hex: '#1f3960' },
+      skin: { hex: '#c46e45' },
+      hair: { hex: '#31271e' },
+      tee: { hex: '#186f71' },
     },
     sweeps: {},
     bands: {},
