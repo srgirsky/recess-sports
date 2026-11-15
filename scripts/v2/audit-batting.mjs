@@ -33,7 +33,7 @@ if(only.length&&process.argv.includes('--check'))throw Error('--check audits the
 let browser;
 try {
  const hash=sourceDigest(root);
- browser=await chromium.launch();
+ browser=await chromium.launch({args:['--mute-audio']});
  const page=await browser.newPage({viewport:{width:1280,height:720}});
  const errors=[];page.on('pageerror',e=>errors.push(String(e)));
  await page.addInitScript(()=>{window.requestAnimationFrame=()=>0;window.cancelAnimationFrame=()=>{};});

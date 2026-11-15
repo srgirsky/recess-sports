@@ -78,11 +78,11 @@
     },
     "tank": {
       "source": "sonny-pilot.blend",
-      "sourceSha256": "801c266b6e79dee965d15bf41480d309f9711c92e9673c2dbff41cece8d3abae",
+      "sourceSha256": "0a635e692fe1ce608fa5e31b60f9e93373b8e12cd7a8531544eae395bb0ccd36",
       "concept": "sonny-turnaround.png",
       "conceptSha256": "ad26d51d48ad7f02a2a3e9ad1aa8b0930527b0f2945c0fdee012819a76c435c2",
       "output": "kid_tank.glb",
-      "outputSha256": "5d6697071f211ea4f5ab1724760fd126aa707d3c0d47d380795e86ddf27a0de6",
+      "outputSha256": "9b29de4147bf813d0eaa37fceff61058dabb244f31ed9f11b74fb7533c884b36",
       "definingTraits": [
         "low wide silhouette",
         "backwards skull cap",
