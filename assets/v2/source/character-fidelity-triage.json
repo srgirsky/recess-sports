@@ -2625,70 +2625,75 @@
       "class": "evidence",
       "excerpt": "GEAR: Back harness (Y-strap, waist strap) appears in no runtime capture or b"
     },
-    "wheelchair_ace:6ec52eb3007b": {
+    "wheelchair_ace:54350f96b584": {
       "char": "wheelchair_ace",
-      "class": "material-light",
-      "excerpt": "HAIR: a smooth glossy cap with a few stick blades on the crown and flat slab"
+      "class": "other",
+      "excerpt": "BODY/CHAIR: the front view still reads as a kid standing in a stilt frame (d"
     },
-    "wheelchair_ace:73f5a7620677": {
+    "wheelchair_ace:529f3f51e5e4": {
+      "char": "wheelchair_ace",
+      "class": "other",
+      "excerpt": "HAIR: fringe hangs down over the forehead as long slabs and hides the near b"
+    },
+    "wheelchair_ace:a06477f691b7": {
+      "char": "wheelchair_ace",
+      "class": "other",
+      "excerpt": "HAIR: tufts are hard hexagonal prisms with flat ends, reading as coal lumps "
+    },
+    "wheelchair_ace:d2fa0680dfcf": {
+      "char": "wheelchair_ace",
+      "class": "other",
+      "excerpt": "HAIR: a slate-blue top-facing face on the forward tuft in 3/4 (dev-runtime-h"
+    },
+    "wheelchair_ace:c4668be65543": {
       "char": "wheelchair_ace",
       "class": "proportions",
-      "excerpt": "BODY: the seated pose does not read from the front: trunk about 87px under a"
+      "excerpt": "TEE/LEGS: hard navy wedges between each sleeve cap and the trunk (dev-runtim"
     },
-    "wheelchair_ace:efa032871b4b": {
+    "wheelchair_ace:02dfea19c0c7": {
       "char": "wheelchair_ace",
       "class": "other",
-      "excerpt": "HAIR: a flat navy-blue face shows between the cap and the front tuft in 3/4 "
+      "excerpt": "TEE/SHORTS: tee is a tube to the crotch, hiding the shorts from the front an"
     },
-    "wheelchair_ace:b445d127c740": {
-      "char": "wheelchair_ace",
-      "class": "other",
-      "excerpt": "CHAIR: seat much wider than the rider, leaving open dirt between shins and w"
-    },
-    "wheelchair_ace:ffb87bd4e17e": {
+    "wheelchair_ace:01f74c509975": {
       "char": "wheelchair_ace",
       "class": "proportions",
-      "excerpt": "TEE/LEGS: hard navy wedges between each sleeve cap and the trunk (face-grin "
+      "excerpt": "BODY: arms are long thin unbent rods from sleeve to tyre top, and from the f"
     },
-    "wheelchair_ace:605a8a755c62": {
+    "wheelchair_ace:8b1486c37c64": {
       "char": "wheelchair_ace",
       "class": "other",
-      "excerpt": "TEE/SHORTS: tee is a tube to the crotch that hides the shorts from the front"
+      "excerpt": "CHAIR: no backrest panel or seat sling (two thin posts at face-grin x 480-49"
     },
-    "wheelchair_ace:cc306b869684": {
+    "wheelchair_ace:307a2a8f926e": {
+      "char": "wheelchair_ace",
+      "class": "face-atlas",
+      "excerpt": "FACE: brows are short dashes identical in all four expressions; angry is a l"
+    },
+    "wheelchair_ace:3c212676e956": {
       "char": "wheelchair_ace",
       "class": "other",
       "excerpt": "SHOES: orange and white only, no teal, no laces (second shoe tone 0.82% agai"
     },
-    "wheelchair_ace:47604d8f9cbb": {
-      "char": "wheelchair_ace",
-      "class": "proportions",
-      "excerpt": "HANDS: from the front in idle both arms end at the tyre tops with no hand vi"
-    },
-    "wheelchair_ace:f750ed4a24db": {
+    "wheelchair_ace:d19fa182a5d8": {
       "char": "wheelchair_ace",
       "class": "face-atlas",
-      "excerpt": "FACE: ears oversized and set from mouth level to below the chin, reading as "
+      "excerpt": "FACE: ears are large and run from the eye line to the chin, reading as jowls"
     },
-    "wheelchair_ace:349c6fa9ec7e": {
+    "wheelchair_ace:5671dff71c0e": {
       "char": "wheelchair_ace",
       "class": "face-atlas",
-      "excerpt": "FACE: brows are short blocks identical in every expression; angry is a frown"
+      "excerpt": "FACE: the grin's top edge tucks under the nose so nose and mouth fuse, a rin"
     },
-    "wheelchair_ace:549c60de7a34": {
-      "char": "wheelchair_ace",
-      "class": "face-atlas",
-      "excerpt": "FACE: in the 3/4 neutral the smile line wraps under the nose into a ring tha"
-    },
-    "wheelchair_ace:d23bfda0a452": {
+    "wheelchair_ace:5d3ab1a839b4": {
       "char": "wheelchair_ace",
       "class": "material-light",
-      "excerpt": "COLOUR: skin is saturated orange-brown (cheek #57320a, arm in light reads br"
+      "excerpt": "COLOUR: skin saturated orange-brown (#995f37 lit, #6c431f shade) against the"
     },
-    "wheelchair_ace:ae8122b9fb05": {
+    "wheelchair_ace:a3c55681eec5": {
       "char": "wheelchair_ace",
       "class": "other",
-      "excerpt": "CHAIR: hubs teal-green, footplate light grey, two front posts with an off-ce"
+      "excerpt": "CHAIR: hubs teal-green, cross bars and footplate light grey, caster off-cent"
     },
     "wheelchair_ace:68df010a4a95": {
       "char": "wheelchair_ace",

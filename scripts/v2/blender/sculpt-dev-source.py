@@ -23,7 +23,7 @@ every form table here is authored in the rig's real feet.
 
 from __future__ import annotations
 
-from math import cos, pi, sin, sqrt
+from math import cos, pi, radians, sin, sqrt
 from pathlib import Path
 import sys
 
@@ -198,24 +198,50 @@ def skull_front_y(x: float, z: float) -> float:
     return HEAD_CENTER[1] - HEAD_RADII[1] * sqrt(s2) * cb * depth
 
 
-# --- The swept spike crown -----------------------------------------------------
+# --- The tousled mop -----------------------------------------------------------
 #
-# A big tousled mass: a shell standing well off the skull (his hair is nearly
-# half a foot deep over the crown) with thick locks raking up and back.
+# His hair is a MOP OF CHUNKY LOBES, not a shell. Six critic rounds scored a
+# smooth dome with locks on it as "a helmet", whatever the locks did: the
+# sheet's outline is jagged all the way round, so the outline has to be made
+# of the lobes themselves. A tight scalp cap sits under them only so no skin
+# shows between two lobes.
 # (z, half-width, half-depth, y-centre) — strictly descending in z.
-# measured: front z=3.48 halfWidth=0.656 tol=0.05
+# not-traceable: the scalp cap lies wholly inside the mop on every view; it
+# hugs the authored skull at +0.05.
 HAIR_LEVELS = [
-    (3.960, 0.200, 0.220, 0.030),
-    (3.900, 0.380, 0.400, 0.030),
-    (3.800, 0.520, 0.540, 0.040),
-    (3.650, 0.620, 0.620, 0.050),
-    (3.480, 0.656, 0.660, 0.060),
-    (3.300, 0.640, 0.640, 0.080),
-    (3.120, 0.500, 0.580, 0.140),
-    (2.960, 0.400, 0.500, 0.180),
-    (2.820, 0.300, 0.400, 0.220),
-    (2.720, 0.220, 0.280, 0.240),
+    (3.620, 0.200, 0.220, 0.000),
+    (3.560, 0.360, 0.380, 0.000),
+    (3.420, 0.470, 0.490, 0.000),
+    (3.250, 0.500, 0.520, 0.020),
+    (3.080, 0.500, 0.520, 0.050),
+    (2.930, 0.440, 0.500, 0.100),
+    (2.800, 0.340, 0.420, 0.160),
+    (2.700, 0.220, 0.280, 0.200),
 ]
+
+# The mop's envelope: the ellipsoid the lobes' middles sit on. Its half-width
+# is the front view's own (the hair is the widest thing above the ears).
+# measured: front z=3.48 halfWidth=0.656 tol=0.05
+MOP_CENTER = (0.0, 0.040, 3.430)
+MOP_RADII = (0.560, 0.580, 0.520)
+
+# Rings of lobes: (elevation in degrees, azimuths off straight-ahead in
+# degrees for the +x side; 0 and 180 are single lobes on the midline, every
+# other azimuth is mirrored to -x). The low rings leave the face open.
+# not-traceable: the lobes are the artist's reading of a tousled mass — the
+# sheet fixes the envelope above and the jagged outline, not each lock.
+MOP_RINGS = [
+    (66.0, (0.0, 72.0, 144.0)),
+    (36.0, (22.0, 68.0, 112.0, 158.0)),
+    (6.0, (82.0, 124.0, 162.0)),
+    (-24.0, (140.0, 180.0)),
+]
+# (root, middle, tip) as multiples of the envelope, then the lobe's girth.
+MOP_REACH = (0.66, 1.00, 1.13)
+MOP_GIRTH = (0.175, 0.170, 0.075)
+# Every lobe's tip is tossed up and back a little, as the sheet's are.
+MOP_TOSS = (0.0, 0.070, 0.055)
+
 HAIR_OPEN_BOTTOM = 2.700
 HAIR_FRINGE_Z = 3.440      # the hairline, sheet row 300
 
@@ -254,7 +280,7 @@ def build_hair(builder: MeshBuilder, detail: int) -> None:
     # (the critic's grey-blue finding). The wave is DROPPED rather than
     # ported to the curl field: his texture is the SPIKES; the shell is the
     # scalp under them and the sheet draws it smooth.
-    segments = 16 if detail >= 2 else 8
+    segments = 12 if detail >= 2 else 8
     use = HAIR_LEVELS if detail >= 2 else thin_for_lod(
         [(z, hx, hy, yc) for z, hx, hy, yc in HAIR_LEVELS], detail)
     ascending = list(reversed(use))
@@ -283,56 +309,35 @@ def build_hair(builder: MeshBuilder, detail: int) -> None:
         for column in range(segments):
             nxt = (column + 1) % segments
             builder.face((lower[column], lower[nxt], upper[nxt], upper[column]), 2)
+    # The lobes. LOD2 keeps the cap alone (a 40px head has no locks).
     if detail < 1:
         return
-    # The swept locks: 3-point tubes rising from the forehead line and
-    # raking BACK over the crown, x-mirrored (leans sum to zero).
-    #
-    # ★ THE SWEEP LIVES IN Y, NOT X. The first table walked every tip
-    # outward (0.18→0.38, 0.34→0.64, 0.24→0.44) as it raked back, and the
-    # FRONT board projected that as a radial hedgehog splay — the critic's
-    # finding — while the sheet rakes every lock up-and-rearward with the
-    # tips staying nearly over their roots laterally — but the SILHOUETTE
-    # stays wide: the sheet's own head aspect is 1.06 WITH its crown, and
-    # the first fully-tucked rung measured 0.95 against tol 0.08 (the old
-    # splay had been load-bearing for the head box). The SIDE locks carry
-    # the width (tips ±0.61/±0.44, laddered against the aspect metric); the front/centre locks stay over their
-    # roots, which is what kills the radial-hedgehog front read. Ten locks
-    # (was eight) at shallower radii close the too-few/too-deep pair.
-    for spine, radii in (
-        (((0.000, -0.300, 3.280), (0.000, -0.060, 3.560), (0.000, 0.300, 3.720)), (0.115, 0.082, 0.030)),
-        (((0.180, -0.260, 3.260), (0.220, 0.020, 3.540), (0.250, 0.360, 3.660)), (0.100, 0.072, 0.026)),
-        (((-0.180, -0.260, 3.260), (-0.220, 0.020, 3.540), (-0.250, 0.360, 3.660)), (0.100, 0.072, 0.026)),
-        (((0.340, -0.140, 3.160), (0.440, 0.120, 3.400), (0.610, 0.380, 3.470)), (0.092, 0.066, 0.024)),
-        (((-0.340, -0.140, 3.160), (-0.440, 0.120, 3.400), (-0.610, 0.380, 3.470)), (0.092, 0.066, 0.024)),
-        (((0.000, 0.140, 3.300), (0.000, 0.380, 3.500), (0.000, 0.600, 3.580)), (0.105, 0.076, 0.028)),
-        (((0.240, 0.200, 3.220), (0.310, 0.420, 3.380), (0.440, 0.600, 3.420)), (0.088, 0.062, 0.024)),
-        (((-0.240, 0.200, 3.220), (-0.310, 0.420, 3.380), (-0.440, 0.600, 3.420)), (0.088, 0.062, 0.024)),
-        (((0.100, -0.060, 3.330), (0.130, 0.200, 3.560), (0.150, 0.470, 3.640)), (0.085, 0.060, 0.024)),
-        (((-0.100, -0.060, 3.330), (-0.130, 0.200, 3.560), (-0.150, 0.470, 3.640)), (0.085, 0.060, 0.024)),
-    ):
-        # ⚠️ The -x members of each mirrored spike pair need flipped winding
-        # (Penny's button lesson) - their spines are x-reflections. Seven
-        # sides (was five): the pentagonal facets were the steel-blue
-        # glint's other half.
-        # Dev's crown is bigger and thicker than the table's first owner's:
-        # every lock is carried out to the new shell and fattened.
-        # They are also SHORTER and BLUNTER: his sheet draws chunky tousled
-        # lumps, where the table's long tapers read as blades raked off the
-        # back of a helmet. The tip is pulled 45% of the way back to the
-        # middle point and left fat.
-        p0, p1, p2 = ((x * 1.06, y * 1.26, z + 0.350) for x, y, z in spine)
-        p2 = tuple(m + 0.55 * (t - m) for m, t in zip(p1, p2))
-        spine = (p0, p1, p2)
-        radii = (radii[0] * 1.70, radii[1] * 1.95, radii[2] * 3.20)
-        builder.tube(list(spine), list(radii), 2, HAIR, "Head", 5, flip=spine[0][0] < 0)
+    sides = 5 if detail >= 2 else 4
+    index = 0
+    for elevation, azimuths in MOP_RINGS:
+        for azimuth in azimuths:
+            for mirror in ((1,) if azimuth in (0.0, 180.0) else (1, -1)):
+                index += 1
+                if detail == 1 and index % 2:
+                    continue   # LOD1 carries every other lobe
+                # A fixed wobble per ring position so no two neighbours match;
+                # mirrored twins share it, which keeps the mop symmetric.
+                wobble = 0.90 + 0.22 * ((azimuth * 7.0 + elevation * 3.0) % 10.0) / 10.0
+                el, az = radians(elevation), radians(azimuth)
+                direction = (mirror * cos(el) * sin(az), -cos(el) * cos(az), sin(el))
+                spine = []
+                for reach in MOP_REACH:
+                    spine.append(tuple(c + r * reach * d for c, r, d in zip(MOP_CENTER, MOP_RADII, direction)))
+                spine[2] = tuple(v + t * wobble for v, t in zip(spine[2], MOP_TOSS))
+                radii = [g * wobble for g in MOP_GIRTH]
+                builder.tube(spine, radii, 2, HAIR, "Head", sides, flip=mirror < 0)
 
     # The fringe: three fat lobes tumbling off the hairline onto the forehead,
     # two swept to his right and one short on his left — the sheet's quiff is
     # lopsided, and that lopsidedness is most of what makes the mop his.
-    # (`FRINGE_LOBES` is module-level so the provenance gate can see it.)
-    for spine, radii in FRINGE_LOBES:
-        builder.tube(list(spine), list(radii), 2, HAIR, "Head", 5, flip=spine[0][0] < 0)
+    if detail >= 2:
+        for spine, radii in FRINGE_LOBES:
+            builder.tube(list(spine), list(radii), 2, HAIR, "Head", 5)
 
 
 # --- The navy tee (torso) with teal trim ---------------------------------------
@@ -341,13 +346,13 @@ def build_hair(builder: MeshBuilder, detail: int) -> None:
 # torso in every view; halves bounded off the shoulder run above the chair
 # (front z≈2.15 measures 0.67 arm-to-arm) minus the drawn sleeve girth.
 TORSO_LEVELS = [
-    (1.590, 0.361, 0.276, "Hips"),
-    (1.640, 0.366, 0.279, "Hips"),
-    (1.750, 0.357, 0.274, "Spine"),
-    (1.950, 0.346, 0.266, "Spine"),
-    (2.150, 0.333, 0.254, "Spine1"),
-    (2.300, 0.330, 0.240, "Spine1"),
-    (2.430, 0.305, 0.217, "Spine2"),
+    (1.590, 0.419, 0.309, "Hips"),
+    (1.640, 0.425, 0.312, "Hips"),
+    (1.750, 0.414, 0.307, "Spine"),
+    (1.950, 0.401, 0.298, "Spine"),
+    (2.150, 0.386, 0.284, "Spine1"),
+    (2.300, 0.356, 0.254, "Spine1"),
+    (2.430, 0.329, 0.230, "Spine2"),
     (2.490, 0.226, 0.177, "Spine2"),
     (2.545, 0.178, 0.143, "Spine2"),
     (2.595, 0.158, 0.128, "Spine2"),
@@ -447,7 +452,7 @@ def build_seated_legs(builder: MeshBuilder, detail: int) -> None:
         # Thigh: hip forward and slightly up to the raised knee (sport tuck).
         builder.tube(
             [(x, -0.020, 1.480), (x + side * 0.008, -0.200, 1.495), (x + side * 0.012, -0.360, 1.490)],
-            [0.146, 0.138, 0.130], 1, SHORTS, "Root", sides)
+            [0.168, 0.160, 0.150], 1, SHORTS, "Root", sides)
         # The sheet's shorts stop mid-thigh: a bare thigh and a round knee
         # carry the lap forward to the shin.
         builder.tube(
@@ -455,7 +460,7 @@ def build_seated_legs(builder: MeshBuilder, detail: int) -> None:
             # palm ray reads the knees as body, and thighs 0.17 thick put the
             # palms 0.15ft inside them at contact.
             [(x + side * 0.012, -0.380, 1.480), (x + side * 0.015, -0.560, 1.462), (x + side * 0.016, -0.670, 1.410)],
-            [0.122, 0.122, 0.108], 0, SKIN, "Root", sides)
+            [0.142, 0.142, 0.124], 0, SKIN, "Root", sides)
         # Bare shin dropping to the tucked ankle.
         builder.tube(
             [(x + side * 0.015, -0.660, 1.450), (x + side * 0.018, -0.740, 1.000), (x + side * 0.018, -0.760, 0.640)],
@@ -537,7 +542,7 @@ def build_chair(builder: MeshBuilder, detail: int) -> None:
             # 2586 background pixels in the profile board against the 1200
             # silhouette.lint had recorded for the old wheel; eight left one
             # sector at 1201. 2026-09-12.
-            spokes = 10 if detail >= 2 else 4
+            spokes = 8 if detail >= 2 else 4
             for k in range(spokes):
                 theta = pi * k / spokes + pi / (2 * spokes)
                 y1 = 0.060 + (WHEEL_R - 0.07) * sin(theta)
@@ -557,8 +562,7 @@ def build_chair(builder: MeshBuilder, detail: int) -> None:
             # torus the field shows through (critic finding 4): a disc fills
             # its centre.
             if detail >= 2:   # LOD1 sits at 3000/3000 without these
-                builder.ellipsoid((side * 0.340, -0.660, 0.160), (0.028, 0.125, 0.125), 1, SEAT, "Root", 6, 3)
-                builder.ellipsoid((side * 0.340, -0.660, 0.160), (0.036, 0.045, 0.045), 1, METAL, "Root", 5, 3)
+                builder.ellipsoid((side * 0.340, -0.660, 0.160), (0.028, 0.125, 0.125), 1, SEAT, "Root", 5, 2)
             # The chassis closes (critic finding 2): the drive wheel hangs on
             # an AXLE BOSS from the seat frame, the rails meet it instead of
             # ending in mid-air, and the caster sits in a fork off the same
