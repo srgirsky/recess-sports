@@ -1100,11 +1100,6 @@
       "class": "decal-not-form",
       "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: NEW (low) — turnaround fr"
     },
-    "gizmo:c34f82777d46": {
-      "char": "gizmo",
-      "class": "hair-nyquist",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED — gizmo-profile-r"
-    },
     "gizmo:3d1e3af929b0": {
       "char": "gizmo",
       "class": "ears",
@@ -1114,11 +1109,6 @@
       "char": "gizmo",
       "class": "butt-joins",
       "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED — gizmo-runtime-s"
-    },
-    "gizmo:23cf22392dde": {
-      "char": "gizmo",
-      "class": "face-atlas",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED (right side clear"
     },
     "dex:d0995111cbcd": {
       "char": "dex",
@@ -2524,6 +2514,36 @@
       "char": "boomer",
       "class": "face-atlas",
       "excerpt": "HEAD: nose is a smooth bump with a highlight, no nostrils or breadth; no che"
+    },
+    "gizmo:898b8727fb56": {
+      "char": "gizmo",
+      "class": "hems-cuffs",
+      "excerpt": "NEW (hair, high) - sweep-crops/gizmo-hair-r3/grin-head.png x 300-560, y 80-3"
+    },
+    "gizmo:07321246af9f": {
+      "char": "gizmo",
+      "class": "other",
+      "excerpt": "NEW (hair, high) - sweep-crops/gizmo-hair-r3/hero-head.png, run-head.png, fr"
+    },
+    "gizmo:f90ce20e0682": {
+      "char": "gizmo",
+      "class": "other",
+      "excerpt": "NEW (hair, medium) - sweep-crops/gizmo-hair-r3/hero-head.png x 700-840, y 34"
+    },
+    "gizmo:4b5eab114943": {
+      "char": "gizmo",
+      "class": "face-atlas",
+      "excerpt": "NEW (hair, medium) - sweep-crops/gizmo-hair-r3/grin-head.png x 130-700, y 40"
+    },
+    "gizmo:d420d7c7ba85": {
+      "char": "gizmo",
+      "class": "other",
+      "excerpt": "NEW (hair, low) - sweep-crops/gizmo-hair-r3/hero-head.png x 300-500, y 400-6"
+    },
+    "gizmo:babd48886827": {
+      "char": "gizmo",
+      "class": "face-atlas",
+      "excerpt": "UPDATED - measure:fidelity visible face at brow: left 21.1 vs 9.59 OFF (+11."
     }
   }
 }

@@ -265,7 +265,7 @@ def ring_loft_cap(builder: MeshBuilder, levels, detail: int) -> None:
     # 24, EVEN: 17 columns had no mirror pair anywhere and drew the back as
     # five hard chords; even counts are the rule for any ring the face row
     # can touch, and the curl field's lobes need their four-column floor.
-    segments = 24 if detail >= 2 else (10 if detail == 1 else 8)
+    segments = 14 if detail >= 2 else (10 if detail == 1 else 8)   # the scalp under the leaf locks
     use = levels if detail >= 2 else thin_for_lod([(z, hx, hy, yc) for z, hx, hy, yc in levels], detail)
     ascending = list(reversed(use))
     rows = []
@@ -276,12 +276,12 @@ def ring_loft_cap(builder: MeshBuilder, levels, detail: int) -> None:
             # The 2D curl field (constants above CAP_LEVELS): the θ-only bump
             # was a flute, and the two-tone below is what reads as the
             # sheet's leaf-like strand clumps under the ramp.
-            f = (curl_field(
-                theta, z, CURL_SEEDS,
-                theta_width=CURL_THETA_WIDTH,
-                z_width=CURL_Z_WIDTH,
-            ) if detail >= 2 else 0.0) * min(1.0, half_x / 0.5)
-            clump = 1.0 + f
+            # The curl field is retired here (2026-11-15): the leaf locks below
+            # are the texture and the outline now, and this shell is the dark
+            # scalp between them, drawn in from the measured envelope so the
+            # locks stand off it.
+            f = 0.0
+            clump = SCALP_SHARE
             x = half_x * clump * cos(theta)
             y = y_centre + half_y * clump * sin(theta)
             if y < y_centre:
@@ -290,7 +290,9 @@ def ring_loft_cap(builder: MeshBuilder, levels, detail: int) -> None:
                     y = max(y, (sf + 0.050) if sf > -9.0 else -0.160)
                 else:
                     y = max(y, (sf - 0.060) if sf > -9.0 else -0.300)
-            tone = HAIR if f > CURL_TROUGH else HAIR_DARK
+            # The scalp is hair-coloured: dark, it showed between the locks as
+            # bald panels above the ear and a flat slab at the nape.
+            tone = HAIR
             ring.append(builder.vertex((x, y, z), tone, "Head"))
         rows.append(ring)
     bottom = builder.vertex((0.0, ascending[0][3], ascending[0][0] - 0.02), HAIR_DARK, "Head")
@@ -305,36 +307,98 @@ def ring_loft_cap(builder: MeshBuilder, levels, detail: int) -> None:
             builder.face((lower[column], lower[nxt], upper[nxt], upper[column]), 2)
 
 
-# The crown spikes: a centre tuft plus mirrored pairs, so the leans sum to
-# zero (the Flash lesson — a net lean blows faceAsymmetry). The silhouette
-# above the cap shows paired runs to z 3.90 and a lone tip at 3.98.
+# ★ LEAF LOCKS (2026-11-15, paid for by the LOD0 cap going 7,000 -> 8,000).
+# His sheet's hair is layered leaf-shaped locks over the whole head, tips
+# kicked up, with a fringe of them over the forehead. The slot shipped "a
+# smooth banded dome with nine tube cones on top", which held hair at 3 and
+# was the only thing between him and all 4s. Each lock is a four-station
+# curved taper (thin root, fat belly, shoulder, pointed tip) rooted inside the
+# scalp and standing off the measured envelope (CAP_LEVELS), in staggered
+# rings so each ring's tips cover the roots of the ring above.
+# not-traceable: each lock is the artist's reading of a tousled mass; the
+# sheet fixes the envelope (CAP_LEVELS, measured above), not a lock.
 # measured: front z=3.82 runs=2
-SPIKES = [
-    # (root x, root y, root z, tip x, tip y, tip z, root radius)
-    (0.000, 0.020, 3.740, 0.000, 0.030, 4.100, 0.105),
-    (0.180, 0.000, 3.700, 0.300, 0.010, 3.960, 0.100),
-    (-0.180, 0.000, 3.700, -0.300, 0.010, 3.960, 0.100),
-    (0.360, 0.020, 3.560, 0.520, 0.030, 3.740, 0.095),
-    (-0.360, 0.020, 3.560, -0.520, 0.030, 3.740, 0.095),
-    (0.120, -0.190, 3.680, 0.220, -0.280, 3.850, 0.085),
-    (-0.120, -0.190, 3.680, -0.220, -0.280, 3.850, 0.085),
-    (0.100, 0.230, 3.660, 0.180, 0.340, 3.830, 0.090),
-    (-0.100, 0.230, 3.660, -0.180, 0.340, 3.830, 0.090),
+SCALP_SHARE = 0.92
+# ★ THE LOCKS LIE ALONG THE HEAD. A first build stood each lock straight out
+# of the skull, short and fat, and a critic read "a pine cone, a crystal
+# cluster". The sheet's are long thin leaves lying on the head and
+# overlapping like feathers, with only the tips flicking free. So each lock
+# now RUNS UP the envelope's surface from its root, swirling a little toward
+# the back, and lifts off only at its tip; rings are closer together than a
+# lock is long, so each ring covers the roots of the one above.
+# (root z, azimuths in degrees off straight-ahead for +x and mirrored (0 and
+# 180 are single), rise of the tip above the root; negative hangs to the nape)
+LOCK_RINGS = [
+    # Longer, thinner and more swirled than the second build ("short fat
+    # faceted diamonds that tile"): each lock is now about twice the ring
+    # spacing long, so it overlaps half of the next ring's.
+    (3.080, (114.0, 138.0, 162.0, 180.0), -0.260),
+    (3.140, (100.0, 128.0, 156.0), 0.360),
+    (3.280, (78.0, 114.0, 150.0), 0.360),
+    (3.420, (58.0, 96.0, 134.0, 172.0), 0.340),
+    (3.560, (38.0, 80.0, 122.0, 164.0), 0.320),
+    (3.700, (30.0, 90.0, 150.0), 0.400),   # the tuft: with the crown lock gone the head read 3.4% short
 ]
+LOCK_ALONG = (0.0, 0.35, 0.70, 1.0)          # how far along its run each station sits
+# Riding at 1.02-1.04 the locks' own girth put head width:height at 0.98
+# against the sheet's 0.86; the envelope is the hair's outside.
+LOCK_SHARE = (0.87, 0.92, 0.93, 0.99)        # envelope share at each station: on it, then off at the tip
+LOCK_GIRTH = (0.055, 0.092, 0.070, 0.012)
+LOCK_SWIRL_DEG = 24.0
+# No standing lock at the crown: one read as "a horn in every capture". The
+# top ring's tips make the tuft.
+CROWN_LOCKS = []
+# The fringe: five locks off the hairline, the outer pair down the temples.
+# The sheet's hair covers the forehead's corners; three locks left "one
+# centre dagger between the brows with bare temples".
+FRINGE_LOCKS = [
+    ((0.000, -0.420, 3.640), (0.040, -0.570, 3.530), (0.090, -0.580, 3.410)),
+    ((0.200, -0.380, 3.630), (0.290, -0.520, 3.510), (0.350, -0.510, 3.390)),
+    ((-0.200, -0.380, 3.630), (-0.290, -0.520, 3.510), (-0.350, -0.510, 3.390)),
+    ((0.380, -0.280, 3.600), (0.470, -0.360, 3.440), (0.520, -0.330, 3.280)),
+    ((-0.380, -0.280, 3.600), (-0.470, -0.360, 3.440), (-0.520, -0.330, 3.280)),
+]
+
+
+def cap_ring_point(azimuth_deg: float, z: float, share: float, side: int):
+    table = CAP_LEVELS
+    row = table[0][1:] if z > table[0][0] else table[-1][1:]
+    for (za, *a), (zb, *b) in zip(table, table[1:]):
+        if zb <= z <= za:
+            t = (za - z) / (za - zb)
+            row = tuple(u + t * (v - u) for u, v in zip(a, b))
+            break
+    half_x, half_y, y_centre = row
+    az = azimuth_deg * pi / 180.0
+    return (side * half_x * share * sin(az), y_centre - half_y * share * cos(az), z)
 
 
 def build_hair(builder: MeshBuilder, detail: int) -> None:
     ring_loft_cap(builder, CAP_LEVELS, detail)
     if detail < 1:
         return
-    sides = 5 if detail >= 2 else 4
-    use_spikes = SPIKES if detail >= 2 else SPIKES[:5]
-    for rx, ry, rz, tx, ty, tz, rr in use_spikes:
-        spine = [(rx, ry, rz),
-                 ((rx + tx) / 2, (ry + ty) / 2, (rz + tz) / 2),
-                 (tx, ty, tz)]
-        builder.tube(spine, [rr, rr * 0.55, 0.012], 2, HAIR, "Head", sides,
-                     flip=rx < 0)
+    sides = 6 if detail >= 2 else 4
+    index = 0
+    for z, azimuths, rise in LOCK_RINGS:
+        for azimuth in azimuths:
+            for side in ((1,) if azimuth in (0.0, 180.0) else (1, -1)):
+                index += 1
+                if detail == 1 and index % 5:
+                    continue   # the mid LOD carries a fifth of the locks (its cap is 3,000)
+                # Mirrored twins share a wobble, so the mop stays symmetric.
+                wobble = 0.90 + 0.20 * ((azimuth * 7.0 + z * 31.0) % 10.0) / 10.0
+                swirl = 0.0 if azimuth in (0.0, 180.0) else LOCK_SWIRL_DEG
+                spine = [cap_ring_point(azimuth + swirl * along, z + rise * along * wobble, share, side)
+                         for along, share in zip(LOCK_ALONG, LOCK_SHARE)]
+                girth = [g * wobble for g in LOCK_GIRTH]
+                if detail == 1:
+                    spine, girth = spine[:2] + spine[3:], girth[:2] + girth[3:]
+                builder.tube(spine, girth, 2, HAIR, "Head", 5 if detail >= 2 else 4, flip=side < 0)
+    if detail >= 2:
+        for spine in CROWN_LOCKS:
+            builder.tube(list(spine), [0.130, 0.110, 0.018], 2, HAIR, "Head", sides)
+        for spine in FRINGE_LOCKS:
+            builder.tube(list(spine), [0.095, 0.105, 0.020], 2, HAIR, "Head", 5, flip=spine[0][0] < 0)
 
 
 # --- The glasses ---------------------------------------------------------------
