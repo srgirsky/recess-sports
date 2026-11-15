@@ -2625,75 +2625,75 @@
       "class": "evidence",
       "excerpt": "GEAR: Back harness (Y-strap, waist strap) appears in no runtime capture or b"
     },
-    "wheelchair_ace:a2ad1a4fab26": {
+    "wheelchair_ace:6ec52eb3007b": {
       "char": "wheelchair_ace",
       "class": "material-light",
-      "excerpt": "HAIR: still a smooth glossy cap with a few stick blades on the crown and fla"
+      "excerpt": "HAIR: a smooth glossy cap with a few stick blades on the crown and flat slab"
     },
-    "wheelchair_ace:7333f706f02e": {
+    "wheelchair_ace:73f5a7620677": {
+      "char": "wheelchair_ace",
+      "class": "proportions",
+      "excerpt": "BODY: the seated pose does not read from the front: trunk about 87px under a"
+    },
+    "wheelchair_ace:efa032871b4b": {
       "char": "wheelchair_ace",
       "class": "other",
-      "excerpt": "HAIR: a flat navy-blue face shows under the front tuft in 3/4 (hero x 575-60"
+      "excerpt": "HAIR: a flat navy-blue face shows between the cap and the front tuft in 3/4 "
     },
-    "wheelchair_ace:da9a942a819e": {
-      "char": "wheelchair_ace",
-      "class": "other",
-      "excerpt": "BODY: the seated pose does not read from the front: trunk about half the hea"
-    },
-    "wheelchair_ace:07bf24c49375": {
+    "wheelchair_ace:b445d127c740": {
       "char": "wheelchair_ace",
       "class": "other",
       "excerpt": "CHAIR: seat much wider than the rider, leaving open dirt between shins and w"
     },
-    "wheelchair_ace:1f2980372a7e": {
+    "wheelchair_ace:ffb87bd4e17e": {
       "char": "wheelchair_ace",
       "class": "proportions",
-      "excerpt": "TEE/LEGS: navy wedges between each sleeve and the trunk (hero x 540-565, y 3"
+      "excerpt": "TEE/LEGS: hard navy wedges between each sleeve cap and the trunk (face-grin "
     },
-    "wheelchair_ace:0c123c9113c0": {
+    "wheelchair_ace:605a8a755c62": {
       "char": "wheelchair_ace",
       "class": "other",
       "excerpt": "TEE/SHORTS: tee is a tube to the crotch that hides the shorts from the front"
     },
-    "wheelchair_ace:e07236e58a28": {
+    "wheelchair_ace:cc306b869684": {
       "char": "wheelchair_ace",
       "class": "other",
-      "excerpt": "SHOES: orange and white only, no teal (second shoe tone 0.82% against 29.4%)"
+      "excerpt": "SHOES: orange and white only, no teal, no laces (second shoe tone 0.82% agai"
     },
-    "wheelchair_ace:31125e013131": {
+    "wheelchair_ace:47604d8f9cbb": {
       "char": "wheelchair_ace",
       "class": "proportions",
-      "excerpt": "HANDS: in idle the far hand hangs in open air (hero x 600-640, y 430-460) an"
+      "excerpt": "HANDS: from the front in idle both arms end at the tyre tops with no hand vi"
     },
     "wheelchair_ace:f750ed4a24db": {
       "char": "wheelchair_ace",
       "class": "face-atlas",
       "excerpt": "FACE: ears oversized and set from mouth level to below the chin, reading as "
     },
-    "wheelchair_ace:6ab4ccb49bcd": {
+    "wheelchair_ace:349c6fa9ec7e": {
       "char": "wheelchair_ace",
       "class": "face-atlas",
       "excerpt": "FACE: brows are short blocks identical in every expression; angry is a frown"
     },
-    "wheelchair_ace:60be00fd6814": {
+    "wheelchair_ace:549c60de7a34": {
       "char": "wheelchair_ace",
       "class": "face-atlas",
       "excerpt": "FACE: in the 3/4 neutral the smile line wraps under the nose into a ring tha"
     },
-    "wheelchair_ace:bd6698a5e604": {
+    "wheelchair_ace:d23bfda0a452": {
+      "char": "wheelchair_ace",
+      "class": "material-light",
+      "excerpt": "COLOUR: skin is saturated orange-brown (cheek #57320a, arm in light reads br"
+    },
+    "wheelchair_ace:ae8122b9fb05": {
       "char": "wheelchair_ace",
       "class": "other",
-      "excerpt": "CHAIR: hubs teal-green, footplate and cross bars light grey, two front caste"
+      "excerpt": "CHAIR: hubs teal-green, footplate light grey, two front posts with an off-ce"
     },
-    "wheelchair_ace:263e99acf9ba": {
-      "char": "wheelchair_ace",
-      "class": "proportions",
-      "excerpt": "BODY: no neck, thin arms, small hands; the sheet has stocky arms and large h"
-    },
-    "wheelchair_ace:8dec9977024d": {
+    "wheelchair_ace:68df010a4a95": {
       "char": "wheelchair_ace",
       "class": "other",
-      "excerpt": "HAIR: crown tabs light up pale grey-beige from the front (face-grin x 505-57"
+      "excerpt": "BODY: no neck; the chin sits on the collar."
     }
   }
 }
