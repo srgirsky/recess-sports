@@ -556,32 +556,32 @@
     "frontProfileSilhouette": {
      "label": "front/profile silhouette",
      "score": 3,
-     "note": "Hero and run captures still read a blonde bun, pink A-line dress and white socks. Hair is a broad smooth helmet-like mass against the sheet's ringlet-edged cloud, and the arms and legs are thin sticks against the sheet's fuller limbs. The shoes now have clean closed rounded toes in hero and run, which removes the old toe-corner notch from the outline but does not change the overall silhouette read. Kept at 3."
+     "note": "Kept at 3. Still a scalloped cloud whose lowest ring reaches the shoulder tops in the front (grin), three-quarter (hero, run) and side (profile boards) views, with a deep mass behind the skull in profile. The smaller lower blobs make the front envelope taper more: it is widest at eye/cheek level and now visibly narrower at the jaw, the opposite of the sheet, which is widest at jaw-to-shoulder level (grin-head crop, front board). Every scallop is still a six-to-eight-sided polygon. Arms and legs are still thin sticks and the dress a rigid bell. No change of score."
     },
     "headBodyProportions": {
      "label": "head/body proportions",
      "score": 3,
-     "note": "Head-size and face metrics are still refused because the detector finds no neck pinch, so they are not passed. Visually the head is large against a narrow body with stick limbs, unlike the sheet's sturdier toddler build. Shoes are long and chunky but within the read. Unchanged at 3."
+     "note": "Kept at 3. measure:fidelity still refuses all five head/face metrics (no neck pinch), so nothing is passed. Visually the head plus hair is now even larger against the narrow body: in the run and swing captures the hair mass is wider than the shoulders and nearly as wide as the skirt, on stick limbs. The sheet has the same big hair but a sturdier toddler body under it. The bun is small and flat against the sheet's bun, which is about a third of the head's width and height."
     },
     "hairMass": {
      "label": "hair mass",
-     "score": 2,
-     "note": "Current hero and run show a few broad faceted panels with a small smooth bun and a hard angular lower perimeter. The sheet's dense curls, ringlet edge and ruffled scrunchie are not reproduced. Not touched by the shoe rebuild. Stays at 2."
+     "score": 3,
+     "note": "Held at 3, still at the bottom of 3. Only the lower two rings changed, and they are visibly smaller than in the previous crops (hero-head and swing-head, r3 against r4): the lowest camera-side blob used to overlap the sleeve and now ends at the top of the sleeve. The read is unchanged: one lumpy blonde cloud around the face, from two forehead blobs and a topknot down to the shoulder line. In the grin capture the lowest blobs sit at jaw level and their bottoms meet the shoulder tops on both sides; in hero and run the lowest blob touches the sleeve; in the profile boards the back mass still falls below the shoulder line. It does not stop at the ears and does not read as a cap. No scalp, skin or neck shows between the smaller blobs in any capture; the spaces between them show hair-coloured shell (grin-head, run-head crops). No blob floats free and none cuts into the face; ears stay visible. What the change cost: the cloud is now top-heavy, with larger blobs over the crown and temples and smaller ones at the jaw, so the outline tapers downward where the sheet widens. That is a worse envelope but not a wrong read, so it does not drop to 2. Swing capture (contact frame 7 of 18): the bat is at waist height, pointing down and away from the body, and is nowhere near the hair; the lowest right-hand blob ends above the sleeve cuff with clear grass between it and the arm. The capture shows only the contact frame, so the load and follow-through frames, where a bat would be nearest the hair, are not evidenced by it. All the earlier hero-scale faults remain: every blob is a faceted low-polygon ball with its own contour line (grape bunch / pinecone), the bun is a small flattened dome with a pointed tip, the scrunchie is a thin olive band half hidden, and navy wedges show at both sides of the neck."
     },
     "clothingConstruction": {
      "label": "clothing construction",
      "score": 2,
-     "note": "Dress, cream hem, sleeve cuffs, socks and pocket remain legible. In the run capture the trailing leg still passes behind and into the skirt hem. Shoes: toes are closed with no dark notch, but they are tan with three pink bars and a pale sole, not the cream criss-cross-lace sneaker on the sheet. A small dark navy rectangle shows on the upper of the lifted trailing shoe in the run capture, at the ankle opening. Stays at 2."
+     "note": "Kept at 2. The hair change did not touch the dress. Cream collar, sleeve cuffs, hem band, two bodice buttons and a waist bow are present (grin crop, boards). The skirt is still a rigid bell: in the run capture the trailing thigh leaves through the back of the skirt above the hem. The pocket is a flat cream bar with no flap or button. Shoes are still tan with three pink bars rather than cream with laces, and measure:fidelity still fails all three shoe-band metrics. Solid navy triangles fill the space between chin, collar and each sleeve in the grin, hero and run captures (neck-wedge crop); these are filled areas about 20px wide, not the thin contour line. The torso's reduced tessellation does not show as visible faceting in the bodice at these sizes."
     },
     "faceExpressionRead": {
      "label": "face/expression read",
      "score": 4,
-     "note": "Grin, cheer, tongue and angry captures were not changed by the shoe rebuild. The hero face keeps readable eyes, brows and mouth. Unchanged at 4."
+     "note": "Kept at 4. Grin, neutral and the swing effort face all read clearly, with large eyes, brows and freckles. The two forehead blobs sit above the brows and do not cover them; they leave a pointed triangle of forehead between them, which is a little odd but does not hurt the expression. The face is narrower and longer than the sheet's round cheeks, as before."
     },
     "heroAndFieldScale": {
      "label": "hero + 40px read",
      "score": 3,
-     "note": "Pink dress and bun hold recognition at small size. The shoes are the one visible improvement at zoom (clean closed toe, no notch), but the hair simplification, thin limbs and skirt/leg overlap in run keep the hero below polished. Stays at 3."
+     "note": "Kept at 3. At field scale (field-scale crop, 40px wide) the kid still reads as a small girl in a pink dress with a big bumpy blonde mass and a topknot; the smaller lower blobs are not noticeable at that size. At hero scale the faceted, individually outlined balls are still the first thing seen. Thin limbs, the skirt/leg overlap in run and the navy neck wedges still hold the hero below polished."
     }
    },
    "heroEvidence": "bubbles-runtime-hero.png",
@@ -593,23 +593,26 @@
     "command": "npm run measure:fidelity -- bubbles",
     "ranAt": "2026-11-15",
     "board": "bubbles-fidelity-review.png",
-    "result": "measure:fidelity bubbles: head height % and head width:height not measured, and the three face-asymmetry metrics not measured (no neck pinch, 5 metrics). Shoe band dominant tone 78.6% vs concept 67.3% (+11.3, OFF, tol 8; previously 72.6 and ok). Second tone 21.4% vs 31.0 (-9.57, OFF, tol 8; previously ok). Mean saturation 21.3 vs 26.0 (-4.68, OFF, tol 4). Ankle daylight 25.0 vs 0.0 (+25.0, OFF, tol 12). Four metrics outside tolerance, up from two: the rebuilt shoes now read as more tan and less cream than the concept.",
+    "result": "npm run measure:fidelity -- bubbles (exit non-zero): concept front view 251x740px, delivered 466x562px. Head height % of figure (concept 40.0), head width:height (0.85), and the three face-asymmetry metrics (34.3 / 55.0 / 0.00) are NOT MEASURED because the detector finds no neck pinch; five metrics not taken. Shoe band dominant tone 78.6% vs 67.3% (+11.3, OFF, tol 8); second tone 21.4% vs 31.0% (-9.59, OFF, tol 8); mean saturation 21.3 vs 26.0 (-4.68, OFF, tol 4); daylight between the ankles 25.0 vs 0.00 (+25.0, OFF, tol 12). Four metrics outside tolerance, identical to the previous run; the tool has no hair metric, so the lower-ring change is not measured by it.",
     "note": "Evidence and board re-captured fresh for the polish-round critic."
    },
    "polishFindings": [
+    "HAIR BLOBS ARE FACETED AND INDIVIDUALLY OUTLINED: each blob is a low-polygon ball with flat facets and a six-to-eight-sided outline, and the contour line is drawn around every blob separately, so at hero scale the hair reads as a bunch of separate balls (grapes, a pinecone) rather than one mass of curls. Smooth-shade or subdivide the blobs and draw one contour around the whole hair mass, or merge the blobs into one surface.",
+    "SOLID NAVY WEDGES AT THE NECK: filled triangles of the outline colour sit between the chin, the collar and each sleeve in the grin, hero and run captures, about 20px wide each. They look like an inside-out or outline-hull surface of the rear hair or collar seen from the front; this was recorded as 'angular dark neckline wedges in the collar and shoulder construction in the A-pose boards' and is now plainly visible in game captures.",
     "INHERITED CLOTHING DEFORMATION: the raised pitching thigh and the running trailing leg pass into the pink skirt above its hem (visible in the run capture).",
-    "CURRENT HAIR IDENTITY: broad angular faceted hair panels with a hard lower perimeter instead of the concept's dense ringlet mass.",
-    "SHOE COLOUR (measured, worse after rebuild): the shoes read tan/orange-beige with a pale sole. Band tones are 78.6/21.4 against 67.3/31.0 on the sheet and mean saturation is 21.3 against 26.0. They should be creamier, with more of the cream tone.",
+    "BUN is a small flattened dome with a pointed tip, not the concept's round ball of curls about a third of the head wide; it is smaller than a single hair blob.",
+    "SCRUNCHIE is a thin smooth band half buried behind the top ring of blobs, not the concept's ruffled, generous ring (team tint itself is not a defect).",
+    "HAIR BLOBS ARE TOO LARGE AND TOO FEW: about two dozen large balls in two sizes against the concept's many small tight ringlets; vary the size and add smaller blobs along the outer edge and the lower ring.",
+    "HAIR ENVELOPE: in the front view the cloud is widest at eye/cheek level and tapers toward the jaw, more so now that the two lower rings are smaller than the upper ones (top-heavy); the concept is widest at jaw-to-shoulder level and falls a little below the shoulder line at the sides.",
+    "SHOE COLOUR (measured): the shoes read tan/orange-beige with a pale sole. Band tones are 78.6/21.4 against 67.3/31.0 on the sheet and mean saturation is 21.3 against 26.0. They should be creamier, with more of the cream tone.",
     "SHOE DETAIL: parallel pink bars instead of the concept's criss-cross cream laces, and no pink sole stripe; the shoe reads as a flat tan slab.",
-    "DARK SQUARE AT THE ANKLE OPENING (new, verifiable): the lifted trailing shoe in the run capture shows a small dark navy rectangle on the upper near the ankle, a hard-edged dark mark rather than a shaded recess.",
+    "DARK SQUARE AT THE ANKLE OPENING: the lifted trailing shoe in the run capture shows a small dark navy rectangle on the upper near the ankle (still visible in the current run capture).",
     "SHARED CONTACT CLEARANCE: lower-forearm/torso intersection in shared contact poses remains open.",
     "SHARED BUNT POSE: at bunt t0.67 the lower-handle elbow rises beside the head and the forearm descends steeply to the handle.",
     "THIN ARMS AND LEGS with abrupt shoulder joins against the concept's fuller child limbs.",
-    "ANGULAR DARK NECKLINE WEDGES in the collar and shoulder construction in the A-pose boards; the garment needs blending.",
-    "SCRUNCHIE is a thin smooth washer, not the concept's ruffled, generous ring (team tint itself is not a defect).",
-    "POCKET reads flat without the concept's button; the concept bow and the two dress buttons are also missing."
+    "POCKET reads as a flat cream bar without the concept's flap and button (the two bodice buttons and the waist bow are present in the current captures)."
    ],
-   "scoredBoardSha256": "7aa43d59073d204418d7173954ea934655848b2824c39dbcf4d30f49c4b83912"
+   "scoredBoardSha256": "eb055bd39a71c66455d299036a155c63b56b9647b756f442bf435f2721258fac"
   },
   "chip": {
    "status": "needs-polish",
@@ -1300,39 +1303,39 @@
     "frontProfileSilhouette": {
      "label": "front/profile silhouette",
      "score": 3,
-     "note": "Blue cap, jacket and cuffed jeans retain Ace identity. Thin flat bill remains unlike the curved concept shelf; migration preserves it."
+     "note": "Unchanged at 3. Hero, run and swing captures and both boards still read blue cap, open blue bomber over a cream tee and cuffed jeans. The bill is still a thin flat plank (profile board) against the sheet curved shelf. Jacket outline at sides, hem and collar is the same as before on the front and profile boards; no new silhouette break."
     },
     "headBodyProportions": {
      "label": "head/body proportions",
      "score": 4,
-     "note": "Fresh head ratios pass. Migrated hands remain attached and wrapped around the handle in stance and contact; no character-specific backward elbow or severe wrist blocker in ten sampled motion sheets. Shared high bunt elbow remains polish."
+     "note": "Unchanged at 4. measure:fidelity head height 32.5 vs 33.1 and head w:h 0.88 vs 0.93, both ok. Limbs and hands attached in hero, run, swing and in all 48 upset_goofy frames I rendered. Nothing in this change touches proportions."
     },
     "hairMass": {
      "label": "hair mass",
      "score": 4,
-     "note": "Dark mass and front notches retain identity beneath cap; smooth interior limits detail."
+     "note": "Unchanged at 4. Dark mass with front notches under the cap in hero, run, swing and the upset rear views; smooth interior. Not touched by this change."
     },
     "clothingConstruction": {
      "label": "clothing construction",
-     "score": 2,
-     "note": "Keep 2: large cream angular patch still protrudes across lower back of blue jacket during upset_goofy t=1.2, side2. Fresh 4x crop confirms a cream surface patch, not a background hole. This inherited garment overlap is separate from successful hand migration."
+     "score": 3,
+     "note": "Raised 2 to 3. The defect that held the 2 is gone: I re-rendered upset_goofy from the current model at t=1.00-1.50 from six cameras including the exact old side view and three rear views; the lower back of the jacket is continuous blue to the navy rib at every sampled time, with no cream patch (old vs new at the same crop: upset-hem-OLD-3x.png vs upset-hem-3x.png). Front checks pass: the tee strip is cream from collar to its own hem in hero, run, swing and on the front board, with no blue on it; side edges, hem rib with cream stripe, and collar show no new seam, hole or colour break on front/profile/A-pose boards; the jacket bends cleanly in run. Not higher than 3 because: the swing capture shows the viewer-left jacket panel hem ending in a jagged dark step with the rib lost (pre-existing, identical in the previous capture); the collar-rib corner fin is still visible on the profile board; and in the upset lean the cream under-hem band at the back widens to a 12-14px crescent the sheet does not show."
     },
     "faceExpressionRead": {
      "label": "face/expression read",
      "score": 4,
-     "note": "Grin, cheer, angry and tongue remain clear in all four fresh runtime expression stills; cap leaves brows legible."
+     "note": "Unchanged at 4. Face stills are not affected by this change; hero/run neutral face and the swing effort face read clearly, brows legible under the cap."
     },
     "heroAndFieldScale": {
      "label": "hero + 40px read",
      "score": 3,
-     "note": "Blue cap and jacket read consistently at hero and field scale. Thin cap bill and visible jacket overlap still limit whole-character finish; this pass approves only sampled hand/arm migration, not full art. Shoe re-check: at 5x on hero and 3x on run the toe ends are closed, smooth rounded caps with the #26333f contour and no dark notch; cream toe-cap, two tan stripes and a lace slit read. Shoes read blue with a tan sole/toe, not the sheet cream-and-blue, but the measured shoe tones pass. Score unchanged."
+     "note": "Unchanged at 3. Blue cap and jacket read at hero and at the 40px tile on the fidelity board. The thin bill still limits the read; the jacket lower-back overlap that was cited here is cleared, but the bill finding alone holds the score."
     }
    },
    "measuredFidelity": {
     "command": "npm run measure:fidelity -- ace_kid",
     "ranAt": "2026-11-15",
     "board": "ace-fidelity-review.png",
-    "result": "measure:fidelity ace_kid (exit non-zero): 8 of 9 metrics ok. Head height 32.5% vs concept 33.1% (-0.58); head w:h 0.88 vs 0.93; shoe dominant tone 63.3 vs 69.7 (-6.44, ok); second tone 29.8 vs 28.4; saturation 24.1 vs 22.3; face left/right 18.1/18.8 vs 23.2/21.7, asymmetry 0.63 ok. Only ankle daylight OFF: 14.8 vs 0.00 (tol 12), the recorded roster-wide rig splay, unchanged and not an Ace defect.",
+    "result": "npm run measure:fidelity -- ace_kid (exit non-zero): 8 of 9 metrics ok, identical to the record. Head height 32.5% vs concept 33.1% (-0.58, ok); head w:h 0.88 vs 0.93 (-0.05, ok); shoe dominant tone 63.3 vs 69.7 (-6.44, ok); second tone 29.8 vs 28.4 (+1.36, ok); shoe saturation 24.1 vs 22.3 (+1.85, ok); face left/right 18.1/18.8 vs 23.2/21.7 (ok), asymmetry 0.63 ok. Only ankle daylight is OFF: 14.8 vs 0.00 (tol 12), the recorded roster-wide rig splay.",
     "note": "Feature placement gated by featurelatitude: brow 46.1 vs traced 46.3, eye 62.8 vs 62.8, mouth 84.7 vs 84.9, ear line 68.7 vs the traced 68.3, through his declared 3.99-2.68 span. The spec refuses his eye band and flags the mouth ambiguous (nostril row 357 vs lip row 373); the targets are bounded traces."
    },
    "heroEvidence": "ace-runtime-hero.png",
@@ -1341,10 +1344,12 @@
     "ace-runtime-swing.png"
    ],
    "polishFindings": [
+    "SWING HEM NOTCH (pre-existing, byte-for-byte the same in the committed capture before this change; not caused by it, not previously filed): in ace-runtime-swing.png the viewer-left jacket front panel loses its navy rib and cream stripe at the hem and ends in a jagged dark step about 18px above the tee hem (x480-520,y490-510; 6x crop /private/tmp/claude-501/-Users-sethgirsky-Documents-Project-Recess-Sports/1b39b513-9285-479c-af2e-21e04e6c71bb/scratchpad/sweep-crops/ace_kid/swing-hem-6x.png, before/after /private/tmp/claude-501/-Users-sethgirsky-Documents-Project-Recess-Sports/1b39b513-9285-479c-af2e-21e04e6c71bb/scratchpad/sweep-crops/ace_kid/swing-prev-vs-now-4x.png). Reads as the jeans hip coming through the lower jacket panel in the swing twist. Give the lower front panel and hem rib the hip clearance / weights of the tee beside it.",
     "SHOE COLOUR, REOBSERVED: runtime shoes read blue upper with tan toe-cap and sole (hero crop), where the sheet shows cream uppers with blue panels; the toes are now closed and clean. Minor.",
     "SCOPED HAND MIGRATION PASS: reference fingers curl around stance/contact handle, thumbs and open digits remain attached in run, pitch, throw, upset, draft pose, cheer and fidget samples. No new character-specific hand/wrist/arm blocker confirmed across ten three-angle sheets. Full art remains needs-polish.",
     "SHARED POSE POLISH, REOBSERVED: bunt-2-2.png at t=0.67 raises lead elbow beside the face with forearm descending almost vertically to lower handle. Wrist remains attached but the elbow arrangement is unnatural.",
-    "INHERITED GARMENT DEFECT, REOBSERVED: upset_goofy-2-2.png t=1.2 has a large angular cream patch over lower back of blue jacket. Region x250-370,y265-395 magnified4x in /tmp/ace-upset-hem-4x.png confirms cream surface overlap, not background hole. The current contact still is cleaner than old contact evidence; this does not clear garment deformation globally.",
+    "UPSET HEM, MINOR, OBSERVED: in the forward lean (upset_goofy t=1.0-1.3) the cream band under the navy hem rib widens at the back to a smooth cream crescent about 12-14px tall at 700px (rear views s3/s5) where the upright pose shows a 2-3px stripe; the sheet back view shows no cream below the back hem. It is hem-shaped and follows the rib, so it reads as a hem stripe or shirt-tail, not a patch. If the tee back is meant to be invisible, paint the tee hem lip back half in the rib navy as well.",
+    "UPSET FRONT EDGE, MINOR, ONE FRAME: a 1x4px grass-green sliver shows between the jacket front edge and the sleeve cuff at upset_goofy t=1.20 side 2 (8x crop /private/tmp/claude-501/-Users-sethgirsky-Documents-Project-Recess-Sports/1b39b513-9285-479c-af2e-21e04e6c71bb/scratchpad/sweep-crops/ace_kid/upset-t1.20-s2-hem-8x.png, lower right). Most likely daylight between the open jacket edge and the body seen edge-on; not confirmed as a hole.",
     "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: The bill's remaining problem is its SECTION, not its angle: a constant-thickness rectangular plank with a square tip and no downward roll at the sides, where the sheet draws a thick shelf that tapers toward the tip and curls down at its edges. Cropped at 12x from ace-profile-review.png x160-250 y140-210.",
     "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: From the front the brim reads at ~10px on a ~176px head (~5-6%) against the sheet's 11-17%. This is what kills the 40px and draft-card read; this round declared the bill untouched, so both bill findings carry unchanged.",
     "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: NEW: the collar rib's front-outer corner extrudes a thin charcoal fin into open air above the neckline - ~1.5x7px in ace-profile-review.png around x240-250 y278-290 (also present in ace-profile-apose-review.png at the same spot), and the same corners read as hard near-black angular quads flanking the neck in ace-front-review.png around x218 and x322, y280-292. Fix: round/merge the rib's front corner rows into the shoulder and lift the corner shading off near-black; the rest of the collar band is correct.",
@@ -1359,9 +1364,10 @@
     "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CLEARED (was: crown is a plain hemisphere): six-panel seam bands and a covered apex button are built and visible - soft fluting at 16 columns is the recorded mesh-resolution limit, not a missing build. Do not re-file as absent; a sharper read needs more columns, which is an asset-budget question.",
     "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CLEARED (was: eyebrows are hard-edged flat quadrilaterals): brows now arc and taper to a point at both ends in ace-front-review.png. Do not re-file.",
     "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: NON-DEFECT (recorded so no future critic re-files it): in the true 90-degree orthographic profile boards, a skin-tan disc ringed in navy sits over the shoulder - that is the near HAND pointing at the camera inside its navy sleeve cuff, the expected bind-pose foreshortening the critic brief warns about, not a badge, hole, or growth. Verified at 8x in ace-profile-review.png x225-315 y265-355.",
-    "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: Nothing is severed - cap, brim, ears, hands, feet and shoes all attach. No holes or open interiors found: I cropped the apparent gap under the brim at 12x and it is open air in front of the forehead, not a hole through the model. Legs are two legs with daylight between thighs and calves in bind, A-pose and run (3.12 holds on both halves). Ears are constructed with an outer rim, inner shadow and lobe. Garment colour boundaries are constructed geometry rings with a 1-2px ramp, not painted gradients. TEAM_MASK is a badge-sized front panel on the cap - correct extent, judged as extent not colour (it renders raw pale grey on boards by design)."
+    "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: Nothing is severed - cap, brim, ears, hands, feet and shoes all attach. No holes or open interiors found: I cropped the apparent gap under the brim at 12x and it is open air in front of the forehead, not a hole through the model. Legs are two legs with daylight between thighs and calves in bind, A-pose and run (3.12 holds on both halves). Ears are constructed with an outer rim, inner shadow and lobe. Garment colour boundaries are constructed geometry rings with a 1-2px ramp, not painted gradients. TEAM_MASK is a badge-sized front panel on the cap - correct extent, judged as extent not colour (it renders raw pale grey on boards by design).",
+    "CLEARED (was: INHERITED GARMENT DEFECT, large angular cream patch over the lower back of the jacket in upset_goofy t=1.2): re-rendered from the live worktree model at t=1.00/1.10/1.20/1.30/1.39/1.50 from six angles including the old side-2 camera and three rear cameras (/private/tmp/claude-501/-Users-sethgirsky-Documents-Project-Recess-Sports/1b39b513-9285-479c-af2e-21e04e6c71bb/scratchpad/sweep-crops/ace_kid/upset/, 3x hem crops /private/tmp/claude-501/-Users-sethgirsky-Documents-Project-Recess-Sports/1b39b513-9285-479c-af2e-21e04e6c71bb/scratchpad/sweep-crops/ace_kid/upset-hem-3x.png, old frame /private/tmp/claude-501/-Users-sethgirsky-Documents-Project-Recess-Sports/1b39b513-9285-479c-af2e-21e04e6c71bb/scratchpad/sweep-crops/ace_kid/upset-hem-OLD-3x.png). The lower back is unbroken jacket blue down to the navy rib in every frame. Do not re-file."
    ],
-   "scoredBoardSha256": "755a232680e6685a1466c8be3fcc86580900fb98e93c5faa48bc9b4b067b3c81"
+   "scoredBoardSha256": "a484618a224bd528fd83a54f9b0d073875bc893d1a4ef194e3397baea77c63b2"
   },
   "rocket": {
    "status": "needs-polish",
@@ -1703,32 +1709,32 @@
     "frontProfileSilhouette": {
      "label": "front/profile silhouette",
      "score": 3,
-     "note": "Hero and run captures keep the red tee / dark shorts read, but the head is a smooth round helmet with a hard nape edge against the sheet's close fade, and the tee neck sits high. Shoes now read as closed, chunky low-tops with a pointed toe cap; no silhouette break. Score unchanged."
+     "note": "Kept at 3. Red tee / dark shorts / cream-and-black shoes read in hero, run and swing. The head outline is still a cap rather than a skull: in the profile board the hair ends at the back in a hard horizontal edge at mid-ear height with a sharp overhanging corner and bare skull below it, where the sheet's profile is one skull-hugging curve tapering into the nape. The crown is still faceted, with a flat-topped peak visible in the grin, cheer, tongue, angry and swing captures and flat planes in the front and profile boards. The hair rebuild changed the temples and the fade inside the outline; the outer contour is unchanged, so no change in score."
     },
     "headBodyProportions": {
      "label": "head/body proportions",
      "score": 3,
-     "note": "Head height 30.4% vs 31.0% and width:height 1.01 vs 0.99 pass. Limbs are thin and the neck/shoulder join is abrupt vs the sheet; the ankles stand wide in hero (daylight 23.5 vs 0). Unchanged."
+     "note": "Kept at 3. Head height 30.4% vs 31.0% and width:height 1.01 vs 0.99 pass. Limbs are still thin and the neck/shoulder join abrupt against the sheet's stocky, thick-limbed build; ankles stand apart in hero and grin (daylight 23.5 vs 0, OFF). Inside the head the hair takes about 35% of head height in the grin crop (hair top to hairline 225px of 635px at 4x) against about 30% on the sheet - close, but the cap still rises to a peak above the skull instead of following it."
     },
     "hairMass": {
      "label": "hair mass",
-     "score": 2,
-     "note": "Hero shows a glossy smooth black cap with a hard horizontal edge, no fade gradient or stubble texture, unlike the sheet's close-cropped fade. Unchanged at 2."
+     "score": 3,
+     "note": "Raised from 2 to 3. Hairline, front (grin, cheer, tongue, angry at 4x and the front board): a clean straight horizontal edge high on the forehead, both brows fully clear - correct. Its two ends are chamfered: the line turns through a 45-degree diagonal before going down, where the sheet has a sharp squared corner. Temples: the long diagonal slabs of the previous build are gone. From the front each side is now a narrow strip hugging the head edge that fades into skin at about eye level and stays clear of the brows and eye corners; the centre-parted-mop read is cleared. In the hero and run three-quarter views the near temple is still wrong in shape: a pointed spike drops in front of the ear to about eye level, with a V-shaped skin notch behind it and a second smaller point, giving a saw-tooth W edge where the sheet has one short vertical edge dissolving into skin. Two thin dark contour lines cross bare skin from the spike toward the brow in the hero and run crops - the shell's free edge standing off the face and catching the outline pass - and the far temple in the hero crop shows a dark blue patch at the head edge (the shell's underside). Fade: now a real gradient. In the profile board and the hero crop roughly the lower third of the cap grades from dark to skin tone, and from the front the side strips fade out; this reads as a fade at hero scale. It still stops at mid-ear instead of running to the nape. Back: unchanged hard horizontal shelf with an overhanging corner. Surface: still a smooth faceted dome with a broad glossy olive-brown highlight; the sheet is matte black stubble. Net: the read is now a short dark crop with a straight line-up and a fade - the right haircut, recognisable - carried on a cap that is too tall, too shiny, saw-toothed at the temple in three-quarter view and shelved at the back."
     },
     "clothingConstruction": {
      "label": "clothing construction",
      "score": 3,
-     "note": "Tee, sleeve hems and cream sock tops with yellow team ring read. Shoes at 4x in the hero crop: toe ends are closed with no dark notch at either toe corner, and two cream stripes sit on a black upper over a cream sole; the toe cap is rather beak-pointed and the cream/black pattern is simplified vs the sheet's sneaker. Run capture shows the central shorts mass hanging between the legs. Score unchanged because the shoe fix is real but small."
+     "note": "Kept at 3; nothing in clothing was rebuilt and the current captures agree with the earlier notes. Tee, sleeve hems, cream socks with a yellow team ring all read. The collar is still a raised band on a thin neck rather than the sheet's shallow crew neck, with dark saddle shapes at the sleeve-to-torso joins in grin and swing. The run capture still shows a dark shorts mass hanging between the legs. Shoes are closed low-tops with two cream stripes over a cream sole, toe caps pointed."
     },
     "faceExpressionRead": {
      "label": "face/expression read",
      "score": 4,
-     "note": "Grin, cheer, tongue and angry captures remain distinguishable at hero scale; eyes, brows and mouth legible. Unchanged."
+     "note": "Kept at 4. Grin, cheer, tongue and angry are distinguishable at hero scale and the swing shows the intended effort face; eyes, brows and mouth are large and legible, and the brows sit as bold arches under a bare forehead as on the sheet. The previous note that temple slabs crowd the outer brow ends and eye corners is cleared in the front captures. Not raised to 5 because the neutral mouth in hero and run is a down-turned frown where the sheet's resting face is a closed smirk, the eye whites render grey-green rather than white, and both measured visible-face widths are further out of tolerance than before (37.1 vs 29.7 / 27.5)."
     },
     "heroAndFieldScale": {
      "label": "hero and field scale",
      "score": 3,
-     "note": "Red/charcoal/cream palette survives small scale, but the helmet hair and plain shoulders weaken identity. Shoes read cleanly at field scale. Unchanged."
+     "note": "Kept at 3. Red/charcoal/cream palette survives at small scale and the 40px board read is identifiable by colour, with a dark cap over a visible face. At hero scale the head is improved - the face is open and the fade is visible - but the peaked glossy cap, the saw-tooth temple with its stray contour lines (hero, run) and the rear shelf are all visible at that size, and the thin-limbed body and wide stance still separate the figure from the sheet's stocky kid."
     }
    },
    "heroEvidence": "smokey-runtime-hero.png",
@@ -1740,19 +1746,24 @@
     "command": "npm run measure:fidelity -- smokey",
     "ranAt": "2026-11-15",
     "board": "smokey-fidelity-review.png",
-    "result": "measure:fidelity smokey: head height 30.4% vs 31.0% (ok), head width:height 1.01 vs 0.99 (ok), shoe band dominant tone 47.9% vs 52.4% (ok), second tone 52.1% vs 45.8% (ok), shoe saturation 29.2 vs 26.8 (ok), ankle daylight 23.5 vs 0.00 (OFF, tol 12), visible face left 37.1 vs 29.7 and right 37.1 vs 27.5 (both OFF, tol 6), asymmetry 0.00 (ok). 3 metrics outside tolerance, the same three as before; shoe-band numbers moved slightly toward the concept.",
+    "result": "npm run measure:fidelity -- smokey (concept front 233x590px, delivered 466x556px; shoe tones #faecdb and #2b241c): head height 30.4% vs 31.0% of figure (delta -0.62, ok); head width:height 1.01 vs 0.99 (+0.01, ok); shoe band dominant tone 47.9% vs 52.4% (-4.53, ok), second tone 52.1% vs 45.8% (+6.29, ok), shoe band mean saturation 29.2 vs 26.8 (+2.43, ok); daylight between the ankles 23.5 vs 0.00 (+23.5, OFF, tol 12); visible face left of centre 37.1% vs 29.7% of head width (+7.39, OFF, tol 6); visible face right of centre 37.1% vs 27.5% (+9.59, OFF, tol 6); face left/right asymmetry 0.00 vs 0.00 (ok). 3 metrics outside tolerance, the same three as the previous build; the two visible-face widths moved further out (35.9 to 37.1 each side) as the temple slabs were cut back. The instrument measures face width, not hairline shape, temple edge, fade extent or hair volume.",
     "note": "His huge real ears gate at earLine 63.7 (outer span 1.234 vs temple 0.983); featurelatitude gates brow 47.5 vs traced 47.5, eye 57.7 vs 57.7, mouth 77.9 vs 77.7 through his 3.99-2.76 span. The red tee's lit and shaded halves are one garment in two clusters (the recipe records it)."
    },
    "polishFindings": [
-    "Replace the smooth helmet-like hair with the concept close fade and stubble read; rear profile is a hard horizontal cap and visible-face widths stay OFF (+7.39/+9.59 points).",
+    "Rear of the hair is a hard horizontal shelf at mid-ear height with an overhanging corner and bare skull below it (profile and profile-apose boards); the sheet's fade follows the skull down to the nape. Carry the shell and its gradient down to the nape and pull it to skull offset.",
+    "Three-quarter temple edge is a saw-tooth: a pointed spike in front of the ear to about eye level, a V skin notch and a second point behind it (hero and run crops); the sheet has one short vertical edge that dissolves into skin above the ear.",
+    "The temple shell stands off the face: two thin contour lines cross bare skin from the spike toward the brow in the hero and run crops, and the far temple shows a dark blue underside patch at the head edge in the hero crop. Close the free edge onto the skull.",
+    "Hair surface is a smooth faceted dome with a flat-topped peak and a broad glossy olive-brown highlight (all four face captures, swing, hero); the sheet is a rounded, matte black stubble cap. The cap takes about 35% of head height from the front against about 30% on the sheet.",
+    "Hairline corners are chamfered at 45 degrees in the front captures; the sheet's line-up turns a sharp squared corner at each temple.",
+    "Both visible-face widths are out of tolerance and moved further out with this build: 37.1% of head width each side vs 29.7% / 27.5% on the sheet (OFF, tol 6); previous build 35.9.",
     "Refine collar/shoulder construction together: raised mock-neck and deep sleeve-to-torso saddles differ from the shallow crew neck and rounded deltoid.",
     "Correct the central shorts flap during run: a solid third hanging garment mass between the moving legs.",
-    "Ankle daylight is 23.5 vs 0 on the sheet (OFF, tol 12): stance is wider than the concept's feet-together stand.",
+    "Ankle daylight is 23.5 vs 0 on the sheet (OFF, tol 12): stance is wider than the concept's stand, and the limbs are thin against the sheet's stocky build.",
+    "Neutral mouth in hero and run is a down-turned frown; the sheet's resting face is a closed smirk.",
     "Shoe toe caps are beak-pointed with a simplified black/cream pattern, a minor departure from the sheet's rounded low-top sneaker.",
-    "Bunt t0.67 receiving elbow lifts beside the head with forearm descending toward the lower grip; shared pose debt.",
-    "Preserve the legible red/charcoal/cream palette while improving close-cropped hair identity at hero and 40px scale."
+    "Bunt t0.67 receiving elbow lifts beside the head with forearm descending toward the lower grip; shared pose debt. [carried from the previous critique; not re-verifiable in the current capture set]"
    ],
-   "scoredBoardSha256": "70f54a71b0a867f1e8cdf81c1a0e4f72acbcd566b0b7a6803c042e300b4b67d2"
+   "scoredBoardSha256": "c1ef01b70b2989352d2081c86904a902fd04ebeca9f889bd69211ab37360504e"
   },
   "sniffles": {
    "status": "needs-polish",
@@ -1988,32 +1999,32 @@
     "frontProfileSilhouette": {
      "label": "front/profile silhouette",
      "score": 3,
-     "note": "Cap, orange jacket and joggers remain coherent, but the straight angular ponytail loses the flowing silhouette in the concept. No new hand migration break in sampled poses."
+     "note": "Kept at 3. The profile now carries a real ponytail mass behind the cap (lefty-profile-review.png, crop profile-head.png) where the old one was a straight strip, and the front view shows the tail falling beside the neck on one side as the sheet does. But the outline is still not the sheet's: the tail is widest at the scrunchie and tapers to four stubby spikes (a carrot/squid outline) where the sheet's tail is narrow at the tie and flares to its widest in the lower half with an S-wave and curled ends; and the backwards brim, which on the sheet is a large bill hanging down behind the nape and is the second-biggest feature of the side silhouette, is a thin sliver almost wholly hidden between the cap and the tail. The navy hood is a ball on the nape rather than a draped hood. One defect replaced another, so the score does not move."
     },
     "headBodyProportions": {
      "label": "head/body proportions",
      "score": 4,
-     "note": "Both fresh head metrics pass. Hands remain attached, distinct fingers curl around the handle, and elbows remain connected through the sampled ten actions. The shared high bunt elbow remains an unnatural pose."
+     "note": "Kept at 4. measure:fidelity head height 29.5% vs 28.4 (ok) and head w:h 0.98 vs 0.98 (ok). The cap dome does not inflate the head beyond the drawn proportion. Nothing in the current images changes the body; the shared bunt elbow pose debt was not re-observable in these captures and is carried."
     },
     "hairMass": {
      "label": "hair mass",
-     "score": 2,
-     "note": "The tail reads as a straight flat strip and front fringe remains sparse against the flowing blonde concept. No hair improvement is inferred from the rig migration."
+     "score": 3,
+     "note": "Raised 2 to 3. Earned by three things visible in the current images: there is blonde between the cap rim and the forehead in every view (front-apose-head.png, grin-head.png), the temples and the area in front of the ear are covered (hero-head.png, run-head.png - no bare-skull read), and the tail is a lit volume with a dark scrunchie at its root, visible even in the 40px tile. Not higher, because the hair does not yet read as the sheet's hair: the two bang locks are thick, flat-faced ribbons with hard kinks that meet in a symmetric chevron over the brow - from the front they read as two hands shading the eyes, or a folded headband - where the sheet has one soft side-swept fringe from an off-centre part with thin tendrils falling in front of the ears; the tail is a single smooth lobe with an inverted taper and spike tips, no strand breakup, no flare, no curl; and the runtime colour is a saturated mustard/olive gold (shadow sides go olive) against the sheet's warm honey blonde. It does separate cleanly from the orange-tan skin."
     },
     "clothingConstruction": {
      "label": "clothing construction",
      "score": 3,
-     "note": "Unchanged from the previous pass: zipper, hem, cuffs and piping read in the current hero and swing captures. Shoes are now closed at the toe: hero crop at 4x shows a smooth rounded toe cap with the dark contour only, no notch at either corner, two cream lace-bar strokes and a pale sole band. They are tan/khaki rather than the sheet grey with cream sole, a colour miss rather than a construction one."
+     "note": "Kept at 3. The jacket, joggers and shoes are unchanged. The cap is rebuilt and is a mixed result: the crown is tilted back and sits about where the sheet puts it, and there is now a strap on the front rim. But the strap is a plain flat rectangle about 47% of the cap's front width (front-apose-head.png, ~280 of ~590 px) laid on the crown, with no opening arc above it - the sheet draws the adjuster opening as a dark arch with the strap across its base. The brim is undersized and thin (profile-head.png: a pale stick under the cap's back edge) and in hero-tail-brim.png it runs through the upper ponytail mass, with blonde both above and below it. The hood is still a navy ball, and from the front it is two dark ticks beside the collar."
     },
     "faceExpressionRead": {
      "label": "face/expression read",
      "score": 4,
-     "note": "All four fresh expression captures visibly distinguish grin, anger, cheer and tongue. Eyes and brows stay readable; no face regression from the hand migration."
+     "note": "Kept at 4. Grin, cheer, tongue and angry are all distinct in the current captures (faces.png, grin-head.png); eyes and brows stay readable. The new bang chevron sits directly on top of the brows and narrows the visible forehead to a small triangle, and in the three-quarter hero the near lock's tip comes down to eye level beside the eye, so the face is more crowded than before, but no expression is lost. Not raised: the frame around the face is now the least sheet-like part of the head."
     },
     "heroAndFieldScale": {
      "label": "hero and field scale",
      "score": 3,
-     "note": "Unchanged. Cap and orange jacket survive field scale in hero, run and swing; ponytail identity is weak. At the feet the toe ends are clean in hero, run and swing captures with no dark notch; the shoes read as one pale tan blob at distance."
+     "note": "Kept at 3. At hero scale cap + blonde tail + orange jacket now read together and the 40px tile shows blonde beside the head, which is an improvement in identity. Holding the score: at the gameplay camera the bangs read as angular straps, the brim reads as a dark wedge stuck in the tail, the hood reads as a dark ball on the back, and the team-tinted strap in these captures is team gold, nearly the hair colour, so it disappears into the fringe rather than marking the cap (a different team colour will read differently). Shoes still one pale tan blob."
     }
    },
    "heroEvidence": "lefty-runtime-hero.png",
@@ -2025,25 +2036,24 @@
     "command": "npm run measure:fidelity -- lefty",
     "ranAt": "2026-11-15",
     "board": "lefty-fidelity-review.png",
-    "result": "measure:fidelity lefty: head height 29.7% vs 28.4 (ok), head w:h 0.96 vs 0.98 (ok), face asymmetry 1.27 (ok). Shoe band dominant tone 81.2% vs 72.8 (+8.35, now OFF tol 8; was ok at 77.8), second tone 18.8 vs 26.4 (ok), saturation 17.7 vs 21.9 (-4.26, now OFF tol 4; was ok at 18.2). Ankle daylight 44.4 vs 0.00 (OFF, known roster-wide instrument conflict). Visible face left/right 34.2/35.4 vs 27.6/28.6 (OFF tol 6, bare forehead). 5 metrics outside tolerance, up from 3: the two new ones are shoe-colour, a slight drift from the rebuild.",
+    "result": "npm run measure:fidelity -- lefty (exit non-zero, 5 metrics outside tolerance, same count as before): head height 29.5% vs 28.4 (+1.11, ok); head w:h 0.98 vs 0.98 (ok); shoe band dominant tone 81.0 vs 72.8 (+8.13, OFF tol 8); second tone 19.0 vs 26.4 (-7.39, ok); shoe saturation 17.8 vs 21.9 (-4.11, OFF tol 4); daylight between ankles 46.0 vs 0.00 (OFF tol 12, the known roster-wide instrument conflict); visible face left/right of centre 41.1/40.5 vs 27.6/28.6 (+13.6/+11.9, OFF tol 6) - this got WORSE than the previous 34.2/35.4 even though a fringe now exists, so the measured row is seeing more skin-toned width, not less; face asymmetry 0.63 (ok).",
     "note": "Her ear line gates at 67.0 (real, under the cap edge); featurelatitude gates brow 54.4 vs traced 54.3, eye 59.9 vs 59.9, mouth 79.1 vs bounded 79.0 through her 3.99-2.80 span. The backwards cap reverses BRIM_REACH (+0.78 rearward); the analyser refuses her brow and eye bands (cap shadow merges them) and the recipe records the tee living in the backdrop's cream cluster. The tail is TWO tubes after a first critic rejected the all-deep compromise as a 'dark strap': a thin deep-tone gather crosses the faceSkin sample band, and the full lit-blonde volume hangs entirely below the measured row - blonde and voluminous without falsifying the face metric. Its depth hugs the nape (Rocket's daylight lesson) and the backwards brim is held at 0.56 reach (a fuller sweep seals an enclosed window against the pony's crown in profile)."
    },
    "polishFindings": [
-    "SHOE COLOUR DRIFT: the rebuilt shoes read tan/khaki with a pale sole (lefty-runtime-hero.png feet at 4x) where the sheet has mid-grey uppers with cream soles and white laces; measure:fidelity shoe dominant tone 81.2 vs 72.8 and saturation 17.7 vs 21.9 are now OFF, both ok before the rebuild.",
+    "NEW - BANGS READ AS FOLDED STRAPS, NOT HAIR: front-apose-head.png and grin-head.png (4x/2x): the two bang locks are thick flat-faced ribbons with hard angular kinks meeting in a symmetric chevron at the centre of the brow, each then bending down in front of the ear - the read is two hands shading the eyes or a folded headband. The sheet has ONE soft side-swept fringe from an off-centre part plus thin tendrils in front of the ears. In hero-head.png the near lock is a slab with a knife-cut tip ending at eye level. measure:fidelity visible face 41.1/40.5 vs 27.6/28.6 is further OFF than before the rebuild (34.2/35.4).",
+    "NEW - PONYTAIL TAPER IS INVERTED AND ENDS IN SPIKES: profile-head.png (4x): the tail is one smooth lobe, widest just under the scrunchie and narrowing to four stubby pointed tips (carrot/squid outline). The sheet's tail is narrow at the tie, flares to its widest in the lower half, carries an S-wave and ends in outward curls. Length (about 1.3 head heights) and the high exit point are right; the flare, wave and curl are absent and there is no strand breakup on the surface.",
+    "NEW - BRIM IS UNDERSIZED AND RUNS THROUGH THE PONYTAIL: hero-tail-brim.png (lefty-runtime-hero.png x440-580,y190-390 at 6x) and run-head.png: the dark brim wedge sits inside the upper tail mass with blonde above and below it. In profile-head.png the brim is a thin pale stick under the cap's rear edge, almost hidden. The sheet's bill is a large navy-undersided panel hanging down behind the nape, clear of the tail, and is a main feature of the side silhouette.",
+    "NEW - CAP STRAP IS A FLAT RECTANGLE WITH NO OPENING: front-apose-head.png: the strap is a plain bar about 47% of the cap's front width laid on the crown; the sheet draws the adjuster opening as a dark arch above the strap with hair showing through. The extent is no longer badge-sized, but the shape is a sticker, not a closure. In the runtime stills the team tint (gold) is close to the hair colour and the strap merges into the fringe.",
+    "NEW - HAIR COLOUR IS MUSTARD/OLIVE, NOT HONEY BLONDE: lefty-runtime-hero.png, -run.png, -swing.png: the tail and bangs are a saturated yellow-olive with olive shadow sides (sampled R:G about 1.2 with near-zero blue) against the sheet's warm honey blonde (R:G about 1.55). It separates from the skin, but it is not the drawn colour.",
+    "SHOE COLOUR DRIFT: the rebuilt shoes read tan/khaki with a pale sole (lefty-runtime-hero.png feet at 4x) where the sheet has mid-grey uppers with cream soles and white laces; measure:fidelity shoe dominant tone 81.0 vs 72.8 and saturation 17.8 vs 21.9 are OFF.",
+    "CARRIED - THE NAVY HOOD IS A BALL ON THE NAPE AND INVISIBLE FROM THE FRONT: profile-head.png shows a dark sphere behind the neck (in hero and run captures it reads as a dark ball on the upper back); lefty-front-apose-review.png shows only dark ticks beside the collar piping. The sheet draws a navy collar V at the neck in every view and a draped hood behind.",
     "SHARED POSE POLISH REOBSERVED: bunt t0.67 receiving elbow rises beside the head while forearm points downward to the lower grip. Hands remain attached; the awkward high elbow arrangement is unchanged shared pose debt.",
-    "CURRENT IDENTITY POLISH: the straight, slab-like blonde tail and sparse forehead hair remain far from the flowing concept ponytail. HairMass2 and silhouette3 reflect visible identity loss, independent of the successful hand-rig migration.",
-    "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED - NO HAIRLINE FROM THE FRONT (3.3): lefty-front-review.png crop x180-380,y70-280 at 4x is bare skin from brow to cap edge; the three forehead FRINGE_WISPS (sculpt-lefty-source.py:350-353, tubes at z 3.44-3.56) are built but nothing blonde reaches the visible forehead. measure:fidelity visible face 34.2/35.4 vs 27.6/28.6 (tol 6) OFF both sides; the sheet (sheet-front-head crop) sweeps hair across the whole forehead under the cap.",
-    "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED - BARE-SKULL READ AT THE GAMEPLAY CAMERA (3.3, 3.9): lefty-runtime-hero.png x430-650,y150-340 and lefty-runtime-run.png x440-660,y150-340 at 3x: one thin sideburn ribbon in front of the ear and a narrow strip behind it (back to main's width after the rebuild restored the locks and nape shell). The fidelity-board 40px tile (ab2-fidelity-review-tile40) still shows no ponytail.",
-    "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED - HAIR IS FLAT CARDS WITH KNIFE-CUT EDGES: measure:strands 0.58 vs 7.60 minima/row (8% of the concept's strand count, 69% prominence). ab-profile-review-head at 4x: the near-side hair is a lit slab with straight-cut edges, one strip across the ear's back rim; the tail is a straight-sided card down the nape, no flare, pixel-alike main.",
-    "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED - PONYTAIL INTERPENETRATES THE JACKET AT swing_contact: ab-runtime-swing-tail (lefty-runtime-swing.png x430-650,y180-450 at 3x): the blonde card passes in front of the orange sleeve and ends in a squared flat cut over the torso with the dark PONY_GATHER tube as a black blob at its base; identical to main's frame.",
-    "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED - THE NAVY HOOD IS INVISIBLE FROM THE FRONT: build_hood (sculpt-lefty-source.py:427-433) is two PANTS/PANTS_DARK ellipsoids at the upper back (y +0.33 z 2.50; y +0.24 z 2.62). lefty-front-apose-review.png: 9 navy px at x242-244,y273-278 (ab-front-apose-review-hoodTick at 12x: a dark tick beside the collar piping), unchanged; profile navy 654 px at x317-337,y271-326 behind the tail, unchanged. Not a hole or artifact - it is the hood, and it is the whole of the hood's front read. The sheet draws a navy collar V at the neck in every view.",
     "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED - PIPING KINKS PROUD AT THE A-POSE SHOULDER: ab-front-apose-review-shoulderL (x170-270,y250-340 at 6x), both shoulders: the collar-to-shoulder piping ribbon runs down-outward and stops dead at the sleeve/torso junction; the sleeve piping starts ~20px further down the arm at a steeper angle, two non-collinear segments with bare deltoid between. Pixel-alike main; the T-pose piping (lefty-front-review.png x150-300,y250-330) is continuous.",
     "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED - SHOULDER JUNCTION: the armpit crease notch at the sleeve/torso junction is unchanged - min luminance 34 at (227,305) and 32 at (311,305) on lefty-front-apose-review.png (main 34 at (228,305) / 32 at (311,305)); dark px <70 in x170-260 / x280-370, y270-340: 109 / 75 (main 101 / 67). The deltoid itself is a rounded form with a continuous elbow line.",
-    "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED - TEAM_MASK EXTENT (extent only, no colour judgement): the declared accent is the cap-front badge panel, sculpt-lefty-source.py:87 and 291-304, x +/-0.105 across z 3.66-3.77; it renders raw grey on the board and team-gold in the runtime stills as designed. ab-front-review-forehead at 4x: the panel is ~29px on a ~137px cap, about a fifth of cap width; the sheet's backwards cap carries the navy closure strap across most of the forehead plus the bill underside, so the accent surface is smaller than the drawn band. Unchanged this round.",
-    "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED - RECORDED INSTRUMENT CONFLICT, not a defect to fix: daylight between the ankles 44.4 vs the concept's 0.00 (tol 12) is the roster-wide containment conflict between the flood-mask reading of a posed drawing and a bind-pose delivered stance with the cuffs cinched to the drawn half-width.",
-    "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED - LEG_STATIONS PROVENANCE: not re-verifiable from renders; nothing in the leg changed this build (the diff touches HEAD_RADII and the TORSO_LEVELS depth column only; profile spans below y450 are 60/60 vs 60/58)."
+    "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED - RECORDED INSTRUMENT CONFLICT, not a defect to fix: daylight between the ankles 46.0 vs the concept's 0.00 (tol 12) is the roster-wide containment conflict between the flood-mask reading of a posed drawing and a bind-pose delivered stance with the cuffs cinched to the drawn half-width.",
+    "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED - LEG_STATIONS PROVENANCE: not re-verifiable from renders; nothing in the leg changed this build."
    ],
-   "scoredBoardSha256": "cb372d209c539ffa600ad9e8fac3405bfef0d0e04c1754540ca492f4d2ed6a65"
+   "scoredBoardSha256": "fbd2f87179ad1facda7a77e2c2b68fefa0304f955dd2439941b9d1127da97c88"
   }
  }
 }

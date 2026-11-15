@@ -123,11 +123,11 @@
     },
     "bubbles": {
       "source": "bubbles-pilot.blend",
-      "sourceSha256": "b5615b9756ecfdd89953ca05a7d7870285b7721436bb6e07a792585ae373b12c",
+      "sourceSha256": "0eba0f777f244926ca408e49ad9104e92fa55e850c3cec6940416d67d5a4dc45",
       "concept": "bubbles-turnaround.png",
       "conceptSha256": "b4b3ec04e975bf1f2d85b449073afbd71edb99af3f17579fe24050bc5edcd9db",
       "output": "kid_bubbles.glb",
-      "outputSha256": "5bc46fdf0638f27fbece03d2391e98eb57787fc22d8d91665fa6f0ddcd460b99",
+      "outputSha256": "e84b4f1d3480d3a901eb7170f275c885bd7330844f9cd6dc215131d4384982df",
       "definingTraits": [
         "golden ringlet cloud",
         "topknot bun and scrunchie",
@@ -288,11 +288,11 @@
     },
     "ace_kid": {
       "source": "ace-pilot.blend",
-      "sourceSha256": "38f040c4c8a0654261abf5a1a0062e9245b8049cbdfa714fce2936ac953d683e",
+      "sourceSha256": "32ba3cd6066ffed1077dfbe924f5974f85376b63e3be1f0fb421828ba66dfe35",
       "concept": "ace-turnaround.png",
       "conceptSha256": "641fb80ce9726fe50255da0275f584d4f1722709a0cc51b11d2dbf633af49a43",
       "output": "kid_ace_kid.glb",
-      "outputSha256": "a64470b88a149bd03b252fa4f7581e792d76a6a129027d54c19dfa7cf8ce774d",
+      "outputSha256": "779e5d484bdf3b2ece34e018b19c398394fc8f951fb80e81d8a79ff9e3f73cdf",
       "definingTraits": [
         "sky-blue ball cap",
         "open blue bomber jacket",
@@ -378,11 +378,11 @@
     },
     "smokey": {
       "source": "smokey-pilot.blend",
-      "sourceSha256": "75addb23239e5481cd748973828aa1310cb6f44fd4a64b7ee99683d6325c29bc",
+      "sourceSha256": "50c572a1ea36e8d5634f4bcc5007c00e07b1651d206b51ec69f14eaa01d521c9",
       "concept": "smokey-turnaround.png",
       "conceptSha256": "3df75f1c323e7ea542d76adcc2f4c294ba10e0f414b0a9f4bea352e2dcb8056e",
       "output": "kid_smokey.glb",
-      "outputSha256": "91cab364dd10b51d953d30b1523414f3a7805689066789d7759450ee047d0a68",
+      "outputSha256": "cf362cb260c316a314fb08bfbe65288cddf1acacd7bed2ba32d1908e330a8168",
       "definingTraits": [
         "tight buzz fade",
         "plain red tee",
@@ -438,11 +438,11 @@
     },
     "lefty": {
       "source": "lefty-pilot.blend",
-      "sourceSha256": "cd97afc16052402edd154d89ff92a9e288f59bb6e11180c16ab1ff633e305576",
+      "sourceSha256": "e79ea6bf3f3639593ed0c4d08573601836bec5682a413259e39abc69a358f340",
       "concept": "lefty-turnaround.png",
       "conceptSha256": "9329598dd2a08be9c6614c3bbe49812a29a44c2beceba8274353b89ffc7777d2",
       "output": "kid_lefty.glb",
-      "outputSha256": "645e0c9c8f3c9e4e1431a7421b9cec387fd6db6c9d75f480aaa4198a77c9f43e",
+      "outputSha256": "2ac1a0b4405dca87068372840cf2c4eeb2d73850f5327d6ad2f4dc09ebe8df9d",
       "definingTraits": [
         "backwards grey cap",
         "blonde side ponytail",
