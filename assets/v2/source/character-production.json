@@ -183,11 +183,11 @@
     },
     "zippy": {
       "source": "fatou-pilot.blend",
-      "sourceSha256": "863262103158343a40c229b3583d33ee557ceba7f3bfecb2b7af7f33ea215b1d",
+      "sourceSha256": "21e6dec9d36b4723aa75f236fe0fb55fad04b24c879e2101e974bc336d86e7db",
       "concept": "fatou-turnaround.png",
       "conceptSha256": "6ee0f2242bdf5d42f4a73ff658fe7037e203753858acfa6934f389bc29a0e9f4",
       "output": "kid_zippy.glb",
-      "outputSha256": "e344dcb6825a8a82b937f9c1203f04f161bf2f156b33e95f769b82325706c4ac",
+      "outputSha256": "279c321ea228cfc39dcfc76d4f4c303513a60f14dee5b9aa597201370cd0dc11",
       "definingTraits": [
         "teal sport hijab",
         "deep brown skin",
