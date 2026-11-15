@@ -2330,30 +2330,10 @@
       "class": "other",
       "excerpt": "Bunt t0.67 receiving elbow lifts beside the head with forearm descending tow"
     },
-    "lefty:b531f1bc1ffb": {
-      "char": "lefty",
-      "class": "face-atlas",
-      "excerpt": "NEW - BANGS READ AS FOLDED STRAPS, NOT HAIR: front-apose-head.png and grin-h"
-    },
-    "lefty:8003a0149db9": {
-      "char": "lefty",
-      "class": "other",
-      "excerpt": "NEW - PONYTAIL TAPER IS INVERTED AND ENDS IN SPIKES: profile-head.png (4x): "
-    },
-    "lefty:bc199f512845": {
-      "char": "lefty",
-      "class": "other",
-      "excerpt": "NEW - BRIM IS UNDERSIZED AND RUNS THROUGH THE PONYTAIL: hero-tail-brim.png ("
-    },
     "lefty:7b0e784b9112": {
       "char": "lefty",
       "class": "material-light",
       "excerpt": "NEW - CAP STRAP IS A FLAT RECTANGLE WITH NO OPENING: front-apose-head.png: t"
-    },
-    "lefty:f2408e0c1bb3": {
-      "char": "lefty",
-      "class": "material-light",
-      "excerpt": "NEW - HAIR COLOUR IS MUSTARD/OLIVE, NOT HONEY BLONDE: lefty-runtime-hero.png"
     },
     "lefty:12e24d8deae9": {
       "char": "lefty",
@@ -2549,6 +2529,41 @@
       "char": "gizmo",
       "class": "material-light",
       "excerpt": "NEW (hair, low) - sweep-crops/gizmo-hair-r4/hero-head-4x.png x 400-560, y 64"
+    },
+    "lefty:131a909d3326": {
+      "char": "lefty",
+      "class": "other",
+      "excerpt": "BRIM IS A THIN, TOO-STEEP, NEAR-BLACK STRIP, NOT A WEDGE: lefty-profile-revi"
+    },
+    "lefty:c4562f19173e": {
+      "char": "lefty",
+      "class": "other",
+      "excerpt": "FRINGE MERGES WITH THE FOREHEAD FRONT-ON AND STILL READS AS FACETED RIBBONS:"
+    },
+    "lefty:a601b617cb29": {
+      "char": "lefty",
+      "class": "other",
+      "excerpt": "PONYTAIL HAS NO WAVE, CURL OR STRAND BREAKUP: profile-head.png (3x) and hero"
+    },
+    "lefty:c003e6c2aec0": {
+      "char": "lefty",
+      "class": "material-light",
+      "excerpt": "HAIR COLOUR IS CLOSER BUT STILL SHORT OF THE SHEET, AND NOW CROWDS THE SKIN:"
+    },
+    "lefty:4501dbca315b": {
+      "char": "lefty",
+      "class": "face-atlas",
+      "excerpt": "NEW r4 - TEMPLE HAIRLINE IS A SQUARE-STEPPED DARK BLOCK AND HIDES THE NEAR B"
+    },
+    "lefty:25093ff13198": {
+      "char": "lefty",
+      "class": "face-atlas",
+      "excerpt": "REDUCED r4 - GREY SLIVER AT HER RIGHT TEMPLE FRONT-ON: lefty-runtime-face-gr"
+    },
+    "lefty:c507006324fd": {
+      "char": "lefty",
+      "class": "other",
+      "excerpt": "SLIVER OF DAYLIGHT ENCLOSED BETWEEN CAP, SCRUNCHIE, BRIM AND TAIL: lefty-run"
     }
   }
 }
