@@ -89,13 +89,16 @@ PALETTE = Palette(
 HEAD_CENTER = (0.0, -0.020, 3.150)
 HEAD_RADII = (0.550, 0.550, 0.500)
 
+# A pear: his sheet's head is narrowest at the temples (0.355-0.37 half at z
+# 3.3-3.5) and widest at the cheeks (0.435 at z 3.0-3.1); as a ball widest at
+# the eyes it read as "a ball skull with no jaw or cheeks".
 FACE_SCALE = (
-    (1.00, 1.00),
-    (0.40, 1.00),
-    (0.05, 1.03),
-    (-0.30, 1.05),
-    (-0.60, 1.03),
-    (-1.00, 0.95),
+    (1.00, 0.86),
+    (0.40, 0.88),
+    (0.05, 0.96),
+    (-0.30, 1.06),
+    (-0.60, 1.08),
+    (-1.00, 0.98),
 )
 
 
@@ -137,7 +140,7 @@ def nose_push(nx: float, nz: float) -> float:
 
 # Real LOW ears breaking the jaw line — the deepest ear line on the roster.
 # measured: front earLine=75.1 earWidth=1.153
-EAR_SPEC = EarSpec(center=(0.020, 2.880), radii=(0.1400, 0.1700))
+EAR_SPEC = EarSpec(center=(0.020, 2.880), radii=(0.1300, 0.1550))
 
 # Island solved for his span (crown 3.99, neck 2.51, H 1.487): brow anchor 34
 # samples cell 32 → z 3.333 (44.5 against the traced 44.5), eye anchor 50
@@ -271,15 +274,21 @@ def ring_loft_scalp(builder: MeshBuilder, levels, detail: int) -> None:
 # not-traceable: the ridge's own width hides under the spikes in every view;
 # the arc it rides is the skull top plus the fade shell.
 CREST_SPINE = [
-    (0.0, -0.360, 3.480),
-    (0.0, -0.180, 3.580),
-    (0.0, 0.120, 3.600),
-    (0.0, 0.320, 3.540),
-    (0.0, 0.480, 3.400),
-    (0.0, 0.590, 3.220),
-    (0.0, 0.660, 3.040),
+    (0.0, -0.330, 3.450),   # starts inside the forehead: at the surface its end cap showed as a flat facet
+    (0.0, -0.220, 3.690),
+    (0.0, 0.080, 3.740),
+    (0.0, 0.300, 3.670),
+    (0.0, 0.480, 3.480),
+    (0.0, 0.600, 3.280),
+    (0.0, 0.660, 3.080),
 ]
-CREST_RADII = [0.115, 0.135, 0.138, 0.128, 0.118, 0.104, 0.078]
+# ★ A DENSE CREST, NOT A ROW OF CONES. His sheet's mohawk is one thick mass
+# 0.33 half-wide at its base (front rows 168-184) narrowing to 0.16 at z 3.88;
+# a ridge 0.13 thick under thirteen thin cones read as "separated tall cones"
+# on a "round head" and held three categories at 2. The ridge is the mass
+# now and the spikes only break its outline.
+# measured: front z=3.69 halfWidth=0.325 tol=0.04
+CREST_RADII = [0.110, 0.330, 0.350, 0.320, 0.265, 0.195, 0.100]
 
 # The spikes. Apex tip z 3.99 is the head span's own crown; leans alternate
 # in x so the front reads the concept's tuft.
@@ -308,7 +317,9 @@ SPIKE_TABLE = [
 
 def build_mohawk(builder: MeshBuilder, detail: int) -> None:
     ring_loft_scalp(builder, SCALP_LEVELS, detail)
-    sides = 5 if detail >= 2 else 4
+    # Six sides: an odd count is lopsided left to right, and on a crest this
+    # wide that pushed the face-symmetry measure out of tolerance.
+    sides = 6 if detail >= 2 else 4
     spine = CREST_SPINE if detail >= 1 else CREST_SPINE[::2]
     radii = CREST_RADII if detail >= 1 else CREST_RADII[::2]
     builder.tube(spine, radii, 2, HAIR, "Head", sides)
@@ -316,8 +327,15 @@ def build_mohawk(builder: MeshBuilder, detail: int) -> None:
         return
     spikes = SPIKE_TABLE if detail >= 2 else SPIKE_TABLE[:7:2] + SPIKE_TABLE[9:11]
     for (bx, by, bz), (tx, ty, tz) in spikes:
-        builder.tube([(bx, by, bz), (tx, ty, tz)],
-                     [0.130, 0.020], 2, HAIR, "Head", 4)
+        # Carried out onto the thicker crest: each spike now starts on the
+        # mass's surface and its tip keeps to the head span's own crown.
+        # Only the flank pairs spread: the midline column's small alternating
+        # leans, widened, pushed the face 9% off-centre.
+        wide = 1.8 if abs(bx) > 0.05 else 1.0
+        if abs(bx) <= 0.05 and by < 0.0:
+            bx = tx = 0.0   # the two front midline spikes stand over the forehead: no lean there
+        builder.tube([(bx * wide, by, bz + 0.160), (tx * (1.5 if abs(bx) > 0.05 else 1.0), ty, min(tz + 0.140, 4.110))],
+                     [0.150, 0.030], 2, HAIR, "Head", 4)
 
 
 # --- The gold-striped tee ------------------------------------------------------
@@ -327,56 +345,48 @@ def build_mohawk(builder: MeshBuilder, detail: int) -> None:
 # and the chest band 2.32-2.42; the collar ring is gold.
 # not-traceable: his hanging arms merge with the belly at every row; halves
 # bounded off the pair-outer silhouette minus the arm runs.
+# ★ The tee runs to z 1.21 (it stopped at 1.50, a crop top on a boy the
+# sheet draws in a long tee over his belly).
 # measured: front z=1.90 halfWidth=0.8285 tol=0.06
 TORSO_LEVELS = [
-    (1.500, 0.460, 0.385, "Hips"),    # hem underside
-    (1.535, 0.485, 0.405, "Hips"),    # hem band, proud
-    (1.650, 0.495, 0.415, "Hips"),
-    (1.800, 0.500, 0.420, "Spine"),   # the belly's widest ring
-    (1.950, 0.490, 0.412, "Spine"),
-    (2.100, 0.465, 0.392, "Spine1"),
-    (2.240, 0.425, 0.360, "Spine1"),
-    (2.340, 0.365, 0.310, "Spine2"),
-    (2.420, 0.290, 0.248, "Spine2"),
+    (1.200, 0.560, 0.470, "Hips"),    # hem underside — sheet row 577, z 1.21
+    (1.235, 0.610, 0.512, "Hips"),    # hem band, proud — the belly peaks at the hem
+    (1.400, 0.622, 0.524, "Hips"),
+    (1.600, 0.612, 0.516, "Hips"),
+    (1.800, 0.588, 0.494, "Spine"),
+    (1.950, 0.560, 0.468, "Spine"),
+    (2.100, 0.522, 0.436, "Spine1"),
+    (2.240, 0.466, 0.392, "Spine1"),
+    (2.340, 0.392, 0.330, "Spine2"),
+    (2.420, 0.300, 0.256, "Spine2"),
     (2.450, 0.215, 0.185, "Spine2"),
     (2.485, 0.175, 0.155, "Spine2"),  # gold collar ring, proud
     (2.520, 0.155, 0.140, "Spine2"),  # neck hole — OUTSIDE the neck loft
 ]
 
 # ⚠️ (lo, hi) ASCENDING — the membership test is `lo <= z <= hi`.
-STRIPES = ((1.560, 1.700), (1.820, 1.960), (2.080, 2.220), (2.320, 2.420),
+STRIPES = ((1.270, 1.410), (1.550, 1.690), (1.820, 1.960), (2.080, 2.220), (2.320, 2.420),
            (2.475, 2.520))
 
 # ★ LOD0 ring pairs 0.006 inside each band edge (the washed-stripe lesson).
 # not-traceable: the paired rows re-express STRIPES as loft rings; the
 # shape numbers interpolate the bounded table above.
-TORSO_LEVELS_CRISP = [
-    (1.500, 0.460, 0.385, "Hips"),
-    (1.535, 0.485, 0.405, "Hips"),
-    (1.554, 0.487, 0.406, "Hips"),
-    (1.566, 0.488, 0.407, "Hips"),
-    (1.650, 0.495, 0.415, "Hips"),
-    (1.694, 0.497, 0.417, "Hips"),
-    (1.706, 0.498, 0.418, "Hips"),
-    (1.800, 0.500, 0.420, "Spine"),
-    (1.814, 0.499, 0.419, "Spine"),
-    (1.826, 0.499, 0.419, "Spine"),
-    (1.950, 0.490, 0.412, "Spine"),
-    (1.954, 0.489, 0.411, "Spine"),
-    (1.966, 0.489, 0.411, "Spine"),
-    (2.074, 0.470, 0.396, "Spine1"),
-    (2.086, 0.468, 0.394, "Spine1"),
-    (2.214, 0.430, 0.364, "Spine1"),
-    (2.226, 0.428, 0.362, "Spine1"),
-    (2.314, 0.372, 0.316, "Spine2"),
-    (2.326, 0.368, 0.312, "Spine2"),
-    (2.414, 0.293, 0.250, "Spine2"),
-    (2.426, 0.287, 0.245, "Spine2"),
-    (2.470, 0.215, 0.185, "Spine2"),
-    (2.469, 0.190, 0.166, "Spine2"),
-    (2.481, 0.178, 0.157, "Spine2"),
-    (2.520, 0.155, 0.140, "Spine2"),
-]
+def _torso_ring_interp(z):
+    for (za, wa, da, ba), (zb, wb, db, bb) in zip(TORSO_LEVELS, TORSO_LEVELS[1:]):
+        if za <= z <= zb:
+            t = (z - za) / (zb - za)
+            return (z, wa + t * (wb - wa), da + t * (db - da), ba)
+    return None
+
+
+# Computed, as on the other striped kids: a ring 0.006 either side of each
+# band edge, skipped where it would sit within 0.008 of an authored row (a
+# sliver band's normals render as dark slits).
+TORSO_LEVELS_CRISP = sorted(
+    TORSO_LEVELS + [ring for lo, hi in STRIPES for edge in (lo - 0.006, lo + 0.006, hi - 0.006, hi + 0.006)
+                    if all(abs(edge - level[0]) > 0.008 for level in TORSO_LEVELS)
+                    and (ring := _torso_ring_interp(edge)) is not None],
+    key=lambda level: level[0])
 
 
 def stripe_color(theta: float, z: float):
@@ -409,23 +419,23 @@ SHOULDER_BLEND = {
 # not-traceable: authored in the rig's T-pose while the concept hangs the
 # arms into the belly outline; the chunky forearm is bounded ~0.085 half.
 ARM_STATIONS = [
-    (0.215, 0.165, SHIRT_DARK, "Arm"),
-    (0.300, 0.170, SHIRT_DARK, "Arm"),
-    (0.335, 0.163, SHIRT, "Arm"),
-    (ARM_SHOULDER_X, 0.152, SHIRT, "Arm"),
-    (0.520, 0.140, SHIRT_DARK, "Arm"),
-    (0.600, 0.132, SHIRT_DARK, "Arm"),
-    (0.630, 0.126, SHIRT, "Arm"),
-    (SLEEVE_HEM_X, 0.132, SHIRT, "Arm"),           # hem roll, proud
-    (0.688, 0.124, SHIRT, "Arm"),
-    (0.706, 0.102, SHIRT, "Arm"),
-    (0.724, 0.088, SKIN, "Arm"),
-    (ARM_ELBOW_X, 0.086, SKIN, "ForeArm"),
-    (1.240, 0.082, SKIN, "ForeArm"),
-    (1.365, 0.072, SKIN, "Hand"),
-    (1.412, 0.078, SKIN, "Hand"),
-    (1.465, 0.084, SKIN, "Hand"),   # knuckle line
-    (1.512, 0.070, SKIN, "Hand"),
+    (0.215, 0.178, SHIRT_DARK, "Arm"),
+    (0.300, 0.184, SHIRT_DARK, "Arm"),
+    (0.335, 0.176, SHIRT, "Arm"),
+    (ARM_SHOULDER_X, 0.164, SHIRT, "Arm"),
+    (0.520, 0.229, SHIRT_DARK, "Arm"),
+    (0.600, 0.216, SHIRT_DARK, "Arm"),
+    (0.630, 0.206, SHIRT, "Arm"),
+    (SLEEVE_HEM_X, 0.216, SHIRT, "Arm"),           # hem roll, proud
+    (0.688, 0.203, SHIRT, "Arm"),
+    (0.706, 0.167, SHIRT, "Arm"),
+    (0.724, 0.144, SKIN, "Arm"),
+    (ARM_ELBOW_X, 0.140, SKIN, "ForeArm"),
+    (1.240, 0.134, SKIN, "ForeArm"),
+    (1.365, 0.117, SKIN, "Hand"),
+    (1.412, 0.128, SKIN, "Hand"),
+    (1.465, 0.138, SKIN, "Hand"),   # knuckle line
+    (1.512, 0.115, SKIN, "Hand"),
 ]
 
 BOOMER_ARM = ArmSpec(
@@ -457,9 +467,9 @@ BOOMER_ARM = ArmSpec(
 
 
 # --- Navy shorts, chunky bare legs, roll-top socks -----------------------------
-SHORTS_HEM_Z = 1.020
-INSEAM_TOP_Z = 1.480
-INSEAM_HEM_Z = 1.000
+SHORTS_HEM_Z = 0.790
+INSEAM_TOP_Z = 1.200
+INSEAM_HEM_Z = 0.780
 INSEAM_HEM_HALF = 0.030
 
 
@@ -474,30 +484,28 @@ def inseam_half(z: float) -> float:
 # measured: front z=0.70 halfWidth=0.4977 tol=0.05
 LEG_STATIONS = [
     (1.580, 0.250, 1.10, PANTS, "UpLeg"),
-    (1.470, 0.246, 1.08, PANTS, "UpLeg"),
-    (1.320, 0.240, 1.07, PANTS, "UpLeg"),
-    (1.160, 0.236, 1.04, PANTS, "UpLeg"),
-    (1.060, 0.238, 1.02, PANTS, "UpLeg"),
-    (SHORTS_HEM_Z, 0.232, 1.01, PANTS_DARK, "UpLeg"),  # hem inner lip
-    (0.990, 0.160, 1.00, SKIN, "UpLeg"),               # chunky bare leg
-    (0.880, 0.152, 1.00, SKIN, "Leg"),
-    (0.760, 0.148, 1.01, SKIN, "Leg"),                 # the calf
-    (0.640, 0.138, 1.00, SKIN, "Leg"),
-    (0.570, 0.132, 1.00, SKIN, "Leg"),
-    (0.530, 0.144, 1.00, TEAM_MASK, "Leg"),            # roll-top, proud — THE accent
-    (0.490, 0.140, 1.00, TEAM_MASK, "Leg"),
-    (0.460, 0.130, 1.00, SOCK, "Leg"),
-    (0.400, 0.120, 0.99, SOCK, "Foot"),
-    (0.280, 0.105, 0.97, SOCK, "Foot"),
-    (0.150, 0.095, 0.95, SOCK, "Foot"),
+    (1.400, 0.270, 1.10, PANTS, "UpLeg"),
+    (1.200, 0.312, 1.08, PANTS, "UpLeg"),
+    (1.000, 0.318, 1.05, PANTS, "UpLeg"),
+    (0.840, 0.318, 1.03, PANTS, "UpLeg"),
+    (SHORTS_HEM_Z, 0.312, 1.02, PANTS_DARK, "UpLeg"),  # hem inner lip
+    (0.770, 0.214, 1.00, SKIN, "Leg"),                 # chunky bare leg
+    (0.680, 0.206, 1.00, SKIN, "Leg"),
+    (0.600, 0.196, 1.00, SKIN, "Leg"),
+    (0.540, 0.200, 1.00, TEAM_MASK, "Leg"),            # roll-top, proud — THE accent
+    (0.500, 0.196, 1.00, TEAM_MASK, "Leg"),
+    (0.470, 0.184, 1.00, SOCK, "Leg"),
+    (0.400, 0.170, 0.99, SOCK, "Foot"),
+    (0.280, 0.140, 0.97, SOCK, "Foot"),
+    (0.150, 0.110, 0.95, SOCK, "Foot"),
 ]
 
 # The yoke that closes the crotch (Zippy's lesson).
 # not-traceable: interior geometry no view can show.
 CROTCH_LEVELS = [
-    (1.040, 0.190, 0.230, "Hips"),
-    (1.250, 0.230, 0.285, "Hips"),
-    (1.530, 0.265, 0.330, "Hips"),
+    (0.800, 0.200, 0.240, "Hips"),
+    (1.150, 0.250, 0.300, "Hips"),
+    (1.530, 0.280, 0.340, "Hips"),
 ]
 
 BOOMER_LEG = LegSpec(
@@ -655,7 +663,7 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
     if detail >= 1:
         builder.loft(CROTCH_LEVELS, 1, PANTS, 8 if detail >= 2 else 6)
     if detail >= 2:
-        builder.loft(TORSO_LEVELS_CRISP, 1, SHIRT, 17, color_fn=stripe_color)
+        builder.loft(TORSO_LEVELS_CRISP, 1, SHIRT, 16, color_fn=stripe_color)
     else:
         builder.loft(thin_for_lod(TORSO_LEVELS, detail), 1, SHIRT, segments,
                      color_fn=stripe_color)
