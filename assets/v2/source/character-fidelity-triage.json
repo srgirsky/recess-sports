@@ -2580,76 +2580,6 @@
       "class": "face-atlas",
       "excerpt": "Eyes are almond with pointed corners and a dull off-white sclera (187,188,16"
     },
-    "tank:58e1ed7515a8": {
-      "char": "tank",
-      "class": "other",
-      "excerpt": "BODY: Torso is about a quarter too shallow in profile and flat-backed: depth"
-    },
-    "tank:71d2a5463555": {
-      "char": "tank",
-      "class": "proportions",
-      "excerpt": "BODY: Head is a flat-sided box with a flat jaw and no cheeks or jowls, on a "
-    },
-    "tank:989fb8415785": {
-      "char": "tank",
-      "class": "proportions",
-      "excerpt": "GEAR: Shin guards are a plain dark band (grin y575-598) with no piping, plat"
-    },
-    "tank:d71ad4cfea48": {
-      "char": "tank",
-      "class": "other",
-      "excerpt": "GEAR: Cap front edge is a ruler-straight cut that overhangs the skull as a l"
-    },
-    "tank:36d8b7a038d5": {
-      "char": "tank",
-      "class": "proportions",
-      "excerpt": "BODY: Hands are narrower than the wrist with three thin spike fingers (hero "
-    },
-    "tank:388e6f5aa56e": {
-      "char": "tank",
-      "class": "other",
-      "excerpt": "GEAR: Swing contact breaks the gear: an angular skin wedge crosses the plate"
-    },
-    "tank:da98ad030d6c": {
-      "char": "tank",
-      "class": "other",
-      "excerpt": "GEAR: Shoes: toe slits are closed (cleared), but each toe comes to a creased"
-    },
-    "tank:7ca2e9913950": {
-      "char": "tank",
-      "class": "face-atlas",
-      "excerpt": "FACE: Brows are thin black arcs (grin x488-513 and x552-577, y239-248) and t"
-    },
-    "tank:f7434c36e4fc": {
-      "char": "tank",
-      "class": "other",
-      "excerpt": "GEAR: Shoulder caps are about half the sheet's pad with cream on the undersi"
-    },
-    "tank:791fcd346fea": {
-      "char": "tank",
-      "class": "other",
-      "excerpt": "GEAR: Chest plate ridges are soft shading bands with no segment breaks; pipi"
-    },
-    "tank:689ebc6c4abc": {
-      "char": "tank",
-      "class": "face-atlas",
-      "excerpt": "FACE: Tongue and cheer are near-identical at hero size (tongue mouth x515-54"
-    },
-    "tank:000b51405e51": {
-      "char": "tank",
-      "class": "face-atlas",
-      "excerpt": "FACE: Skin is saturated orange against the sheet's warm brown and the face p"
-    },
-    "tank:5dc5439a4472": {
-      "char": "tank",
-      "class": "other",
-      "excerpt": "GEAR: Shorts lack the cream side stripe (carried)."
-    },
-    "tank:dd516c627952": {
-      "char": "tank",
-      "class": "evidence",
-      "excerpt": "GEAR: Back harness is shown by no capture or board; only one strap edge is v"
-    },
     "zippy:bf914983c32b": {
       "char": "zippy",
       "class": "other",
@@ -2759,6 +2689,61 @@
       "char": "big_lou",
       "class": "face-atlas",
       "excerpt": "FACE: Profile is a near-flat plane with a small nose wedge (guri-profile-rev"
+    },
+    "tank:c0416cb7de14": {
+      "char": "tank",
+      "class": "proportions",
+      "excerpt": "BODY: Head is a rounded box with a flat jaw, no cheek or jowl mass, on a vis"
+    },
+    "tank:de1af717a4a1": {
+      "char": "tank",
+      "class": "proportions",
+      "excerpt": "GEAR: Knee caps are a cream-olive sliver under the shorts hem no wider than "
+    },
+    "tank:5a6e9f7c0a95": {
+      "char": "tank",
+      "class": "proportions",
+      "excerpt": "BODY: Profile is a flat-backed slab with little seat or belly depth (sonny-p"
+    },
+    "tank:c2cf3f47f3e5": {
+      "char": "tank",
+      "class": "other",
+      "excerpt": "GEAR: Cap front edge is a ruler-straight cut that overhangs the temple as a "
+    },
+    "tank:92512328b284": {
+      "char": "tank",
+      "class": "proportions",
+      "excerpt": "BODY: Hands are stubby mitts with thin spike fingers (run x545-580, y415-455"
+    },
+    "tank:141009288f5f": {
+      "char": "tank",
+      "class": "other",
+      "excerpt": "GEAR: Shoes: toes come to a creased hoof point (grin x445-455 and x605-615, "
+    },
+    "tank:65875a62801f": {
+      "char": "tank",
+      "class": "other",
+      "excerpt": "GEAR: Swing contact breaks the gear: a skin wedge crosses the plate, the tee"
+    },
+    "tank:576428a0a644": {
+      "char": "tank",
+      "class": "face-atlas",
+      "excerpt": "FACE: Brows are thin black arcs and the eyes are narrow slanted almonds with"
+    },
+    "tank:8c595a5e69d8": {
+      "char": "tank",
+      "class": "other",
+      "excerpt": "GEAR: Chest plate ridges are shading bands, with no wings or waist strap (gr"
+    },
+    "tank:f759c58729b4": {
+      "char": "tank",
+      "class": "face-atlas",
+      "excerpt": "FACE: Tongue and cheer are near-identical at hero size (tongue mouth x515-54"
+    },
+    "tank:ad57d5e56e14": {
+      "char": "tank",
+      "class": "evidence",
+      "excerpt": "GEAR: The back harness is shown by no capture or board. Capture a back view "
     }
   }
 }
