@@ -523,8 +523,16 @@ def build_shoe(
     toe = builder.vertex(shoe_place(spec, ankle_x, side, spec.toe_point[0] * spec.length_scale, 0.0, spec.toe_point[1]), spec.trim, bone, (0.75, 0.25))
     for index in range(len(ring)):
         nxt = (index + 1) % len(ring)
-        a = (heel, rows[0][nxt], rows[0][index])
-        b = (toe, rows[-1][index], rows[-1][nxt])
+        # ★ EACH END POINT CLOSES ITS OWN END. Every station table runs toe
+        # (-y) first, so rows[0] is the TOE ring and rows[-1] the heel ring —
+        # and until 2026-11-14 the heel point was fanned to rows[0] and the toe
+        # point to rows[-1]. Both fans ran the length of the shoe INSIDE it:
+        # the toe was closed by a cone pointing backward, which is the dark
+        # notch at the toe corners critics reported on kid after kid, and each
+        # end point stood outside the far end as a spike. Windings are the two
+        # old ones, swapped with their rings.
+        a = (toe, rows[0][nxt], rows[0][index])
+        b = (heel, rows[-1][index], rows[-1][nxt])
         builder.face(a if side < 0 else (a[0], a[2], a[1]), 1)
         builder.face(b if side < 0 else (b[0], b[2], b[1]), 1)
 
