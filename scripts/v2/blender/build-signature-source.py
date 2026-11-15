@@ -80,7 +80,7 @@ def main() -> None:
         f"{name} produced-character pass\n\n"
         "1 unit = 1 foot; +Y up; +Z forward.\n"
         "Do not rename, reorder or move canonical bones.\n"
-        "LOD0/1/2 must remain under 8000/3000/1200 triangles.\n"
+        "LOD0/1/2 must remain under 12000/4500/1200 triangles.\n"
         "The packed turnaround is the visual target.\n"
         f"Use npm run export:authored-character -- {character_id} for the shipping GLB; "
         "raw Blender export is not contract-safe.\n"

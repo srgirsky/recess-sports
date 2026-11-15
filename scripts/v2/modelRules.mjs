@@ -493,9 +493,24 @@ const SLOTS = ['M_Body', 'M_Uniform', 'M_Hair', 'M_Accessory'];
 //   - LOD0 is drawn only while a kid stands 90px tall or more on the mid and
 //     high tiers (`perfTier.ts`); the low tier never uploads it. LOD1 and LOD2,
 //     which carry every distant kid, are unchanged.
-// A budget in this repo may normally only shrink. This one grew once, on the
-// record above; do not raise it again without the same measurement.
-const LOD_BUDGET = { LOD0: 8000, LOD1: 3000, LOD2: 1200 };
+//
+// ★ RELAXED AGAIN THE SAME DAY, ON THE MAINTAINER'S INSTRUCTION (2026-11-15):
+// "remove as many restrictions as reasonable; only rules that are part of the
+// game". These are download and draw budgets, not game rules, so they are now
+// set where they stop a runaway file and no longer where they shape a sculpt:
+//   LOD0  8,000 -> 12,000   close-ups only (90px and taller, mid and high tiers)
+//   LOD1  3,000 ->  4,500   it had forced Yui's and Gizmo's mid-distance hair
+//                           down to a fifth of their locks
+//   LOD2  1,200  unchanged  the far level; nothing has asked for more
+//   file  400KB ->  640KB   (MAX_CHARACTER_BYTES below) a kid at both new caps
+//                           is about 545KB at 29.6 bytes a triangle
+// What this costs, at the caps: the roster could grow from 10.1MB to about
+// 19MB, and a game that loads 18 kids from about 6.3MB to 11.5MB. Nothing
+// costs anything until a sculpt uses the room. Frame time was not measured.
+const LOD_BUDGET = { LOD0: 12000, LOD1: 4500, LOD2: 1200 };
+
+/** The per-kid file ceiling. One constant: every caller imports it. */
+export const MAX_CHARACTER_BYTES = 640 * 1024;
 
 export function checkCharacter(gltf, spec, report, id) {
   const { json } = gltf;

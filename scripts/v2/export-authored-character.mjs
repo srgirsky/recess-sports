@@ -17,7 +17,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { AUTHORED_CHARACTERS } from './character-registry.mjs';
 import { readGlb, writeGlb } from './glb.mjs';
-import { checkCharacter, checkContainer, checkSkeleton, makeReport } from './modelRules.mjs';
+import { checkCharacter, checkContainer, checkSkeleton, makeReport, MAX_CHARACTER_BYTES } from './modelRules.mjs';
 import { loadContract, RUNTIME_DIR } from './validate-models.mjs';
 import { writeManifest } from './models-manifest.mjs';
 
@@ -392,7 +392,7 @@ export async function exportAuthoredCharacter(id, { blender = process.env.BLENDE
 
     const normalized = readGlb(promoted);
     const report = makeReport();
-    checkContainer(normalized, report, { maxBytes: 400 * 1024 });
+    checkContainer(normalized, report, { maxBytes: MAX_CHARACTER_BYTES });
     checkSkeleton(normalized, contract, report);
     checkCharacter(normalized, contract, report, id);
     const failures = failReport(report);

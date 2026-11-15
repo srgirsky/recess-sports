@@ -170,13 +170,14 @@ missed. The validator measures it from the delivered file.
 
   | node | triangle budget |
   |---|---|
-  | `kid_<id>_LOD0` | ≤ 8,000 |
-  | `kid_<id>_LOD1` | ≤ 3,000 |
+  | `kid_<id>_LOD0` | ≤ 12,000 |
+  | `kid_<id>_LOD1` | ≤ 4,500 |
   | `kid_<id>_LOD2` | ≤ 1,200 |
 
-  LOD0 was 7,000 until 2026-11-15. The measurement behind the change is in
-  `scripts/v2/modelRules.mjs` beside `LOD_BUDGET`; the 400 KB file cap below did
-  not move and is the limit a full LOD0 now runs into first.
+  These are download and draw budgets, not game rules. They were 7,000 / 3,000
+  with a 400 KB file until 2026-11-15, and were relaxed on the maintainer's
+  instruction so they stop a runaway file without shaping a sculpt. The record
+  and the measured cost are in `scripts/v2/modelRules.mjs` beside `LOD_BUDGET`.
 
 - **Nothing but hair may be drawn above `HeadTop_End`**, and hair only by up to
   **10% of body height** (`HAIR_HEADROOM_FRAC` in `src/v2/render/skeleton.ts`;
@@ -244,7 +245,7 @@ rejects any model that has them.
   `_RECESS_COLOR` into `COLOR_0`, removes unused buffers, then byte-normalizes
   colours and weights; both paths must stay under the same file cap.
 - **KTX2 / Basis** textures: ETC1S q200 for `albedo` and `mask`, UASTC for `face_atlas`
-- **≤ 400 KB per `.glb`**
+- **≤ 640 KB per `.glb`** (`MAX_CHARACTER_BYTES` in `scripts/v2/modelRules.mjs`)
 
 ---
 
@@ -286,7 +287,7 @@ npm run validate:models
 Unlike the fallback exporter, these files carry a UV-mapped `M_Body`, an
 individual 4×4 `face_atlas` derived from the character's authored face data,
 roster-fidelity silhouette details, and no `STAND-IN` marker. They are held to
-the same rig, LOD, material, height and 400KB rules as an external delivery.
+the same rig, LOD, material, height and file-size rules as an external delivery.
 `manifest.test.js` requires a validated production file for every roster id,
 but this path is not sculpt approval and must not overwrite an authored source
 delivery.

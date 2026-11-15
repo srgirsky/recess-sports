@@ -1837,7 +1837,7 @@ both recolouring and field distance without spending another draw call.
 
 The distinction is executable. Production files never carry the `STAND-IN`
 generator marker, `manifest.test.js` requires exactly the 30 `ROSTER` ids and
-re-validates every committed GLB under 400KB, and `?spike=1&roster=1` renders a
+re-validates every committed GLB under the file cap (400KB then, 640KB now), and `?spike=1&roster=1` renders a
 front-facing contact sheet of the complete batch. `?spike=1&kid=<id>` keeps the
 single-character field review, while `?proxy=1` remains the honest A/B against
 the permanent cheap fallback.
@@ -2725,7 +2725,7 @@ face**.
 
 What has never been attempted is the step that decides it: retopologising the
 mesh, conforming it to the canonical rig's bone order and bind pose, splitting it
-across the four material slots, and generating LOD0/1/2 at 7000/3000/1200 (LOD0's cap has since been raised to 8000). Two
+across the four material slots, and generating LOD0/1/2 at 7000/3000/1200 (the caps have since been relaxed; see `scripts/v2/modelRules.mjs`). Two
 gates stand in the way and one of them is new — `palette.lint.test.js` requires
 every vertex colour to be a *declared swatch*, and a photogrammetric colour field
 has thousands. A bounded experiment on branch `spike/img23d-conform` is scoped to
