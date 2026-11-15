@@ -21,7 +21,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { ROSTER } from '../../src/data/characters.ts';
 import { readGlb } from './glb.mjs';
-import { checkAnimations, checkCharacter, checkContainer, checkSkeleton, makeReport } from './modelRules.mjs';
+import { checkAnimations, checkCharacter, checkContainer, checkSkeleton, makeReport, MAX_CHARACTER_BYTES } from './modelRules.mjs';
 import * as skeletonSpec from '../../src/v2/render/skeleton.ts';
 import * as animationSpec from '../../src/v2/render/clips.ts';
 
@@ -89,7 +89,7 @@ describe('public/v2/models/manifest.json', () => {
       }
 
       const report = makeReport();
-      checkContainer(gltf, report, { maxBytes: 400 * 1024 });
+      checkContainer(gltf, report, { maxBytes: MAX_CHARACTER_BYTES });
       checkSkeleton(gltf, skeletonSpec, report);
       checkCharacter(gltf, skeletonSpec, report, id);
       const failures = report.items
