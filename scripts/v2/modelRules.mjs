@@ -479,7 +479,23 @@ function checkDrawnHeight(gltf, spec, report, nodes, lodNodes) {
 // --- Character rules ----------------------------------------------------------
 
 const SLOTS = ['M_Body', 'M_Uniform', 'M_Hair', 'M_Accessory'];
-const LOD_BUDGET = { LOD0: 7000, LOD1: 3000, LOD2: 1200 };
+// ★ LOD0 WAS 7,000 UNTIL 2026-11-15, AND THE ROSTER HAD HIT IT. Nine kids
+// shipped within 100 triangles of 7,000 and eighteen within 300, so nearly
+// every open polish finding that asks for geometry (rounder curls, shoe laces
+// and stripes, hems, knees) could only be paid for by taking triangles from
+// somewhere a critic would then notice. Raised by the maintainer's decision,
+// with the cost measured across all thirty delivered files:
+//   - LOD0 geometry costs 29.6 bytes a triangle (it is 56% of a kid's file),
+//     so a kid at the new cap is at most 29KB heavier. The largest file was
+//     358KB; at the cap it is 387KB, still under the 400KB container limit,
+//     which DID NOT MOVE and is now the binding one. 9,000 would have put the
+//     largest file at 416KB and needed that limit raised too.
+//   - LOD0 is drawn only while a kid stands 90px tall or more on the mid and
+//     high tiers (`perfTier.ts`); the low tier never uploads it. LOD1 and LOD2,
+//     which carry every distant kid, are unchanged.
+// A budget in this repo may normally only shrink. This one grew once, on the
+// record above; do not raise it again without the same measurement.
+const LOD_BUDGET = { LOD0: 8000, LOD1: 3000, LOD2: 1200 };
 
 export function checkCharacter(gltf, spec, report, id) {
   const { json } = gltf;

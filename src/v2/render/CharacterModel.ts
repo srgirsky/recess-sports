@@ -200,7 +200,7 @@ export class CharacterModel implements KidView {
     // ★ `lodBias` DROPS the nearest levels rather than scaling distances.
     // `perfTier` defines it as "added to every character's LOD index — 1 means
     // never use LOD0", and dropping is literally that; scaling distances would
-    // still upload LOD0's 7,000 triangles to a device that must never draw them.
+    // still upload all of LOD0's triangles to a device that must never draw them.
     const bias = Math.max(0, Math.min(opts.lodBias ?? 0, candidates.length - 1));
     const used = candidates.slice(bias);
 

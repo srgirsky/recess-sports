@@ -65,7 +65,7 @@ const TIERS: Record<PerfTier, Omit<TierSettings, 'tier'>> = {
 /**
  * ★ LOD thresholds are DERIVED from apparent size, not picked as distances.
  *
- * The thing that decides whether 7,000 triangles are worth spending is how many
+ * The thing that decides whether LOD0's triangles are worth spending is how many
  * PIXELS the character covers, and that is a function of distance, field of
  * view and viewport height together — not distance alone. Hardcoding "LOD1 past
  * 90ft" bakes in one camera and one screen: the same 90ft is a 99px kid on the

@@ -2725,7 +2725,7 @@ face**.
 
 What has never been attempted is the step that decides it: retopologising the
 mesh, conforming it to the canonical rig's bone order and bind pose, splitting it
-across the four material slots, and generating LOD0/1/2 at 7000/3000/1200. Two
+across the four material slots, and generating LOD0/1/2 at 7000/3000/1200 (LOD0's cap has since been raised to 8000). Two
 gates stand in the way and one of them is new — `palette.lint.test.js` requires
 every vertex colour to be a *declared swatch*, and a photogrammetric colour field
 has thousands. A bounded experiment on branch `spike/img23d-conform` is scoped to
