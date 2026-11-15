@@ -1057,10 +1057,11 @@ export const FACE_SPECS = {
     mouthDrop: -2.8,
   },
   // Boomer. Big bright eyes under thick arched brows, and the roster's
-  // widest grin — a full white teeth band. Feature rows traced on his
-  // sheet: brows rows 224-232 (44.5% of head), eyes rows 246-260 centred
-  // 54.7%, grin rows 272-290 (66.0%). Cells through his island
-  // (0.92, -1.5005, 2.500).
+  // widest grin — a full white teeth band. Feature rows RE-TRACED on his
+  // sheet 2026-11-15 (the first trace filed each feature one too high; see
+  // sculpt-boomer-source.py): brows rows 246-255 (54.3% of head), eyes rows
+  // 273-297 (68.2%), teeth rows 333-339 inside a mouth 327-345 (89.0%).
+  // Cells through his island (0.92, -1.5005, 2.500) on the lowered skull.
   boomer: {
     ink: '#120a04',
     mouthInk: '#4e2412',
@@ -1082,7 +1083,7 @@ export const FACE_SPECS = {
     browThin: 2.8,
     browHalf: 15,
     browX: [31, 97],
-    browY: 34,
+    browY: 28,
     browTilt: 0,
     // The roster's widest grin: the sheet's mouth spans 0.52ft. Open cells
     // are aligned to his high mouthY 62 (Gizmo's under-chin lesson).
@@ -1090,7 +1091,7 @@ export const FACE_SPECS = {
     tongueOut: true,
     tongueReach: 1.5,
     mouthScale: 0.96,
-    mouthY: 64,
+    mouthY: 78,
     mouthBow: -0.8,
     mouthDrop: -3.4,
   },

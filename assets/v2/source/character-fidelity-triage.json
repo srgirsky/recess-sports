@@ -2270,26 +2270,6 @@
       "class": "hems-cuffs",
       "excerpt": "CLEARED IN THE TWO SAMPLED FRAMES, NOT CERTIFIED ELSEWHERE — thigh through t"
     },
-    "boomer:6751018559eb": {
-      "char": "boomer",
-      "class": "face-atlas",
-      "excerpt": "EARS: long flaps hanging from mouth level down and out to the collar (boomer"
-    },
-    "boomer:b82bb2358453": {
-      "char": "boomer",
-      "class": "face-atlas",
-      "excerpt": "FACE: at 3/4 the nose/mouth is a beak. hero x580-600 y250-285 and run x612-6"
-    },
-    "boomer:2bca9045624c": {
-      "char": "boomer",
-      "class": "face-atlas",
-      "excerpt": "FACE: grin still joins the eyes. face-grin x505-565 y255-280: the crescent's"
-    },
-    "boomer:02c7a7b9fd05": {
-      "char": "boomer",
-      "class": "other",
-      "excerpt": "BODY: slim limbs on a barrel. Upper arms about a third of the sheet's thickn"
-    },
     "boomer:c326a63409a4": {
       "char": "boomer",
       "class": "other",
@@ -2300,11 +2280,6 @@
       "class": "hems-cuffs",
       "excerpt": "CLOTHING: swing capture shows a jagged navy sawtooth poking up over the tee "
     },
-    "boomer:1b80def281b3": {
-      "char": "boomer",
-      "class": "face-atlas",
-      "excerpt": "HEAD: sphere widest at the eyes, no cheek or jaw mass, no nose head-on in an"
-    },
     "boomer:8ffc93cb8662": {
       "char": "boomer",
       "class": "hems-cuffs",
@@ -2314,11 +2289,6 @@
       "char": "boomer",
       "class": "other",
       "excerpt": "HANDS: narrow mitts with spike fingers (hero x480-520 y470-510 and x625-650 "
-    },
-    "boomer:f2c8cd85c301": {
-      "char": "boomer",
-      "class": "face-atlas",
-      "excerpt": "FACE: swing effort mouth is an off-centre dark O with a white patch between "
     },
     "boomer:ae05d6e445de": {
       "char": "boomer",
@@ -2500,35 +2470,60 @@
       "class": "hems-cuffs",
       "excerpt": "SWING HEM FOLD, minor: in the same frame the lower-left hem carries a heavy "
     },
-    "boomer:2fada1627254": {
+    "boomer:46532cac00da": {
       "char": "boomer",
       "class": "other",
-      "excerpt": "HAIR: the crest does not read as hair. Front-on (boomer-runtime-face-grin.pn"
+      "excerpt": "HAIR: the crest's foot is a visible step, a crown or hat brim on the skull. "
     },
-    "boomer:173955c22c8c": {
+    "boomer:bc6bc4ebac3e": {
+      "char": "boomer",
+      "class": "face-atlas",
+      "excerpt": "FACE: the grin is not his grin. boomer-runtime-face-grin.png x505-560 y308-3"
+    },
+    "boomer:4ddb08486286": {
+      "char": "boomer",
+      "class": "face-atlas",
+      "excerpt": "FACE: mouth is at the bottom limit of the head. Tongue expression: the tongu"
+    },
+    "boomer:bf3f373a8844": {
+      "char": "boomer",
+      "class": "face-atlas",
+      "excerpt": "FACE: the neutral face (hero, run, swing) is an open O with a white tooth pa"
+    },
+    "boomer:b4056e6b8160": {
+      "char": "boomer",
+      "class": "other",
+      "excerpt": "HAIR: the crest does not read as hair. It is five or six large smooth straig"
+    },
+    "boomer:2f3f077b001f": {
       "char": "boomer",
       "class": "material-light",
-      "excerpt": "HAIR: temple edge of the fade is a saw-tooth with a stray dark sliver. The s"
+      "excerpt": "HAIR: temple edge of the fade is a saw-tooth. The stubble tone ends against "
     },
-    "boomer:08cbee9846d2": {
+    "boomer:3239a2373cbf": {
+      "char": "boomer",
+      "class": "face-atlas",
+      "excerpt": "HAIR: front-on the fade tone runs down to the brows, leaving no forehead and"
+    },
+    "boomer:5dd886798d2d": {
       "char": "boomer",
       "class": "other",
-      "excerpt": "HAIR: front-on the crest is still not widest at its foot. face-grin: widest "
+      "excerpt": "HAIR: material is glossy tan-grey, not matte black; every lit cone face carr"
     },
-    "boomer:6b6f196ef431": {
+    "boomer:d7717e7c973f": {
       "char": "boomer",
-      "class": "face-atlas",
-      "excerpt": "HAIR: material is glossy grey-brown, not matte black. Broad tan-grey specula"
+      "class": "other",
+      "excerpt": "BODY: slim limbs on a barrel. Upper arms about a third of the sheet's thickn"
     },
-    "boomer:817e76df529f": {
+    "boomer:783ef3af576a": {
       "char": "boomer",
       "class": "hems-cuffs",
-      "excerpt": "HAIR: small dark triangular pits between locks that read as holes into the c"
+      "excerpt": "EARS: right height now, but front-on they are small half-discs mostly hidden"
     },
-    "boomer:5605f02ed7e5": {
+    "boomer:07912ebbb457": {
       "char": "boomer",
       "class": "face-atlas",
-      "excerpt": "HAIR: front-on the stubble tone runs all the way down to the brows, leaving "
+      "excerpt": "HEAD: nose is a smooth bump with a highlight, no nostrils or breadth; no che"
     }
   }
 }

@@ -81,12 +81,21 @@ PALETTE = Palette(
 
 # --- The skull -----------------------------------------------------------------
 #
-# The roster's widest head. Features, bounded traces on the front view:
-# thick arched brows rows 224-232 centred ~227 (44.5% of the 3.99→2.51
-# head, z 3.33 — the widow's peak between them scans as a third brow), the
-# eyes rows 246-260 centred ~252 (54.7%, z 3.18), the grin outline rows
-# 272-290 centred ~280 (66.0%, z 3.01).
-HEAD_CENTER = (0.0, -0.020, 3.150)
+# The roster's widest head.
+# ★ RE-TRACED 2026-11-15, AND EVERY FEATURE HAD BEEN FILED ONE FEATURE TOO
+# HIGH. The first trace took rows 224-232 for the brows, 246-260 for the eyes
+# and 272-290 for the grin. Luminance scans down the front view (columns 169,
+# 176, 202, 236) say rows 224-232 are the WIDOW'S PEAK of the hairline, the
+# brows are the dark run at rows 246-255, the eyes run 273-297 (lid line,
+# sclera, iris) and the teeth are the white run at rows 333-339 inside a
+# mouth outline 327-345. Against the 118-363 head that is brow 54.3%, eye
+# 68.2%, mouth 89.0%, where the old numbers were 44.5 / 54.7 / 66.0. Half
+# of his head span is mohawk: the hairline is at row 237 (z 3.27) and the
+# face fills the lower half, widest at the ear rows (288-340, z 2.96-2.65).
+# The sculpt had a ball skull to z 3.65 with the face in its upper half, a
+# blank chin under it, ears that read as jowls, and a short crest; four
+# critics described exactly that without the cause.
+HEAD_CENTER = (0.0, -0.020, 2.950)
 HEAD_RADII = (0.550, 0.550, 0.500)
 
 # A pear: his sheet's head is narrowest at the temples (0.355-0.37 half at z
@@ -142,10 +151,10 @@ def nose_push(nx: float, nz: float) -> float:
 # measured: front earLine=75.1 earWidth=1.153
 EAR_SPEC = EarSpec(center=(0.020, 2.880), radii=(0.1300, 0.1550))
 
-# Island solved for his span (crown 3.99, neck 2.51, H 1.487): brow anchor 34
-# samples cell 32 → z 3.333 (44.5 against the traced 44.5), eye anchor 50
-# samples cell 48 → z 3.181 (54.7 vs 54.7), mouth anchor 62 samples cell 65 →
-# z 3.016 (65.8 vs 66.0).
+# Island cells for his span (crown 3.99, neck 2.51) on the lowered skull
+# (centre z 2.95, rz 0.50), cell = (1 - (latitude + 1.5005) / 2.5) * 128:
+# brow z 3.186 → cell 26 (anchor 28), eye z 2.981 → cell 48 (anchor 50),
+# mouth z 2.673 → cell 81 (anchor 78).
 FACE_ISLAND = (0.92, -1.5005, 2.500)
 
 HEAD_SPEC = HeadSpec(
@@ -197,30 +206,30 @@ def skull_front_y(x: float, z: float) -> float:
 # measured: front z=3.50 halfWidth=0.3703
 # measured: front z=3.98 halfWidth=0.0243
 SCALP_LEVELS = [
-    (3.640, 0.180, 0.190, 0.000),
-    (3.560, 0.330, 0.345, 0.005),
+    (3.440, 0.180, 0.190, 0.000),
+    (3.360, 0.330, 0.345, 0.005),
     # 3.460 is NOT redundant even though redundant-rows-scan calls it so (within 0.025 of
     # its neighbours' lerp): it is the ring just above SCALP_FRINGE's front z 3.400, and
     # the visible curtain edge is the quad wall from the ring ABOVE the fringe row (the
     # column-quantized fringe lesson, sideways). Deleting it moved the hairline up to
     # 3.560 and broke the fade into a thin crown band — an independent critic caught it
     # on the front board (y166 stubble 87px -> 15px). 36 LOD0 tris, kept. 2026-09-12.
-    (3.460, 0.420, 0.440, 0.010),
+    (3.260, 0.420, 0.440, 0.010),
     # 3.200 sits under the mohawk's scalp and below the fringe at every x, within 0.025
     # of its neighbours' lerp: 36 LOD0 tris toward the nose rows, 2026-09-02.
-    (3.340, 0.480, 0.500, 0.020),
-    (3.060, 0.530, 0.555, 0.040),
-    (2.940, 0.480, 0.510, 0.070),
-    (2.860, 0.400, 0.440, 0.105),
+    (3.140, 0.480, 0.500, 0.020),
+    (2.860, 0.530, 0.555, 0.040),
+    (2.740, 0.480, 0.510, 0.070),
+    (2.660, 0.400, 0.440, 0.105),
 ]
 
 # The fade stops above the brows and drops past the temples to the ears.
 SCALP_FRINGE = [
-    (0.00, 3.400),
-    (0.26, 3.400),
-    (0.36, 3.320),
-    (0.46, 3.160),
-    (0.56, 3.000),
+    (0.00, 3.270),   # row 237
+    (0.26, 3.270),
+    (0.36, 3.200),
+    (0.46, 3.040),
+    (0.56, 2.880),
 ]
 
 SCALP_OPEN_BOTTOM = 2.840
@@ -245,10 +254,10 @@ def fringe_z_at(x_abs: float) -> float:
 FADE = rgba("8A5222")   # the sheet's shaved side: skin with a dark cast
 # not-traceable: colour heights, not silhouette. Read off the profile view:
 # near-black at the crest's foot, the stubble cast by ~z 3.3, skin by the ear.
-FADE_DARK_Z = 3.520
-FADE_MID_Z = 3.280
-FADE_SKIN_Z = 3.020
-SCALP_BACK_RIM = 2.940
+FADE_DARK_Z = 3.320
+FADE_MID_Z = 3.100
+FADE_SKIN_Z = 2.860
+SCALP_BACK_RIM = 2.760
 
 
 def fade_color(z: float):
@@ -319,13 +328,13 @@ def ring_loft_scalp(builder: MeshBuilder, levels, detail: int) -> None:
 # not-traceable: the ridge's own width hides under the spikes in every view;
 # the arc it rides is the skull top plus the fade shell.
 CREST_SPINE = [
-    (0.0, -0.330, 3.450),   # starts inside the forehead: at the surface its end cap showed as a flat facet
-    (0.0, -0.220, 3.690),
-    (0.0, 0.080, 3.740),
-    (0.0, 0.300, 3.670),
-    (0.0, 0.480, 3.480),
-    (0.0, 0.600, 3.280),
-    (0.0, 0.660, 3.080),
+    (0.0, -0.330, 3.300),   # starts inside the forehead: at the surface its end cap showed as a flat facet
+    (0.0, -0.220, 3.540),
+    (0.0, 0.080, 3.620),
+    (0.0, 0.300, 3.550),
+    (0.0, 0.480, 3.360),
+    (0.0, 0.600, 3.140),
+    (0.0, 0.660, 2.920),
 ]
 # ★ A DENSE CREST, NOT A ROW OF CONES. His sheet's mohawk is one thick mass
 # 0.33 half-wide at its base (front rows 168-184) narrowing to 0.16 at z 3.88;
@@ -347,19 +356,22 @@ CREST_RADII = [0.110, 0.330, 0.350, 0.320, 0.265, 0.195, 0.100]
 # Mirrored pairs and a midline column: the leans sum to zero by construction
 # (Flash's faceAsymmetry lesson).
 FLAME_MIDLINE = [   # (foot y, foot z), (tip y, tip z) on x = 0
-    ((-0.300, 3.600), (-0.500, 3.960)),
-    ((-0.140, 3.720), (-0.220, 4.090)),
-    ((0.040, 3.760), (0.040, 4.120)),   # the crown: the export allows hair 4% over the 4.0ft bone height
-    ((0.220, 3.720), (0.340, 4.070)),
-    ((0.400, 3.600), (0.620, 3.920)),
-    ((0.560, 3.360), (0.860, 3.560)),
+    ((-0.300, 3.440), (-0.480, 3.900)),
+    ((-0.140, 3.580), (-0.220, 4.090)),
+    ((0.040, 3.640), (0.040, 4.120)),   # the crown: the export allows hair 4% over the 4.0ft bone height
+    ((0.220, 3.600), (0.340, 4.070)),
+    ((0.400, 3.460), (0.640, 3.900)),
+    ((0.560, 3.220), (0.880, 3.500)),
 ]
 FLAME_FLANKS = [    # (foot x, y, z), (tip x, y, z) for +x, mirrored to -x
-    ((0.200, -0.200, 3.580), (0.130, -0.340, 3.940)),
-    ((0.215, 0.060, 3.640), (0.140, 0.060, 4.000)),
-    ((0.190, 0.340, 3.540), (0.130, 0.520, 3.860)),
+    # Feet low and wide, on the skull's shoulder: with the feet at x 0.26 /
+    # z 3.5 the crest's foot was narrower than the skull under it, and
+    # `measure:fidelity` took that waist for the neck (head height 17.5%).
+    ((0.310, -0.200, 3.350), (0.190, -0.320, 3.920)),
+    ((0.330, 0.060, 3.400), (0.200, 0.060, 3.990)),
+    ((0.300, 0.340, 3.330), (0.180, 0.540, 3.840)),
 ]
-FLAME_RADII = (0.165, 0.105, 0.022)
+FLAME_RADII = (0.185, 0.115, 0.022)
 
 
 def flame_lock(builder: MeshBuilder, foot, tip, sides: int, flip: bool = False, mid_station: bool = True) -> None:
