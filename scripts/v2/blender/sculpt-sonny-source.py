@@ -579,19 +579,19 @@ ARM_STATIONS = [
     (0.298, 0.296, SHIRT, "Arm"),   # deltoid peak
     (0.330, 0.292, SHIRT, "Arm"),
     (ARM_SHOULDER_X, 0.270, SHIRT, "Arm"),
-    (0.560, 0.280, SHIRT, "Arm"),
-    (SLEEVE_HEM_X - 0.030, 0.272, SHIRT, "Arm"),
-    (SLEEVE_HEM_X, 0.282, SHIRT_DARK, "Arm"),          # cuff band, proud
-    (SLEEVE_HEM_X + 0.022, 0.272, SHIRT_DARK, "Arm"),
-    (SLEEVE_HEM_X + 0.036, 0.254, SHIRT_DARK, "Arm"),  # the cuff's underside
-    (SLEEVE_HEM_X + 0.050, 0.244, SKIN, "Arm"),        # the heavy bare arm
-    (ARM_ELBOW_X, 0.232, SKIN, "Arm"),
-    (1.100, 0.218, SKIN, "ForeArm"),
-    (1.240, 0.194, SKIN, "ForeArm"),
-    (ARM_WRIST_X, 0.162, SKIN, "Hand"),
-    (1.430, 0.164, SKIN, "Hand"),
-    (1.500, 0.176, SKIN, "Hand"),   # knuckle line, the widest ring
-    (1.556, 0.150, SKIN, "Hand"),
+    (0.560, 0.296, SHIRT, "Arm"),
+    (SLEEVE_HEM_X - 0.030, 0.292, SHIRT, "Arm"),
+    (SLEEVE_HEM_X, 0.302, SHIRT_DARK, "Arm"),          # cuff band, proud
+    (SLEEVE_HEM_X + 0.022, 0.292, SHIRT_DARK, "Arm"),
+    (SLEEVE_HEM_X + 0.036, 0.276, SHIRT_DARK, "Arm"),  # the cuff's underside
+    (SLEEVE_HEM_X + 0.050, 0.268, SKIN, "Arm"),        # the heavy bare arm
+    (ARM_ELBOW_X, 0.258, SKIN, "Arm"),
+    (1.100, 0.242, SKIN, "ForeArm"),
+    (1.240, 0.216, SKIN, "ForeArm"),
+    (ARM_WRIST_X, 0.180, SKIN, "Hand"),
+    (1.430, 0.182, SKIN, "Hand"),
+    (1.500, 0.194, SKIN, "Hand"),   # knuckle line, the widest ring
+    (1.556, 0.164, SKIN, "Hand"),
 ]
 
 
@@ -1380,17 +1380,35 @@ SHIN_ROWS = [
     (0.700, 0.296),
     (0.760, 0.280),
 ]
-SHIN_ANGLES = (-78.0, -44.0, 0.0, 44.0, 78.0)
-# The knee cap: a rounded boss on the bare knee, its top under the shorts cuff.
-# not-traceable: as above. (z, radius) up a vertical spine 0.15 ahead of the leg.
-KNEE_CAP = [
-    (0.740, 0.040),
-    (0.800, 0.160),
-    (0.890, 0.190),
-    (0.970, 0.160),
-    (1.020, 0.050),
+SHIN_ANGLES = (-80.0, -70.0, -36.0, 0.0, 36.0, 70.0, 80.0)
+# The knee cap: a domed plate over the front of the knee, overlapping the shin
+# plate's top edge and riding the SAME bone, so the two never part in a stride
+# (as two pieces — a ball on the knee above a plate on the shin — they did).
+# (z, radius, half-angle in degrees)
+# not-traceable: drawn on sonny-turnaround.png's front view between sheet rows
+# 694 and 738 (z 1.03 to 0.75); sized 0.05 proud of this script's own leg.
+KNEE_PLATE = [
+    (0.740, 0.300, 64.0),
+    (0.800, 0.326, 62.0),
+    (0.880, 0.338, 56.0),
+    (0.950, 0.322, 46.0),
+    (0.985, 0.290, 30.0),
 ]
-KNEE_FORWARD = -0.215
+KNEE_COLUMNS = (-1.0, -0.86, -0.42, 0.0, 0.42, 0.86, 1.0)
+
+# The shoulder caps: a pad over each shoulder at the protector's top corners,
+# on a cream piped base. (centre, radii) for the +x side.
+# not-traceable: drawn on sonny-turnaround.png, which shows them standing
+# proud of the tee from collar to sleeve seam on the front and 3/4 views.
+SHOULDER_CAP = ((0.415, -0.070, 2.630), (0.205, 0.215, 0.078))
+SHOULDER_PIPING = ((0.415, -0.070, 2.606), (0.226, 0.236, 0.050))
+
+
+def build_shoulder_cap(builder: MeshBuilder, side: int, detail: int) -> None:
+    (cx, cy, cz), radii = SHOULDER_PIPING
+    builder.ellipsoid((side * cx, cy, cz), radii, GEAR_SLOT, GEAR_TRIM, "Spine2", 6, 3)
+    (cx, cy, cz), radii = SHOULDER_CAP
+    builder.ellipsoid((side * cx, cy, cz), radii, GEAR_SLOT, GEAR, "Spine2", 6 if detail >= 2 else 5, 3)
 
 
 def build_shin_guard(builder: MeshBuilder, side: int, detail: int) -> None:
@@ -1403,7 +1421,7 @@ def build_shin_guard(builder: MeshBuilder, side: int, detail: int) -> None:
         row = []
         for index, angle in enumerate(angles):
             edge = index in (0, len(angles) - 1)
-            r = radius - (0.035 if edge else 0.0)
+            r = radius - (0.030 if edge else 0.0)
             phi = radians(angle)
             at = (centre_x + r * sin(phi), -r * 0.95 * cos(phi), z)
             row.append(builder.vertex(at, GEAR_TRIM if edge else GEAR, bone))
@@ -1411,8 +1429,24 @@ def build_shin_guard(builder: MeshBuilder, side: int, detail: int) -> None:
     for lower, upper in zip(rows, rows[1:]):
         for c in range(len(angles) - 1):
             builder.face((lower[c], lower[c + 1], upper[c + 1], upper[c]), GEAR_SLOT)
-    spine = [(side * leg_x(z), KNEE_FORWARD, z) for z, _ in KNEE_CAP]
-    builder.tube(spine, [r for _, r in KNEE_CAP], GEAR_SLOT, GEAR, bone, 6 if detail >= 2 else 4)
+    if detail < 2:
+        table, columns = [KNEE_PLATE[0], KNEE_PLATE[2], KNEE_PLATE[-1]], (-1.0, 0.0, 1.0)
+    else:
+        table, columns = KNEE_PLATE, KNEE_COLUMNS
+    rows = []
+    for z, radius, half in table:
+        centre_x = side * leg_x(z)
+        row = []
+        for u in columns:
+            edge = abs(u) >= 0.999
+            r = radius - (0.040 if edge else 0.0)
+            phi = radians(u * half)
+            at = (centre_x + r * sin(phi), -r * 0.98 * cos(phi), z)
+            row.append(builder.vertex(at, GEAR_TRIM if abs(u) >= 0.85 else GEAR, bone))
+        rows.append(row)
+    for lower, upper in zip(rows, rows[1:]):
+        for c in range(len(columns) - 1):
+            builder.face((lower[c], lower[c + 1], upper[c + 1], upper[c]), GEAR_SLOT)
 
 
 def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) -> None:
@@ -1460,6 +1494,7 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
             build_shin_guard(builder, side, detail)
         if detail >= 2:
             build_harness(builder, side)
+            build_shoulder_cap(builder, side, detail)
 
 
 def build_lod(name: str, armature: bpy.types.Object, segments: int, rings: int, detail: int) -> bpy.types.Object:

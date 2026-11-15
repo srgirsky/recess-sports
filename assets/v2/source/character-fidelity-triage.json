@@ -2710,75 +2710,80 @@
       "class": "face-atlas",
       "excerpt": "FACE: Profile is still a flat vertical plane (guri-profile-review.png, guri-"
     },
-    "tank:5be4744f9d0b": {
+    "tank:f5474bbb3b93": {
       "char": "tank",
       "class": "other",
-      "excerpt": "GEAR: Shoulder caps are absent (carried from round 3). The sheet's broad cre"
+      "excerpt": "GEAR: Shoulder caps now exist but are small hex chips about a quarter of the"
     },
-    "tank:ab696ca0ec0c": {
+    "tank:57dc3b817b87": {
+      "char": "tank",
+      "class": "other",
+      "excerpt": "GEAR: Shin guard is a front half-shell: plain dark band in front (grin y558-"
+    },
+    "tank:8f03eabbecdc": {
       "char": "tank",
       "class": "proportions",
-      "excerpt": "GEAR: Knee caps are loose faceted balls, not part of the guard (carried): hi"
+      "excerpt": "BODY: Head is a flat-sided box with no cheeks or jowls on a visible purple n"
     },
-    "tank:e4a5c38ab132": {
-      "char": "tank",
-      "class": "other",
-      "excerpt": "GEAR: Shin guard is a plain front half-shell whose side face is pale olive-c"
-    },
-    "tank:8338432f450c": {
+    "tank:81f3f79e5295": {
       "char": "tank",
       "class": "proportions",
-      "excerpt": "BODY: Arms are about half the sheet's thickness and taper to points with thr"
+      "excerpt": "BODY: Forearms taper to hands smaller than the wrist with three spike finger"
     },
-    "tank:8c523a9392b1": {
+    "tank:6ab909cd1d8d": {
+      "char": "tank",
+      "class": "other",
+      "excerpt": "GEAR: Shoes carry navy slashes and triangular toe notches (hero x547-580, y5"
+    },
+    "tank:c1eef8adca3d": {
+      "char": "tank",
+      "class": "other",
+      "excerpt": "GEAR: Tee hem throws a pointed purple tongue over the shorts at swing contac"
+    },
+    "tank:2ba557094b62": {
+      "char": "tank",
+      "class": "other",
+      "excerpt": "GEAR: Cap hem is a straight horizontal cut flaring past the skull as a lip ("
+    },
+    "tank:6d9e82671be1": {
       "char": "tank",
       "class": "proportions",
-      "excerpt": "BODY: Head is a flat-sided box with no cheeks on a visible neck collar (grin"
+      "excerpt": "GEAR: Chest plate ridges are blurred shading stripes with no segment breaks;"
     },
-    "tank:3089eb62b118": {
-      "char": "tank",
-      "class": "other",
-      "excerpt": "GEAR: Tee hem throws a pointed purple tongue down over the shorts at swing c"
-    },
-    "tank:2571b3a98f8a": {
-      "char": "tank",
-      "class": "other",
-      "excerpt": "GEAR: Shoes carry navy slashes and triangular notches (hero x545-585, y598-6"
-    },
-    "tank:e88dd42859e9": {
-      "char": "tank",
-      "class": "other",
-      "excerpt": "GEAR: Cap hem is a straight cut flaring past the skull like a bowl (grin x44"
-    },
-    "tank:0d423fba2b7d": {
+    "tank:df803fbaa73d": {
       "char": "tank",
       "class": "proportions",
-      "excerpt": "GEAR: Chest plate is a narrow bib about half the chest wide with blurred sha"
+      "excerpt": "GEAR: Knee caps are attached now but are unpiped lumps no wider than the leg"
     },
-    "tank:8f02624bca4c": {
+    "tank:204eaa9e7678": {
       "char": "tank",
       "class": "face-atlas",
-      "excerpt": "FACE: Brows are thin black arcs; the sheet's thick soft brown brows are a si"
+      "excerpt": "FACE: Brows are thin black arcs (grin x488-513 and x552-577, y239-248); the "
     },
-    "tank:95029d10d929": {
+    "tank:6403c50a24b2": {
       "char": "tank",
       "class": "face-atlas",
-      "excerpt": "FACE: Skin is saturated orange against the sheet's warm brown and the front "
+      "excerpt": "FACE: Skin is saturated orange against the sheet's warm brown and the face p"
     },
-    "tank:a136949529ff": {
+    "tank:01ea753c2d1e": {
       "char": "tank",
       "class": "face-atlas",
-      "excerpt": "FACE: Tongue expression is close to cheer at hero size; the tongue is a few "
+      "excerpt": "FACE: Tongue is a few pixels and close to cheer at hero size (sonny-runtime-"
     },
-    "tank:f7bbf7474c1b": {
+    "tank:027ef7d9351a": {
       "char": "tank",
       "class": "other",
-      "excerpt": "GEAR: Shorts lack the cream side stripe and stop well short of the knee, lea"
+      "excerpt": "GEAR: Shorts lack the cream side stripe, and bare thigh shows above the guar"
     },
-    "tank:2abf0a168346": {
+    "tank:e38f64e5967a": {
+      "char": "tank",
+      "class": "other",
+      "excerpt": "BODY: Torso is a straight-sided tube from the front and flat-backed in profi"
+    },
+    "tank:e42405b1c5f9": {
       "char": "tank",
       "class": "evidence",
-      "excerpt": "GEAR: Back harness (Y-strap, waist strap) appears in no runtime capture or b"
+      "excerpt": "GEAR: Back harness is still shown in no capture or board (carried, unverifie"
     }
   }
 }
