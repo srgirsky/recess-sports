@@ -314,7 +314,7 @@ try {
     'chromium launch',
     // --no-sandbox: GitHub runners execute as root, where Chromium's sandbox
     // refuses to start.
-    chromium.launch({ args: process.env.CI ? ['--no-sandbox'] : [] })
+    chromium.launch({ args: ['--mute-audio', ...(process.env.CI ? ['--no-sandbox'] : [])] })
   );
 
   const strict = await runPass(browser, { blockFont: false });

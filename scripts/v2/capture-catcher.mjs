@@ -45,7 +45,7 @@ await new Promise((ok, fail) => {
 const VIEWS = ['pitch', 'hero', 'side', 'front'];
 let browser;
 try {
-  browser = await chromium.launch();
+  browser = await chromium.launch({ args: ['--mute-audio'] });
   const page = await browser.newPage({ viewport: { width: 960, height: 540 } });
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e)));
