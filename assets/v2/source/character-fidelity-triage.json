@@ -1245,106 +1245,6 @@
       "class": "no-defect-note",
       "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CLEARED (record) — prior "
     },
-    "boomer:939d7a7da555": {
-      "char": "boomer",
-      "class": "no-defect-note",
-      "excerpt": "SCOPED HAND MIGRATION PASS: fresh runtime hero/run/contact and four expressi"
-    },
-    "boomer:d37d79ea08be": {
-      "char": "boomer",
-      "class": "interpenetration",
-      "excerpt": "SHARED POSE ISSUES REMAIN OPEN: held bunt raises the lower-handle elbow besi"
-    },
-    "boomer:2b5a27d16a7c": {
-      "char": "boomer",
-      "class": "face-atlas",
-      "excerpt": "CURRENT FACE READ DEFECT: the 4x grin crop /tmp/boomer-face-4x.png shows the"
-    },
-    "boomer:7c4b254974eb": {
-      "char": "boomer",
-      "class": "proportions",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: REVISED (nose, the round'"
-    },
-    "boomer:a264fa1e7b4a": {
-      "char": "boomer",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CLEARED (the intermediate"
-    },
-    "boomer:08040ee65a29": {
-      "char": "boomer",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CLEARED (incidental) - pr"
-    },
-    "boomer:01f65ebade8a": {
-      "char": "boomer",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: NON-CHANGE (do not re-fil"
-    },
-    "boomer:bac22d5b7b6a": {
-      "char": "boomer",
-      "class": "hair-nyquist",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED - mohawk daylight"
-    },
-    "boomer:070c5faff293": {
-      "char": "boomer",
-      "class": "hair-nyquist",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED - bare-skull side"
-    },
-    "boomer:2cbe880c6599": {
-      "char": "boomer",
-      "class": "proportions",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED - head identity: "
-    },
-    "boomer:47341ec1e42a": {
-      "char": "boomer",
-      "class": "proportions",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED (verbatim, region"
-    },
-    "boomer:7a674d0047ce": {
-      "char": "boomer",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED (verbatim, region"
-    },
-    "boomer:35820357fae3": {
-      "char": "boomer",
-      "class": "40px-read",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED - stripe contrast"
-    },
-    "boomer:d48dabad6f33": {
-      "char": "boomer",
-      "class": "butt-joins",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED - swing_contact f"
-    },
-    "boomer:7dea57d9ad0f": {
-      "char": "boomer",
-      "class": "decal-not-form",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED - socks: smooth t"
-    },
-    "boomer:2c1799e2c6fa": {
-      "char": "boomer",
-      "class": "face-atlas",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED - hero/run yaw: b"
-    },
-    "boomer:afb5c80a77e5": {
-      "char": "boomer",
-      "class": "face-atlas",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED (softened) - chee"
-    },
-    "boomer:9c45e9453b99": {
-      "char": "boomer",
-      "class": "proportions",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED - no philtrum (fo"
-    },
-    "boomer:0297df7f3e26": {
-      "char": "boomer",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: 12-vs-14 VERDICT carries "
-    },
-    "boomer:936f38cec507": {
-      "char": "boomer",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: NON-DEFECT (re-checked, d"
-    },
     "sniffles:2e0d44d87d00": {
       "char": "sniffles",
       "class": "interpenetration",
@@ -2385,16 +2285,6 @@
       "class": "other",
       "excerpt": "NEW (measured): shoe-band mean saturation now reads 15.6 against the concept"
     },
-    "boomer:ebd5bfd432b5": {
-      "char": "boomer",
-      "class": "other",
-      "excerpt": "Shoe toe cap is a pointed beak with a hard central crease and a dark slash p"
-    },
-    "boomer:ac60e1aca373": {
-      "char": "boomer",
-      "class": "other",
-      "excerpt": "SHOE (laces): lace straps still read as two cream diagonal bars across the n"
-    },
     "wheelchair_ace:5c98a23b33e3": {
       "char": "wheelchair_ace",
       "class": "proportions",
@@ -2494,6 +2384,76 @@
       "char": "peaches",
       "class": "hems-cuffs",
       "excerpt": "CLEARED IN THE TWO SAMPLED FRAMES, NOT CERTIFIED ELSEWHERE — thigh through t"
+    },
+    "boomer:6751018559eb": {
+      "char": "boomer",
+      "class": "face-atlas",
+      "excerpt": "EARS: long flaps hanging from mouth level down and out to the collar (boomer"
+    },
+    "boomer:b82bb2358453": {
+      "char": "boomer",
+      "class": "face-atlas",
+      "excerpt": "FACE: at 3/4 the nose/mouth is a beak. hero x580-600 y250-285 and run x612-6"
+    },
+    "boomer:2bca9045624c": {
+      "char": "boomer",
+      "class": "face-atlas",
+      "excerpt": "FACE: grin still joins the eyes. face-grin x505-565 y255-280: the crescent's"
+    },
+    "boomer:e588e6795603": {
+      "char": "boomer",
+      "class": "face-atlas",
+      "excerpt": "HAIR: no fade, so no mohawk read. The whole skull to the ear and nape is an "
+    },
+    "boomer:870a494242bf": {
+      "char": "boomer",
+      "class": "face-atlas",
+      "excerpt": "HAIR: front-on the crest is a crown. face-grin x480-600 y120-210: six or sev"
+    },
+    "boomer:02c7a7b9fd05": {
+      "char": "boomer",
+      "class": "other",
+      "excerpt": "BODY: slim limbs on a barrel. Upper arms about a third of the sheet's thickn"
+    },
+    "boomer:c326a63409a4": {
+      "char": "boomer",
+      "class": "other",
+      "excerpt": "SHOES: toe cap is a pointed claw-shaped cream wedge with a dark ragged notch"
+    },
+    "boomer:7ed2442888df": {
+      "char": "boomer",
+      "class": "hems-cuffs",
+      "excerpt": "CLOTHING: swing capture shows a jagged navy sawtooth poking up over the tee "
+    },
+    "boomer:1b80def281b3": {
+      "char": "boomer",
+      "class": "face-atlas",
+      "excerpt": "HEAD: sphere widest at the eyes, no cheek or jaw mass, no nose head-on in an"
+    },
+    "boomer:8ffc93cb8662": {
+      "char": "boomer",
+      "class": "hems-cuffs",
+      "excerpt": "CLOTHING: sleeves and yoke lose the stripes to an airbrushed gold-to-cream g"
+    },
+    "boomer:c551c88181dc": {
+      "char": "boomer",
+      "class": "other",
+      "excerpt": "HANDS: narrow mitts with spike fingers (hero x480-520 y470-510 and x625-650 "
+    },
+    "boomer:f2c8cd85c301": {
+      "char": "boomer",
+      "class": "face-atlas",
+      "excerpt": "FACE: swing effort mouth is an off-centre dark O with a white patch between "
+    },
+    "boomer:ae05d6e445de": {
+      "char": "boomer",
+      "class": "hems-cuffs",
+      "excerpt": "CLOTHING: shorts render near-black rather than navy in game (face-grin x450-"
+    },
+    "boomer:5ded84cae7e6": {
+      "char": "boomer",
+      "class": "other",
+      "excerpt": "FIELD SCALE: at 40px the crest is a 3-4px smudge merging with the dark skull"
     }
   }
 }

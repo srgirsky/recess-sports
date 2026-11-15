@@ -1089,9 +1089,9 @@ export const FACE_SPECS = {
     alignOpenMouth: true,
     tongueOut: true,
     tongueReach: 1.5,
-    mouthScale: 1.55,
-    mouthY: 62,
-    mouthBow: -1.4,
+    mouthScale: 0.96,
+    mouthY: 64,
+    mouthBow: -0.8,
     mouthDrop: -3.4,
   },
   // Smokey. Intense dark eyes under heavy straight brows, a small sly
