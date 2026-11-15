@@ -12,7 +12,7 @@ import * as audio from '../systems/audio';
 import { commentatorProfile } from '../systems/voices';
 import { makeButton } from '../ui/Button';
 import { ribbon, pill, heading } from '../ui/theme';
-import { hitFromBox } from '../ui/layout';
+import { hitFromBox, tagUi } from '../ui/layout';
 import { mountLayoutOverlay } from '../dev/LayoutOverlay';
 
 const TRACK_W = 420;
@@ -90,9 +90,15 @@ export class SettingsScene extends Phaser.Scene {
     });
     knob.on('dragend', () => onChange(last));
     // Tap anywhere on the track to jump there (little fingers miss knobs).
-    const hit = this.add
-      .rectangle(GAME_WIDTH / 2, y, TRACK_W + 60, 56, 0xffffff, 0.001)
-      .setInteractive();
+    // The row is a tagged container with a kit hit area, so the layout audit
+    // can hold it clear of the pills and buttons around it — it was a bare
+    // interactive rectangle the audit could count but not measure. (The knob
+    // rides inside this row by design and sits above it, so a drag still
+    // starts on the knob.)
+    const hit = tagUi(this.add.container(GAME_WIDTH / 2, y), {
+      role: 'button', ox: 0, oy: 0, w: TRACK_W + 60, h: 56, label: `${icon} slider`,
+    });
+    hitFromBox(hit);
     hit.on('pointerdown', (p: Phaser.Input.Pointer) => {
       const v = Phaser.Math.Clamp((p.worldX - x0) / TRACK_W, 0, 1);
       redraw(v);
