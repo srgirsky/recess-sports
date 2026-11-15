@@ -2015,11 +2015,6 @@
       "class": "other",
       "excerpt": "SHOE COLOUR DRIFT: the rebuilt shoes read tan/khaki with a pale sole (lefty-"
     },
-    "smokey:6ff3a35b5128": {
-      "char": "smokey",
-      "class": "other",
-      "excerpt": "Replace the smooth helmet-like hair with the concept close fade and stubble "
-    },
     "smokey:44f3f4055126": {
       "char": "smokey",
       "class": "hems-cuffs",
@@ -2030,25 +2025,10 @@
       "class": "other",
       "excerpt": "Correct the central shorts flap during run: a solid third hanging garment ma"
     },
-    "smokey:1d4d4deb3c69": {
-      "char": "smokey",
-      "class": "proportions",
-      "excerpt": "Ankle daylight is 23.5 vs 0 on the sheet (OFF, tol 12): stance is wider than"
-    },
     "smokey:61033175c4cf": {
       "char": "smokey",
       "class": "other",
       "excerpt": "Shoe toe caps are beak-pointed with a simplified black/cream pattern, a mino"
-    },
-    "smokey:f0a338dd5878": {
-      "char": "smokey",
-      "class": "other",
-      "excerpt": "Bunt t0.67 receiving elbow lifts beside the head with forearm descending tow"
-    },
-    "smokey:92f66cb7c24b": {
-      "char": "smokey",
-      "class": "other",
-      "excerpt": "Preserve the legible red/charcoal/cream palette while improving close-croppe"
     },
     "bend_it:cd9fe42c3c73": {
       "char": "bend_it",
@@ -2454,6 +2434,51 @@
       "char": "boomer",
       "class": "other",
       "excerpt": "FIELD SCALE: at 40px the crest is a 3-4px smudge merging with the dark skull"
+    },
+    "smokey:70df996f3473": {
+      "char": "smokey",
+      "class": "other",
+      "excerpt": "Rear of the hair is a hard horizontal shelf at mid-ear height with an overha"
+    },
+    "smokey:910dc338f205": {
+      "char": "smokey",
+      "class": "face-atlas",
+      "excerpt": "Three-quarter temple edge is a saw-tooth: a pointed spike in front of the ea"
+    },
+    "smokey:107efa8bc797": {
+      "char": "smokey",
+      "class": "face-atlas",
+      "excerpt": "The temple shell stands off the face: two thin contour lines cross bare skin"
+    },
+    "smokey:f1d24ae14e5d": {
+      "char": "smokey",
+      "class": "face-atlas",
+      "excerpt": "Hair surface is a smooth faceted dome with a flat-topped peak and a broad gl"
+    },
+    "smokey:427833a80659": {
+      "char": "smokey",
+      "class": "other",
+      "excerpt": "Hairline corners are chamfered at 45 degrees in the front captures; the shee"
+    },
+    "smokey:2f127c8607ad": {
+      "char": "smokey",
+      "class": "other",
+      "excerpt": "Both visible-face widths are out of tolerance and moved further out with thi"
+    },
+    "smokey:0c1ac09c9364": {
+      "char": "smokey",
+      "class": "proportions",
+      "excerpt": "Ankle daylight is 23.5 vs 0 on the sheet (OFF, tol 12): stance is wider than"
+    },
+    "smokey:97b5b07fd7f1": {
+      "char": "smokey",
+      "class": "face-atlas",
+      "excerpt": "Neutral mouth in hero and run is a down-turned frown; the sheet's resting fa"
+    },
+    "smokey:48579fedc90c": {
+      "char": "smokey",
+      "class": "other",
+      "excerpt": "Bunt t0.67 receiving elbow lifts beside the head with forearm descending tow"
     }
   }
 }

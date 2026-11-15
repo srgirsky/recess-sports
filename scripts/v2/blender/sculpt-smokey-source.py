@@ -209,7 +209,8 @@ BUZZ_LEVELS = [
     (3.505, 0.533, 0.543, 0.014),
     (3.420, 0.540, 0.550, 0.020),
     (3.300, 0.530, 0.545, 0.035),
-    (3.220, 0.500, 0.520, 0.055),   # the temples keep hair to here (BUZZ_FRINGE 0.42 -> 3.14);
+    (3.220, 0.500, 0.520, 0.055),   # the back and sides end here (BUZZ_BACK_RIM)
+    (3.100, 0.470, 0.500, 0.060),   # a side row: only the columns over the ear keep it
 ]                                   # the 3.10 and 2.98 nape tongues below were the bowl
 
 # The ring at 3.22 ends the shell; the former lower nape tongues are gone.
@@ -219,15 +220,26 @@ BUZZ_LEVELS = [
 # The fade wraps FORWARD over the temples — the sheet's own skin band at
 # the ear row is narrow, and a curtain edge that fails to flip a quad
 # COLUMN moves the faceSkin metric by nothing (Ace's quantization lesson).
+# ★ RE-MEASURED 2026-11-14, AND THE HAIRLINE WAS 0.19ft TOO LOW. A luminance
+# scan down the front view's centre column puts the last hair row at sheet row
+# 270 (z 3.71) and the first skin row at 276 (z 3.67): the hairline is 3.69,
+# high over a tall bare forehead, where this table said 3.50 and put the edge
+# on his brows (z 3.41). At 0.35 out it is still 3.65. Beyond 0.40 the sheet
+# is not skin at all down to z 3.0: it is the fade's stubble tone (luminance
+# 44 rising to 90), so the shell continues down the temple there and
+# `fade_color` paints it.
 BUZZ_FRINGE = [
-    (0.00, 3.500),
-    (0.28, 3.470),
-    (0.36, 3.300),
-    (0.42, 3.140),
-    (0.50, 3.020),
+    (0.00, 3.690),
+    (0.28, 3.675),
+    (0.36, 3.640),
+    (0.42, 3.500),   # the corner, then a short edge down the side of the head only:
+    (0.46, 3.300),   # brought forward to 0.40 it hung as a slab past the eye to the cheek
+    (0.50, 3.100),
 ]
 
 BUZZ_OPEN_BOTTOM = 2.940
+# Behind the ears the cut stops here; the old 3.10 and 2.98 nape tongues were the bowl.
+BUZZ_BACK_RIM = 3.300
 
 
 def fringe_z_at(x_abs: float) -> float:
@@ -240,6 +252,44 @@ def fringe_z_at(x_abs: float) -> float:
     return table[-1][1]
 
 
+# The fade: the shell's own colour runs from the buzz at the crown's edge to
+# a skin-dark tone at its lowest ring, so the sides read as hair thinning
+# into skin and not as a cap with a hard lower edge (four critics: "a glossy
+# black cap with a hard horizontal edge, no fade").
+FADE = rgba("6E4424")   # the sheet's stubble tone at the temple: luminance ~85 against skin at 110-170
+# not-traceable: colour heights, not silhouette. Read off the profile view:
+# full buzz above z 3.56, the stubble tone by 3.42, and that tone held down
+# the temple to the ear (front view, 0.44 out: luminance 44 at z 3.51, 84 at
+# 3.42, 85 at 3.2, 76 at 3.0).
+FADE_FULL_Z = 3.560
+FADE_GONE_Z = 3.420
+
+
+def buzz_half_at(z: float):
+    table = BUZZ_LEVELS
+    if z >= table[0][0]:
+        return table[0][1:]
+    for (za, *a), (zb, *b) in zip(table, table[1:]):
+        if zb <= z <= za:
+            t = (za - z) / (za - zb)
+            return tuple(u + t * (v - u) for u, v in zip(a, b))
+    return table[-1][1:]
+
+
+# Below the stubble tone the fade dissolves INTO SKIN by this height, so the
+# shell's lower edge is skin-coloured and there is no shelf to see.
+FADE_SKIN_Z = 3.240
+
+
+def fade_color(z: float):
+    smooth = lambda t: (lambda c: c * c * (3 - 2 * c))(max(0.0, min(1.0, t)))
+    if z >= FADE_GONE_Z:
+        t = smooth((FADE_FULL_Z - z) / (FADE_FULL_Z - FADE_GONE_Z))
+        return tuple(h + (f - h) * t for h, f in zip(HAIR, FADE))
+    t = smooth((FADE_GONE_Z - z) / (FADE_GONE_Z - FADE_SKIN_Z))
+    return tuple(f + (k - f) * t for f, k in zip(FADE, SKIN))
+
+
 def build_buzz(builder: MeshBuilder, detail: int) -> None:
     # An ascending table silently inverts the winding — descending, asserted.
     assert all(a[0] > b[0] for a, b in zip(BUZZ_LEVELS, BUZZ_LEVELS[1:])), \
@@ -248,30 +298,49 @@ def build_buzz(builder: MeshBuilder, detail: int) -> None:
     use = BUZZ_LEVELS if detail >= 2 else thin_for_lod(
         [(z, hx, hy, yc) for z, hx, hy, yc in BUZZ_LEVELS], detail)
     ascending = list(reversed(use))
-    rows = []
+    # ★ THE HAIRLINE IS A LINE THE TABLE DRAWS. Every front vertex below
+    # BUZZ_FRINGE is SNAPPED UP ONTO IT (Fatou's and Guri's pattern), and a
+    # quad whose four corners all snapped is dropped. Tucking those vertices
+    # behind the face instead left the edge wherever the nearest ring fell
+    # per column: a ragged fringe of bangs down to the brows on a kid whose
+    # sheet draws a clean, high, straight line.
+    rows, snaps = [], []
     for z, half_x, half_y, y_centre in ascending:
-        ring = []
+        ring, snapped = [], []
         for column in range(segments):
             theta = 2 * pi * column / segments
             x = half_x * cos(theta)
             y = y_centre + half_y * sin(theta)
-            if y < y_centre:
-                sf = skull_front_y(x, z)
-                if BUZZ_OPEN_BOTTOM < z < fringe_z_at(abs(x)):
-                    y = max(y, (sf + 0.050) if sf > -9.0 else -0.160)
-                else:
-                    y = max(y, (sf - 0.060) if sf > -9.0 else -0.300)
-            ring.append(builder.vertex((x, y, z), HAIR, "Head"))
+            zz = z
+            inside = False
+            front = y < y_centre
+            rim = fringe_z_at(abs(x)) if front else BUZZ_BACK_RIM
+            if z < rim:
+                inside = True
+                zz = rim
+                hx, hy, yc = buzz_half_at(zz)
+                x = hx * cos(theta)
+                y = yc + hy * sin(theta)
+            if front:
+                sf = skull_front_y(x, zz)
+                if sf > -9.0:
+                    y = min(y, sf - 0.022)
+            ring.append(builder.vertex((x, y, zz), fade_color(zz), "Head"))
+            snapped.append(inside)
         rows.append(ring)
-    bottom = builder.vertex((0.0, ascending[0][3], ascending[0][0] - 0.02), HAIR, "Head")
+        snaps.append(snapped)
+    bottom = builder.vertex((0.0, ascending[0][3] + 0.10, ascending[0][0] - 0.02), SKIN, "Head")
     top = builder.vertex((0.0, ascending[-1][3], ascending[-1][0] + 0.02), HAIR, "Head")
     for column in range(segments):
         nxt = (column + 1) % segments
-        builder.face((bottom, rows[0][nxt], rows[0][column]), 2)
+        if not (snaps[0][column] and snaps[0][nxt]):
+            builder.face((bottom, rows[0][nxt], rows[0][column]), 2)
         builder.face((rows[-1][column], rows[-1][nxt], top), 2)
-    for lower, upper in zip(rows, rows[1:]):
+    for (lower, ls), (upper, us) in zip(zip(rows, snaps), zip(rows[1:], snaps[1:])):
         for column in range(segments):
             nxt = (column + 1) % segments
+            if ls[column] and ls[nxt] and us[nxt] and us[column]:
+                continue
             builder.face((lower[column], lower[nxt], upper[nxt], upper[column]), 2)
 
 

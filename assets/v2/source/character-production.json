@@ -378,11 +378,11 @@
     },
     "smokey": {
       "source": "smokey-pilot.blend",
-      "sourceSha256": "75addb23239e5481cd748973828aa1310cb6f44fd4a64b7ee99683d6325c29bc",
+      "sourceSha256": "50c572a1ea36e8d5634f4bcc5007c00e07b1651d206b51ec69f14eaa01d521c9",
       "concept": "smokey-turnaround.png",
       "conceptSha256": "3df75f1c323e7ea542d76adcc2f4c294ba10e0f414b0a9f4bea352e2dcb8056e",
       "output": "kid_smokey.glb",
-      "outputSha256": "91cab364dd10b51d953d30b1523414f3a7805689066789d7759450ee047d0a68",
+      "outputSha256": "cf362cb260c316a314fb08bfbe65288cddf1acacd7bed2ba32d1908e330a8168",
       "definingTraits": [
         "tight buzz fade",
         "plain red tee",

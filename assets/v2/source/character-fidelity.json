@@ -1703,32 +1703,32 @@
     "frontProfileSilhouette": {
      "label": "front/profile silhouette",
      "score": 3,
-     "note": "Hero and run captures keep the red tee / dark shorts read, but the head is a smooth round helmet with a hard nape edge against the sheet's close fade, and the tee neck sits high. Shoes now read as closed, chunky low-tops with a pointed toe cap; no silhouette break. Score unchanged."
+     "note": "Kept at 3. Red tee / dark shorts / cream-and-black shoes read in hero, run and swing. The head outline is still a cap rather than a skull: in the profile board the hair ends at the back in a hard horizontal edge at mid-ear height with a sharp overhanging corner and bare skull below it, where the sheet's profile is one skull-hugging curve tapering into the nape. The crown is still faceted, with a flat-topped peak visible in the grin, cheer, tongue, angry and swing captures and flat planes in the front and profile boards. The hair rebuild changed the temples and the fade inside the outline; the outer contour is unchanged, so no change in score."
     },
     "headBodyProportions": {
      "label": "head/body proportions",
      "score": 3,
-     "note": "Head height 30.4% vs 31.0% and width:height 1.01 vs 0.99 pass. Limbs are thin and the neck/shoulder join is abrupt vs the sheet; the ankles stand wide in hero (daylight 23.5 vs 0). Unchanged."
+     "note": "Kept at 3. Head height 30.4% vs 31.0% and width:height 1.01 vs 0.99 pass. Limbs are still thin and the neck/shoulder join abrupt against the sheet's stocky, thick-limbed build; ankles stand apart in hero and grin (daylight 23.5 vs 0, OFF). Inside the head the hair takes about 35% of head height in the grin crop (hair top to hairline 225px of 635px at 4x) against about 30% on the sheet - close, but the cap still rises to a peak above the skull instead of following it."
     },
     "hairMass": {
      "label": "hair mass",
-     "score": 2,
-     "note": "Hero shows a glossy smooth black cap with a hard horizontal edge, no fade gradient or stubble texture, unlike the sheet's close-cropped fade. Unchanged at 2."
+     "score": 3,
+     "note": "Raised from 2 to 3. Hairline, front (grin, cheer, tongue, angry at 4x and the front board): a clean straight horizontal edge high on the forehead, both brows fully clear - correct. Its two ends are chamfered: the line turns through a 45-degree diagonal before going down, where the sheet has a sharp squared corner. Temples: the long diagonal slabs of the previous build are gone. From the front each side is now a narrow strip hugging the head edge that fades into skin at about eye level and stays clear of the brows and eye corners; the centre-parted-mop read is cleared. In the hero and run three-quarter views the near temple is still wrong in shape: a pointed spike drops in front of the ear to about eye level, with a V-shaped skin notch behind it and a second smaller point, giving a saw-tooth W edge where the sheet has one short vertical edge dissolving into skin. Two thin dark contour lines cross bare skin from the spike toward the brow in the hero and run crops - the shell's free edge standing off the face and catching the outline pass - and the far temple in the hero crop shows a dark blue patch at the head edge (the shell's underside). Fade: now a real gradient. In the profile board and the hero crop roughly the lower third of the cap grades from dark to skin tone, and from the front the side strips fade out; this reads as a fade at hero scale. It still stops at mid-ear instead of running to the nape. Back: unchanged hard horizontal shelf with an overhanging corner. Surface: still a smooth faceted dome with a broad glossy olive-brown highlight; the sheet is matte black stubble. Net: the read is now a short dark crop with a straight line-up and a fade - the right haircut, recognisable - carried on a cap that is too tall, too shiny, saw-toothed at the temple in three-quarter view and shelved at the back."
     },
     "clothingConstruction": {
      "label": "clothing construction",
      "score": 3,
-     "note": "Tee, sleeve hems and cream sock tops with yellow team ring read. Shoes at 4x in the hero crop: toe ends are closed with no dark notch at either toe corner, and two cream stripes sit on a black upper over a cream sole; the toe cap is rather beak-pointed and the cream/black pattern is simplified vs the sheet's sneaker. Run capture shows the central shorts mass hanging between the legs. Score unchanged because the shoe fix is real but small."
+     "note": "Kept at 3; nothing in clothing was rebuilt and the current captures agree with the earlier notes. Tee, sleeve hems, cream socks with a yellow team ring all read. The collar is still a raised band on a thin neck rather than the sheet's shallow crew neck, with dark saddle shapes at the sleeve-to-torso joins in grin and swing. The run capture still shows a dark shorts mass hanging between the legs. Shoes are closed low-tops with two cream stripes over a cream sole, toe caps pointed."
     },
     "faceExpressionRead": {
      "label": "face/expression read",
      "score": 4,
-     "note": "Grin, cheer, tongue and angry captures remain distinguishable at hero scale; eyes, brows and mouth legible. Unchanged."
+     "note": "Kept at 4. Grin, cheer, tongue and angry are distinguishable at hero scale and the swing shows the intended effort face; eyes, brows and mouth are large and legible, and the brows sit as bold arches under a bare forehead as on the sheet. The previous note that temple slabs crowd the outer brow ends and eye corners is cleared in the front captures. Not raised to 5 because the neutral mouth in hero and run is a down-turned frown where the sheet's resting face is a closed smirk, the eye whites render grey-green rather than white, and both measured visible-face widths are further out of tolerance than before (37.1 vs 29.7 / 27.5)."
     },
     "heroAndFieldScale": {
      "label": "hero and field scale",
      "score": 3,
-     "note": "Red/charcoal/cream palette survives small scale, but the helmet hair and plain shoulders weaken identity. Shoes read cleanly at field scale. Unchanged."
+     "note": "Kept at 3. Red/charcoal/cream palette survives at small scale and the 40px board read is identifiable by colour, with a dark cap over a visible face. At hero scale the head is improved - the face is open and the fade is visible - but the peaked glossy cap, the saw-tooth temple with its stray contour lines (hero, run) and the rear shelf are all visible at that size, and the thin-limbed body and wide stance still separate the figure from the sheet's stocky kid."
     }
    },
    "heroEvidence": "smokey-runtime-hero.png",
@@ -1740,19 +1740,24 @@
     "command": "npm run measure:fidelity -- smokey",
     "ranAt": "2026-11-15",
     "board": "smokey-fidelity-review.png",
-    "result": "measure:fidelity smokey: head height 30.4% vs 31.0% (ok), head width:height 1.01 vs 0.99 (ok), shoe band dominant tone 47.9% vs 52.4% (ok), second tone 52.1% vs 45.8% (ok), shoe saturation 29.2 vs 26.8 (ok), ankle daylight 23.5 vs 0.00 (OFF, tol 12), visible face left 37.1 vs 29.7 and right 37.1 vs 27.5 (both OFF, tol 6), asymmetry 0.00 (ok). 3 metrics outside tolerance, the same three as before; shoe-band numbers moved slightly toward the concept.",
+    "result": "npm run measure:fidelity -- smokey (concept front 233x590px, delivered 466x556px; shoe tones #faecdb and #2b241c): head height 30.4% vs 31.0% of figure (delta -0.62, ok); head width:height 1.01 vs 0.99 (+0.01, ok); shoe band dominant tone 47.9% vs 52.4% (-4.53, ok), second tone 52.1% vs 45.8% (+6.29, ok), shoe band mean saturation 29.2 vs 26.8 (+2.43, ok); daylight between the ankles 23.5 vs 0.00 (+23.5, OFF, tol 12); visible face left of centre 37.1% vs 29.7% of head width (+7.39, OFF, tol 6); visible face right of centre 37.1% vs 27.5% (+9.59, OFF, tol 6); face left/right asymmetry 0.00 vs 0.00 (ok). 3 metrics outside tolerance, the same three as the previous build; the two visible-face widths moved further out (35.9 to 37.1 each side) as the temple slabs were cut back. The instrument measures face width, not hairline shape, temple edge, fade extent or hair volume.",
     "note": "His huge real ears gate at earLine 63.7 (outer span 1.234 vs temple 0.983); featurelatitude gates brow 47.5 vs traced 47.5, eye 57.7 vs 57.7, mouth 77.9 vs 77.7 through his 3.99-2.76 span. The red tee's lit and shaded halves are one garment in two clusters (the recipe records it)."
    },
    "polishFindings": [
-    "Replace the smooth helmet-like hair with the concept close fade and stubble read; rear profile is a hard horizontal cap and visible-face widths stay OFF (+7.39/+9.59 points).",
+    "Rear of the hair is a hard horizontal shelf at mid-ear height with an overhanging corner and bare skull below it (profile and profile-apose boards); the sheet's fade follows the skull down to the nape. Carry the shell and its gradient down to the nape and pull it to skull offset.",
+    "Three-quarter temple edge is a saw-tooth: a pointed spike in front of the ear to about eye level, a V skin notch and a second point behind it (hero and run crops); the sheet has one short vertical edge that dissolves into skin above the ear.",
+    "The temple shell stands off the face: two thin contour lines cross bare skin from the spike toward the brow in the hero and run crops, and the far temple shows a dark blue underside patch at the head edge in the hero crop. Close the free edge onto the skull.",
+    "Hair surface is a smooth faceted dome with a flat-topped peak and a broad glossy olive-brown highlight (all four face captures, swing, hero); the sheet is a rounded, matte black stubble cap. The cap takes about 35% of head height from the front against about 30% on the sheet.",
+    "Hairline corners are chamfered at 45 degrees in the front captures; the sheet's line-up turns a sharp squared corner at each temple.",
+    "Both visible-face widths are out of tolerance and moved further out with this build: 37.1% of head width each side vs 29.7% / 27.5% on the sheet (OFF, tol 6); previous build 35.9.",
     "Refine collar/shoulder construction together: raised mock-neck and deep sleeve-to-torso saddles differ from the shallow crew neck and rounded deltoid.",
     "Correct the central shorts flap during run: a solid third hanging garment mass between the moving legs.",
-    "Ankle daylight is 23.5 vs 0 on the sheet (OFF, tol 12): stance is wider than the concept's feet-together stand.",
+    "Ankle daylight is 23.5 vs 0 on the sheet (OFF, tol 12): stance is wider than the concept's stand, and the limbs are thin against the sheet's stocky build.",
+    "Neutral mouth in hero and run is a down-turned frown; the sheet's resting face is a closed smirk.",
     "Shoe toe caps are beak-pointed with a simplified black/cream pattern, a minor departure from the sheet's rounded low-top sneaker.",
-    "Bunt t0.67 receiving elbow lifts beside the head with forearm descending toward the lower grip; shared pose debt.",
-    "Preserve the legible red/charcoal/cream palette while improving close-cropped hair identity at hero and 40px scale."
+    "Bunt t0.67 receiving elbow lifts beside the head with forearm descending toward the lower grip; shared pose debt. [carried from the previous critique; not re-verifiable in the current capture set]"
    ],
-   "scoredBoardSha256": "70f54a71b0a867f1e8cdf81c1a0e4f72acbcd566b0b7a6803c042e300b4b67d2"
+   "scoredBoardSha256": "c1ef01b70b2989352d2081c86904a902fd04ebeca9f889bd69211ab37360504e"
   },
   "sniffles": {
    "status": "needs-polish",
