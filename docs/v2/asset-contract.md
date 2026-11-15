@@ -170,9 +170,13 @@ missed. The validator measures it from the delivered file.
 
   | node | triangle budget |
   |---|---|
-  | `kid_<id>_LOD0` | ≤ 7,000 |
+  | `kid_<id>_LOD0` | ≤ 8,000 |
   | `kid_<id>_LOD1` | ≤ 3,000 |
   | `kid_<id>_LOD2` | ≤ 1,200 |
+
+  LOD0 was 7,000 until 2026-11-15. The measurement behind the change is in
+  `scripts/v2/modelRules.mjs` beside `LOD_BUDGET`; the 400 KB file cap below did
+  not move and is the limit a full LOD0 now runs into first.
 
 - **Nothing but hair may be drawn above `HeadTop_End`**, and hair only by up to
   **4% of body height** (`HAIR_HEADROOM_FRAC` in `src/v2/render/skeleton.ts`).

@@ -24,7 +24,7 @@
 // What it prints, per authored kid:
 //   stale   — commits to sculptlib/ since the kid's .blend was last committed
 //             (0 = built on HEAD's library), and which library files moved
-//   lod0    — delivered LOD0 triangles and headroom under the 7000 ceiling
+//   lod0    — delivered LOD0 triangles and headroom under the 8000 ceiling
 //             (every joint ring costs 56-112; a kid under ~60 spare pays for a
 //             shared change by trimming before it can build — see Boomer's
 //             worked example in `sculpt-boomer-source.py`)
@@ -46,7 +46,7 @@ import { RUNTIME_DIR, loadContract, validateFile } from './validate-models.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = resolve(here, '..', '..');
-const LOD0_BUDGET = 7000;
+const LOD0_BUDGET = 8000;   // modelRules.mjs's LOD_BUDGET.LOD0, raised from 7000 on 2026-11-15
 
 const git = (...args) => execFileSync('git', args, { cwd: repo, encoding: 'utf8' }).trim();
 
