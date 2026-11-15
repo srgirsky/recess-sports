@@ -119,6 +119,23 @@ const DEBT = {
   dev: 4100,
 };
 
+// ★ A GAP THE SHEET ITSELF DRAWS IS NOT A HOLE (2026-11-15, the maintainer's
+// instruction: "only rules that are part of the game"). The rule above exists
+// to catch a figure you can see THROUGH by mistake: a torn seam, a missing
+// face. It was also refusing daylight the concept draws on purpose: Lu's
+// sheet shows open air between her ponytail and her neck, and her tail had to
+// be pressed against her cap and jacket until the pocket closed. A kid may
+// now declare such a gap here. Each entry is reviewable and has to earn its
+// place: `px` is the budget for the largest pocket, `sheet` says which view of
+// the turnaround draws it and where, and the stale check below retires an
+// entry the moment the model no longer has the gap. Do not use this for a
+// hole the sheet does not show; that is still DEBT, or a bug.
+const DRAWN_GAPS = {
+  // slug: { px: 0, sheet: '<slug>-turnaround.png, <view>: <what the gap is between>' },
+};
+
+const budgetFor = (slug) => Math.max(DEBT[slug] ?? ANTIALIAS_ALLOWANCE, DRAWN_GAPS[slug]?.px ?? ANTIALIAS_ALLOWANCE);
+
 const VIEWS = ['front', 'profile', 'front-apose', 'profile-apose'];
 
 /**
@@ -233,14 +250,15 @@ describe('a delivered view has no hole in it', () => {
   it('encloses no background a reviewer could see through', async () => {
     const failures = [];
     for (const { slug, view, path } of renders()) {
-      const budget = DEBT[slug] ?? ANTIALIAS_ALLOWANCE;
+      const budget = budgetFor(slug);
       const { largest, at } = await measure(path);
       if (largest > budget) {
         failures.push(
           `${slug}-${view}: ${largest} enclosed background pixels in one pocket ` +
           `at ${at}, over a budget of ${budget} — the delivered view can be seen ` +
           'through, which is rubric 3.7 and binary. Find the geometry under those ' +
-          'pixels before changing this number; a budget here may only shrink',
+          'pixels first. If the concept sheet itself draws that gap, declare it ' +
+          'in DRAWN_GAPS with the view that shows it; otherwise close it',
         );
       }
     }
@@ -259,6 +277,19 @@ describe('a delivered view has no hole in it', () => {
     }
     expect(retired, `these no longer need a budget — delete their DEBT entries: ${retired.join(', ')}`)
       .toEqual([]);
+  }, SCANS_EVERY_VIEW);
+
+  // A drawn gap must say where the sheet draws it, and must still be there.
+  it('carries no drawn-gap entry without sheet evidence or without a gap', async () => {
+    const problems = [];
+    for (const [slug, entry] of Object.entries(DRAWN_GAPS)) {
+      if (!entry.sheet || !/turnaround/.test(entry.sheet)) problems.push(`${slug}: say which view of the turnaround draws the gap`);
+      const views = renders().filter((r) => r.slug === slug);
+      if (!views.length) { problems.push(`${slug}: no rendered views`); continue; }
+      const worst = Math.max(...(await Promise.all(views.map(async (v) => (await measure(v.path)).largest))));
+      if (worst <= ANTIALIAS_ALLOWANCE) problems.push(`${slug}: worst pocket is now ${worst}px, so the entry is unused — delete it`);
+    }
+    expect(problems).toEqual([]);
   }, SCANS_EVERY_VIEW);
 
   // ★ BROKEN ONCE, AGAINST A REAL RENDER rather than a synthetic figure. A 7x7
