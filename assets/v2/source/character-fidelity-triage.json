@@ -2580,61 +2580,6 @@
       "class": "face-atlas",
       "excerpt": "Eyes are almond with pointed corners and a dull off-white sclera (187,188,16"
     },
-    "zippy:bf914983c32b": {
-      "char": "zippy",
-      "class": "other",
-      "excerpt": "HIJAB: Neck pinch under the chin makes a light bulb; start the drape at chin"
-    },
-    "zippy:6267740afc98": {
-      "char": "zippy",
-      "class": "other",
-      "excerpt": "HIJAB: Neck gathers are three stacked horizontal rings; replace with one or "
-    },
-    "zippy:f40cdf611329": {
-      "char": "zippy",
-      "class": "other",
-      "excerpt": "HIJAB: Crown front overhangs the band as a lip with a hard corner in 3/4; pu"
-    },
-    "zippy:c24f691cc3bc": {
-      "char": "zippy",
-      "class": "other",
-      "excerpt": "HIJAB: Skin-coloured dot on the band at her left, ~5px, in every front still"
-    },
-    "zippy:3b7742bf9e4d": {
-      "char": "zippy",
-      "class": "other",
-      "excerpt": "BODY: Shoes: closed ends now, but each ends in a big cream pointed toe cap t"
-    },
-    "zippy:71e804f9739a": {
-      "char": "zippy",
-      "class": "other",
-      "excerpt": "HIJAB: Cloth is a uniform glossy shell with no temple-to-chin folds; add sha"
-    },
-    "zippy:6caed2462ba6": {
-      "char": "zippy",
-      "class": "other",
-      "excerpt": "HIJAB: Temple skin sliver between band end and rim in 3/4 (hero x576-585 y19"
-    },
-    "zippy:f25a04385e49": {
-      "char": "zippy",
-      "class": "face-atlas",
-      "excerpt": "FACE: Different girl from the sheet: orange-brown skin vs deep cool brown, s"
-    },
-    "zippy:a55e2bbdeea0": {
-      "char": "zippy",
-      "class": "other",
-      "excerpt": "BODY: Shorts are a navy ring with cream hem only; no dolphin piping, dark ma"
-    },
-    "zippy:2a6f7e34ec37": {
-      "char": "zippy",
-      "class": "proportions",
-      "excerpt": "BODY: Limbs thin near-parallel tubes with leg gap (ankle daylight 27.3 vs 11"
-    },
-    "zippy:6171fc9f6d76": {
-      "char": "zippy",
-      "class": "other",
-      "excerpt": "BODY: Tee ~9 narrow stripes vs ~5 wide, no dark collar trim. Still: grin x48"
-    },
     "big_lou:ed992e610644": {
       "char": "big_lou",
       "class": "face-atlas",
@@ -2689,6 +2634,61 @@
       "char": "big_lou",
       "class": "face-atlas",
       "excerpt": "FACE: Profile is a near-flat plane with a small nose wedge (guri-profile-rev"
+    },
+    "zippy:2a8276343c14": {
+      "char": "zippy",
+      "class": "other",
+      "excerpt": "HIJAB: Light-bulb neck - the cloth pinches under the chin into a narrow stra"
+    },
+    "zippy:775a4db2efd1": {
+      "char": "zippy",
+      "class": "other",
+      "excerpt": "HIJAB: Crown front projects past the forehead band as a peaked lip, reading "
+    },
+    "zippy:d84cc07dbbb7": {
+      "char": "zippy",
+      "class": "other",
+      "excerpt": "BODY: Navy block under the tee hem with the shorts hanging below it as a sep"
+    },
+    "zippy:183f844fc778": {
+      "char": "zippy",
+      "class": "other",
+      "excerpt": "BODY: Shoes still carry a large pointed cream toe cap (with dark specks) and"
+    },
+    "zippy:19733ef3b17c": {
+      "char": "zippy",
+      "class": "proportions",
+      "excerpt": "BODY: Limbs are thin near-parallel tubes with a wide leg gap (ankle daylight"
+    },
+    "zippy:963d4459ba7f": {
+      "char": "zippy",
+      "class": "face-atlas",
+      "excerpt": "FACE: Not the sheet's girl - orange-brown skin instead of deep brown, short "
+    },
+    "zippy:31ed055ff8dd": {
+      "char": "zippy",
+      "class": "other",
+      "excerpt": "HIJAB: Skin-coloured wedge between the band end and the hood rim at the temp"
+    },
+    "zippy:eed50353eb89": {
+      "char": "zippy",
+      "class": "other",
+      "excerpt": "HIJAB: Shell is glossy with one hard vertical seam-like crease and no soft f"
+    },
+    "zippy:f4181411ec86": {
+      "char": "zippy",
+      "class": "other",
+      "excerpt": "HIJAB: Small red-brown dot on the forehead band in every front still (grin a"
+    },
+    "zippy:f23ea815a887": {
+      "char": "zippy",
+      "class": "other",
+      "excerpt": "BODY: Fingers are long separate spikes at hero scale. fatou-runtime-hero.png"
+    },
+    "zippy:512dafd4c2b6": {
+      "char": "zippy",
+      "class": "other",
+      "excerpt": "BODY: Sleeve stripes smear into a gradient on the sleeve cap and the tee has"
     },
     "tank:c0416cb7de14": {
       "char": "tank",
