@@ -218,8 +218,9 @@ export const ROSTER: Character[] = [
     tier: 2,
     recast: { was: 'Zippy Kwan', modelCarries: true },
     stats: { contact: 7, power: 4, speed: 9, pitching: 3, fielding: 7 },
-    // Fatou runs in a sport hijab. Until that part exists, a bun under a
-    // headband is the nearest covered-hair silhouette the kit has.
+    // Fatou runs in a sport hijab: `signature` draws it in the classic game,
+    // and her 3D model is sculpted wearing it (slug `fatou`). The bun and
+    // headband below are what a renderer with neither falls back to.
     visual: { signature: 'hijab', skin: 5, hair: 'bun', hairColor: 3, uniform: 5, accessory: 'headband', expression: 'grin', stance: 'crouch',
       body: { height: 0.92, shoulderW: 40, neck: 3 },
       face: { eyeGap: 19, eyeSize: 1.1, mouthW: 1.05 },

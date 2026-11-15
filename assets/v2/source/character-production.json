@@ -182,15 +182,15 @@
       ]
     },
     "zippy": {
-      "source": "zippy-pilot.blend",
-      "sourceSha256": "246496db75e38e93c3c3daeb16d47822cbcdb9771c76a26509cb0daee53582ca",
-      "concept": "zippy-turnaround.png",
-      "conceptSha256": "5a6ad80e5d6ad18e455b6c4ae56447cdcab1a14fa2eccf4ebd8a7f72a611fb31",
+      "source": "fatou-pilot.blend",
+      "sourceSha256": "dcad110fd4277de37f1c165a45ec03534929948940256634dc4fde742cc1c3e5",
+      "concept": "fatou-turnaround.png",
+      "conceptSha256": "6ee0f2242bdf5d42f4a73ff658fe7037e203753858acfa6934f389bc29a0e9f4",
       "output": "kid_zippy.glb",
-      "outputSha256": "4260bd9beba8fa49170098225a94d20fa987f89e79580164f6175ebf771a972e",
+      "outputSha256": "40b3a27759ffa93e6ec6691c066116c4cf39aeda74346c6b484b90951f9fd164",
       "definingTraits": [
-        "black side pigtails",
-        "cream headband",
+        "teal sport hijab",
+        "deep brown skin",
         "two-tone pink striped tee",
         "navy dolphin shorts",
         "huge happy grin"

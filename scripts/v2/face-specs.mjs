@@ -528,23 +528,27 @@ export const FACE_SPECS = {
     mouthDrop: -2.5,
   },
 
-  // Zippy. The roster's biggest grin — her NEUTRAL is drawn mid-laugh, so the
-  // resting mouth is a wide high-cornered smile. Big shining eyes under a
-  // straight fringe, gently arched brows. Feature rows traced on her sheet
-  // (spec refuses her eye band — the fringe merges with it): brow bands rows
-  // 268-283 (41.3% of head), eyes rows 294-320 centred 58.7%, open smile rows
-  // 347-361 (85%). Cells through her island (0.92, -1.531, 2.438).
+  // Fatou Diallo (the `zippy` slot). A huge happy grin, her NEUTRAL drawn
+  // mid-laugh, so the resting mouth is a wide high-cornered smile; big shining
+  // eyes, gently arched brows. The marks are the slot's previous ones — the
+  // sheet draws the same face design — with the lower lip re-toned to her
+  // skin. Her sheet's own feature rows are hand traces (the analyser refuses
+  // brow, eye and mouth on deep skin: the bands merge); they are recorded in
+  // the featurelatitude entry. Cells through the island (0.92, -1.531, 2.438).
   zippy: {
     ink: '#150b04',
-    mouthInk: '#8a4030',
+    // Lip tones are set AGAINST HER SKIN: the slot's previous warm browns
+    // (#8a4030 on #f2a066 skin) are her skin's own colour and the resting smile
+    // disappeared on the first board. A dark line and a lighter lower lip read.
+    mouthInk: '#2e1008',
     sclera: '#fffdf2',
     irisBrown: '#4a2c12',
     pupil: '#170d06',
     white: '#fff8ea',
-    mouth: '#7a3423',
-    mouthDark: '#552114',
+    mouth: '#5a2014',
+    mouthDark: '#33100a',
     tongue: '#e57f86',
-    lowerLip: '#f2a066',
+    lowerLip: '#b26444',
     eyeHalfW: 19,
     eyeHalfH: 13,
     irisR: 11.5,

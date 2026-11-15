@@ -183,18 +183,20 @@ export const RECIPES = {
   // paired pigtails are the widest thing on the sheet at their own rows, so
   // any width metric near z 3.0-3.8 is hair, not head. The cream headband and
   // sock stripes share the backdrop-cream cluster and are geometry traces.
-  // Her lit SKIN and the light pink resolve to the same cluster (the resolver
-  // refuses the pair as indistinct-materials — the honest answer, kept), so
-  // every skin/teeLight boundary is a geometry trace like Grizz's tee.
+  // ★ FATOU'S FIFTH VIEW IS A SECOND THREE-QUARTER, not an action pose: the
+  // sheet turns her the other way instead of raising an arm. Her navy shoes
+  // and navy shorts are one cluster, so the shoe is not declared (a shoe band
+  // would read the shorts' tone); the hijab is declared as `hair` because it
+  // is the head's covering and owns every head-width row the hair would.
   zippy: {
-    slug: 'zippy',
-    views: ['front', 'threeQuarter', 'profile', 'back', 'action'],
+    slug: 'fatou',
+    views: ['front', 'threeQuarter', 'profile', 'back', 'threeQuarter'],
     materials: {
-      skin: { hex: '#eda05e' },
-      hair: { hex: '#1b140c' },
-      shorts: { hex: '#2a2e39' },
-      teeDark: { hex: '#f25c74' },
-      teeLight: { hex: '#fa939c' },
+      skin: { hex: '#793b22' },
+      hair: { hex: '#0b5a5e' },
+      shorts: { hex: '#1b1d28' },
+      teeDark: { hex: '#d63556' },
+      teeLight: { hex: '#fdb2b3' },
     },
     sweeps: {},
     bands: {},

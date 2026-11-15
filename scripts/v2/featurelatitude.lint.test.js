@@ -224,21 +224,22 @@ const TURNAROUND = {
     span: { crownZ: 3.99, neckZ: 2.60 },
     tolerance: 2.5,
   },
-  // ★ ZIPPY HAS NO earLine TARGET although her ears ARE drawn: her paired
-  // pigtails are the widest thing at every row of the ear zone, so the
-  // widest-row trace reads hair on both the concept and any delivery — there
-  // is no honest number to gate. Her EarSpec is placed off the profile view
-  // (ear centred ~z 3.17) and reviewed by eye. Bounded traces on
-  // zippy-turnaround.png (crown row 199 = the pigtail spouts' top, neck row
-  // 383): brow bands rows 268-283 (centroid ~275), the big eyes rows 294-320
-  // centred row 307 (the spec refuses the eye band — the fringe merges with
-  // it), open-grin mouth rows 347-361 centred ~355.
+  // ★ FATOU HAS NO `earLine`, AND HERE IT IS A FACT ABOUT THE DRAWING. Her
+  // sport hijab covers both ears in all five views — crop the profile: the
+  // cloth's edge runs from the temple to under the jaw with cheek in front
+  // of it and no ear anywhere. So no EarSpec is built, and this is not the
+  // Grizz/Penny/Bubbles inference (the claim is read off the sheet, not off
+  // the sculpt). Bounded luminance traces on fatou-turnaround.png (crown row
+  // 176 = the wrap's top, neck pinch row 384; the analyser refuses brow, eye
+  // and mouth on deep skin): brow bands rows 237-243 (centre 240), eyes rows
+  // 264-294 (centre 279), the open grin rows 327-357 (centre 340).
   zippy: {
-    slug: 'zippy',
-    brow: 41.3,
-    eye: 58.7,
-    mouth: 85.0,
-    span: { crownZ: 3.99, neckZ: 2.84 },
+    // Fatou Diallo took this slot in the World 1 re-cast; the entry is hers.
+    slug: 'fatou',
+    brow: 30.3,
+    eye: 48.8,
+    mouth: 77.7,
+    span: { crownZ: 4.0, neckZ: 2.84 },
     tolerance: 2.5,
   },
   // ★ DAZZLE'S SPEC REFUSES ALL THREE FEATURES — her mane merges with every
