@@ -123,11 +123,11 @@
     },
     "bubbles": {
       "source": "bubbles-pilot.blend",
-      "sourceSha256": "c72ce706ef8d937127e7595ec0fa4b52b2f8687d04f93dd01cb641a2cb02faea",
+      "sourceSha256": "0f14873f458b41cf7be7439b7fa00db845b0cde6f22d395a930fc0bc9b4c0330",
       "concept": "bubbles-turnaround.png",
       "conceptSha256": "b4b3ec04e975bf1f2d85b449073afbd71edb99af3f17579fe24050bc5edcd9db",
       "output": "kid_bubbles.glb",
-      "outputSha256": "f50ceb6ac320a5c84d577ec7b9ca6db36f9190f3a84b520c47d42c508fbf04b2",
+      "outputSha256": "7eef4de2ce7faee3b6c34ec569f0a73a9d8207894cf3c5dc6ce410696f0c6c4d",
       "definingTraits": [
         "golden ringlet cloud",
         "topknot bun and scrunchie",

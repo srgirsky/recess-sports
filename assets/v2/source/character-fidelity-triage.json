@@ -2380,16 +2380,6 @@
       "class": "hems-cuffs",
       "excerpt": "SOLID NAVY WEDGES AT THE NECK: filled triangles of the outline colour sit be"
     },
-    "bubbles:2b695f38efd4": {
-      "char": "bubbles",
-      "class": "other",
-      "excerpt": "BUN is a small flattened dome with a pointed tip, not the concept's round ba"
-    },
-    "bubbles:86eb5cc93a72": {
-      "char": "bubbles",
-      "class": "other",
-      "excerpt": "SCRUNCHIE is a thin smooth band half buried behind the top ring of blobs, no"
-    },
     "bubbles:840a6002e221": {
       "char": "bubbles",
       "class": "other",
@@ -2419,21 +2409,6 @@
       "char": "ace_kid",
       "class": "hems-cuffs",
       "excerpt": "CLEARED (was: INHERITED GARMENT DEFECT, large angular cream patch over the l"
-    },
-    "bubbles:8bd026b9a959": {
-      "char": "bubbles",
-      "class": "other",
-      "excerpt": "HAIR BLOBS ARE FACETED AND INDIVIDUALLY OUTLINED: each blob is a low-polygon"
-    },
-    "bubbles:0d2ed40f54fe": {
-      "char": "bubbles",
-      "class": "other",
-      "excerpt": "HAIR BLOBS ARE TOO LARGE AND TOO FEW: about two dozen large balls in two siz"
-    },
-    "bubbles:98306bb7b59d": {
-      "char": "bubbles",
-      "class": "face-atlas",
-      "excerpt": "HAIR ENVELOPE: in the front view the cloud is widest at eye/cheek level and "
     },
     "bubbles:5336479c7891": {
       "char": "bubbles",
@@ -2559,6 +2534,36 @@
       "char": "gizmo",
       "class": "face-atlas",
       "excerpt": "UPDATED - measure:fidelity visible face at brow: left 34.7 vs 9.59 OFF (+25."
+    },
+    "bubbles:b59cb2250da9": {
+      "char": "bubbles",
+      "class": "hems-cuffs",
+      "excerpt": "HAIR SURFACE READS AS BATTER, NOT RINGLETS: the fused skin is a crust of irr"
+    },
+    "bubbles:3d8225cf5f15": {
+      "char": "bubbles",
+      "class": "face-atlas",
+      "excerpt": "FOREHEAD IS A HEAVY ROLL, NOT CURLS: two swollen lobes meet in a notch under"
+    },
+    "bubbles:14a8f7138166": {
+      "char": "bubbles",
+      "class": "other",
+      "excerpt": "HAIR ENVELOPE: in the front view the cloud is a near straight-sided column f"
+    },
+    "bubbles:8f4156173e3e": {
+      "char": "bubbles",
+      "class": "other",
+      "excerpt": "DOUBLED CONTOUR ON THE HAIR: a second outline runs a few pixels inside the s"
+    },
+    "bubbles:d63f54f43a9c": {
+      "char": "bubbles",
+      "class": "other",
+      "excerpt": "PINHOLE SPECKS IN THE HAIR: two or three dark 1-2px specks in the side mass "
+    },
+    "bubbles:a25e65bbaf1c": {
+      "char": "bubbles",
+      "class": "other",
+      "excerpt": "SCRUNCHIE is a thin smooth band half buried between the bun and the forehead"
     }
   }
 }

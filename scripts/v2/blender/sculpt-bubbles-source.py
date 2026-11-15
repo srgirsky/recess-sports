@@ -47,6 +47,7 @@ from sculptlib.arm import ArmSpec, HandSpec, build_arm
 from sculptlib.atlas import install_face_atlas
 from sculptlib.color import ensure_material_slots, rebuild_palette_material, rgba, srgb_to_linear
 from sculptlib.ear import EarSpec, build_ear
+from sculptlib.fused import fuse_into
 from sculptlib.hair import curl_field, curl_seeds
 from sculptlib.head import HeadSpec, head_surface
 from sculptlib.leg import LegSpec, build_leg, leg_x
@@ -380,8 +381,10 @@ CURL_TROUGH = 0.018
 CURL_RINGS = [
     (3.560, (38.0, 105.0, 165.0), 0.235, 0.000),
     (3.240, (72.0, 122.0, 168.0), 0.250, 0.000),
-    (2.900, (64.0, 110.0, 156.0), 0.225, 0.020),
-    (2.620, (84.0, 150.0), 0.195, 0.020),   # the hem, hanging to the shoulders
+    # 0.225 / 0.195 cleared the bat as six-sided blobs; fused they are truly
+    # round and a little larger, and the shaft clipped them in one load frame.
+    (2.900, (64.0, 110.0, 156.0), 0.200, 0.020),
+    (2.620, (84.0, 150.0), 0.172, 0.020),   # the hem, hanging to the shoulders
 ]
 # Sunk deep and sized to overlap by a third: at 0.96 and radius ~0.2 each blob
 # stood clear as its own ball with the scalp showing between ("a cap with
@@ -393,7 +396,40 @@ CURL_SQUASH = 0.88    # blob height : width
 # high hairline left bare: (x, z, radius), seated proud of the skull.
 # z 3.45, not higher: at 3.52 the skull has no front surface to seat on and
 # the blobs landed inside the head.
-FRINGE_CURLS = ((-0.130, 3.460, 0.180), (0.130, 3.460, 0.180))
+FRINGE_CURLS = ((-0.140, 3.430, 0.100), (-0.070, 3.460, 0.105), (0.010, 3.445, 0.100),
+                (0.080, 3.462, 0.105), (0.140, 3.425, 0.095))   # five uneven curls: a mirrored pair read as a bow
+
+
+# ★ FUSED (2026-11-15). The blobs above are still the design of the cloud, but
+# what ships is one skin (`sculptlib.fused.fuse_into`): scalp, bun, big blobs
+# and a scatter of small ringlet curls are remeshed into a single surface with
+# a darker tone in the hollows. Three critics read the separate blobs as
+# "low-polygon balls, each with its own contour: a grape bunch".
+# First fused build: voxel 0.024, ringlets 0.100 at share 1.02 over blobs
+# sunk to 0.88. The ringlets "did not read at all: shallow pinches between
+# 15-20 big smooth lobes, popcorn". Finer now, with the big blobs sunk
+# deeper so the ringlets ARE the surface.
+FUSE_VOXEL_FT = 0.018
+FUSE_RELAX = 1
+FUSE_TRIS = {2: 5900, 1: 1200}     # LOD0, LOD1; LOD2 keeps the plain scalp
+FUSE_GROOVE_FT = 0.004
+# not-traceable: the ringlets are texture on the measured envelope
+# (HAIR_LEVELS), not a silhouette the sheet fixes curl by curl.
+RINGLET_TOP_Z = 3.640
+RINGLET_BOTTOM_Z = 2.560
+RINGLET_STEP_Z = 0.110
+RINGLET_FIRST_AZ = 20.0     # above the hairline the curls come round the front
+RINGLET_SIDE_AZ = 62.0      # below it they stay beside and behind the face
+RINGLET_FACE_Z = 3.480
+RINGLET_STEP_AZ = 19.0
+RINGLET_SHARE = 1.07
+# Below this height the ringlets sit inside the envelope: at the full share
+# the bat's shaft passed through them in eight swing frames (`audit:batting`).
+RINGLET_LOW_Z = 3.260
+RINGLET_LOW_SHARE = 0.90
+RINGLET_RADIUS = 0.115
+FUSED_BLOB_SINK = 0.78     # the big blobs' centres, as a share of the envelope, when fused
+RINGLET_BUN_COUNT = 9
 
 
 def hair_ring_point(azimuth_deg: float, z: float, share: float, side: int):
@@ -425,6 +461,11 @@ def build_hair(builder: MeshBuilder, detail: int) -> None:
     # 24 even columns keep mirror columns and give eight lobes three samples.
     segments = 10 if detail >= 2 else (10 if detail == 1 else 8)   # the scalp under the curl cloud
 
+    # Where the lofts and curls are written: straight into the kid at the far
+    # LOD, into a scratch builder that `fuse_into` consumes at the near ones.
+    fuse = detail >= 1
+    out = MeshBuilder() if fuse else builder
+
     def ring_loft(levels, seeds, columns=None):
         segs = columns or segments
         assert all(x[0] > y[0] for x, y in zip(levels, levels[1:])), \
@@ -455,18 +496,18 @@ def build_hair(builder: MeshBuilder, detail: int) -> None:
                     if seeds is CURL_SEEDS and FACE_BAND[0] < z < FACE_BAND[1]:
                         y = max(y, FACE_BAND_FLOOR_Y)
                 tone = HAIR if (f > CURL_TROUGH or seeds is CURL_SEEDS) else HAIR_DARK
-                ring.append(builder.vertex((x, y, z), tone, "Head"))
+                ring.append(out.vertex((x, y, z), tone, "Head"))
             rows.append(ring)
-        bottom = builder.vertex((0.0, ascending[0][3], ascending[0][0] - 0.02), HAIR, "Head")
-        top = builder.vertex((0.0, ascending[-1][3], ascending[-1][0] + 0.02), HAIR, "Head")
+        bottom = out.vertex((0.0, ascending[0][3], ascending[0][0] - 0.02), HAIR, "Head")
+        top = out.vertex((0.0, ascending[-1][3], ascending[-1][0] + 0.02), HAIR, "Head")
         for column in range(segs):
             nxt = (column + 1) % segs
-            builder.face((bottom, rows[0][nxt], rows[0][column]), 2)
-            builder.face((rows[-1][column], rows[-1][nxt], top), 2)
+            out.face((bottom, rows[0][nxt], rows[0][column]), 2)
+            out.face((rows[-1][column], rows[-1][nxt], top), 2)
         for lower, upper in zip(rows, rows[1:]):
             for column in range(segs):
                 nxt = (column + 1) % segs
-                builder.face((lower[column], lower[nxt], upper[nxt], upper[column]), 2)
+                out.face((lower[column], lower[nxt], upper[nxt], upper[column]), 2)
 
     # ★ THE CURLS ARE LOBED HARD — she is ringlets, not a smooth mass. Seven
     # primary lobes at ±6.5% of radius; the drawing's read is texture first.
@@ -489,27 +530,49 @@ def build_hair(builder: MeshBuilder, detail: int) -> None:
         ring_loft(BUN_LEVELS, BUN_SEEDS, columns=11 if detail >= 2 else None)
 
     # The curl cloud. LOD2 keeps the shell alone.
-    if detail >= 1:
-        blob_segments, blob_rings = (6, 4) if detail >= 2 else (5, 3)
-        index = 0
+    if fuse:
+        # The big blobs are the cloud's volume...
         for z, azimuths, radius, drop in CURL_RINGS:
             for azimuth in azimuths:
                 for side in (1, -1):
-                    index += 1
-                    if detail == 1 and index % 2:
-                        continue
                     # Mirrored twins share a wobble, so the cloud stays symmetric.
                     wobble = 0.92 + 0.16 * ((azimuth * 7.0 + z * 31.0) % 10.0) / 10.0
-                    cx, cy, cz = hair_ring_point(azimuth, z, CURL_SINK, side)
+                    cx, cy, cz = hair_ring_point(azimuth, z, FUSED_BLOB_SINK, side)
                     r = radius * wobble
-                    builder.ellipsoid((cx, cy, cz - drop), (r, r, r * CURL_SQUASH), 2, HAIR,
-                                      "Head", blob_segments, blob_rings)
-        if detail >= 2:
-            for x, z, r in FRINGE_CURLS:
-                front = skull_front_y(x, z)
-                assert front > -9.0, "a fringe curl needs a skull surface to sit on"
-                builder.ellipsoid((x, front - 0.050, z), (r, r * 0.80, r * CURL_SQUASH),
-                                  2, HAIR, "Head", blob_segments, blob_rings)
+                    out.ellipsoid((cx, cy, cz - drop), (r, r, r * CURL_SQUASH), 2, HAIR, "Head", 10, 6)
+        for x, z, r in FRINGE_CURLS:
+            front = skull_front_y(x, z)
+            assert front > -9.0, "a fringe curl needs a skull surface to sit on"
+            out.ellipsoid((x, front - 0.050, z), (r, r * 0.80, r * CURL_SQUASH), 2, HAIR, "Head", 10, 6)
+        # ...and the ringlets are small curls scattered over it, staggered row
+        # to row. Fused, a hundred small pieces cost nothing: the skin is
+        # reduced to FUSE_TRIS whatever went in.
+        row = 0
+        z = RINGLET_TOP_Z
+        while z >= RINGLET_BOTTOM_Z:
+            azimuth = RINGLET_FIRST_AZ + (row % 2) * RINGLET_STEP_AZ * 0.5
+            while azimuth <= 180.0:
+                # No ringlets over the face: above the hairline they may come
+                # round to the front, below it they stay beside and behind.
+                if azimuth >= (RINGLET_FIRST_AZ if z > RINGLET_FACE_Z else RINGLET_SIDE_AZ):
+                    for side in ((1,) if azimuth >= 179.5 else (1, -1)):
+                        # Not mirrored: each side gets its own size and a nudge round.
+                        wobble = 0.85 + 0.30 * ((azimuth * 13.0 + z * 47.0 + side * 3.7) % 10.0) / 10.0
+                        share = RINGLET_SHARE if z > RINGLET_LOW_Z else RINGLET_LOW_SHARE
+                        cx, cy, cz = hair_ring_point(azimuth + side * 4.0 * wobble, z, share, side)
+                        r = RINGLET_RADIUS * wobble
+                        out.ellipsoid((cx, cy, cz), (r, r, r * 0.9), 2, HAIR, "Head", 8, 5)
+                azimuth += RINGLET_STEP_AZ
+            z -= RINGLET_STEP_Z
+            row += 1
+        for index in range(RINGLET_BUN_COUNT):
+            angle = 2 * pi * index / RINGLET_BUN_COUNT
+            out.ellipsoid((0.20 * cos(angle), 0.02 + 0.19 * sin(angle), 3.880 + 0.05 * (index % 2)),
+                          (0.085, 0.085, 0.080), 2, HAIR, "Head", 8, 5)
+        out.ellipsoid((0.0, 0.02, 3.985), (0.110, 0.110, 0.080), 2, HAIR, "Head", 8, 5)
+        fuse_into(builder, out, material=2, color=HAIR, groove_color=HAIR_DARK, bone="Head",
+                  voxel_ft=FUSE_VOXEL_FT, relax_iterations=FUSE_RELAX, target_tris=FUSE_TRIS[detail],
+                  groove_depth_ft=FUSE_GROOVE_FT, mirror=False)
 
     # The scrunchie: a pink torus at the bun's base — the team-accent surface,
     # on M_Accessory (slot 3).
