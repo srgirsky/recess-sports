@@ -2625,75 +2625,55 @@
       "class": "evidence",
       "excerpt": "GEAR: Back harness (Y-strap, waist strap) appears in no runtime capture or b"
     },
-    "wheelchair_ace:22a718fd2ffa": {
+    "wheelchair_ace:5c98a23b33e3": {
       "char": "wheelchair_ace",
       "class": "other",
-      "excerpt": "BODY/CHAIR: the front view still reads as a thin kid standing in a stilt fra"
+      "excerpt": "BODY/CHAIR: the front is still a thin kid in a stilt frame; the slimmer trun"
     },
-    "wheelchair_ace:aa1c8984272c": {
+    "wheelchair_ace:a297d6b5fcaa": {
       "char": "wheelchair_ace",
       "class": "other",
-      "excerpt": "HAIR: every tuft is a hard faceted prism, reading as coal lumps or crystals "
+      "excerpt": "HAIR: every tuft is a hard faceted prism (dev-runtime-hero.png x 420-600, y "
     },
-    "wheelchair_ace:bf19d0223642": {
+    "wheelchair_ace:40ad5d21a2b5": {
       "char": "wheelchair_ace",
       "class": "proportions",
-      "excerpt": "TEE/LEGS: hard navy wedges between each sleeve cap and the neck in every cap"
+      "excerpt": "BODY: arms are long unbent tubes with no hand from the front (grin x 437-460"
     },
-    "wheelchair_ace:d17a95e87399": {
+    "wheelchair_ace:e5cf6250b8de": {
       "char": "wheelchair_ace",
       "class": "proportions",
-      "excerpt": "BODY: arms are long thin unbent tubes; from the front both end at the tyre t"
+      "excerpt": "TEE/LEGS: hard navy wedges between neck and sleeve caps (hero x 540-565, y 3"
     },
-    "wheelchair_ace:c093bd39b022": {
+    "wheelchair_ace:6196dff7ac1e": {
       "char": "wheelchair_ace",
       "class": "other",
-      "excerpt": "SHOES: plain orange upper on a boxy grey-white sole, no teal panels or laces"
+      "excerpt": "SHOES: orange upper with a boxy pale sole, no teal panels or laces, navy toe"
     },
-    "wheelchair_ace:477f4ef21fc6": {
+    "wheelchair_ace:f6ce91f3f274": {
+      "char": "wheelchair_ace",
+      "class": "face-atlas",
+      "excerpt": "FACE: symmetric open grin tucks into the nose and wraps to the far eye in 3/"
+    },
+    "wheelchair_ace:5bebc295d85f": {
+      "char": "wheelchair_ace",
+      "class": "face-atlas",
+      "excerpt": "FACE: ears are large paddles at jaw level (grin crop region x 130-190 and 32"
+    },
+    "wheelchair_ace:ccbe4f12023b": {
       "char": "wheelchair_ace",
       "class": "other",
-      "excerpt": "TEE/SHORTS: tee is a tube to the crotch that hides the shorts and reads as a"
+      "excerpt": "TEE/SHORTS: tee is a tube to the crotch with a zigzag hem hiding the shorts;"
     },
-    "wheelchair_ace:66706d1947e1": {
+    "wheelchair_ace:4382ed26317f": {
       "char": "wheelchair_ace",
       "class": "other",
-      "excerpt": "CHAIR: no backrest panel, seat or side guards (two thin posts at face-grin x"
+      "excerpt": "CHAIR: green hubs, pale grey cross bar and two long caster stalks; the sheet"
     },
-    "wheelchair_ace:1659995aa800": {
-      "char": "wheelchair_ace",
-      "class": "face-atlas",
-      "excerpt": "FACE: ears are large paddles hung at jaw level, reading as jowls from the fr"
-    },
-    "wheelchair_ace:b39259932c24": {
-      "char": "wheelchair_ace",
-      "class": "face-atlas",
-      "excerpt": "FACE: the grin's top edge tucks under the nose so nose and mouth fuse; in th"
-    },
-    "wheelchair_ace:ebb5d6ebedc1": {
-      "char": "wheelchair_ace",
-      "class": "face-atlas",
-      "excerpt": "FACE: brows now slant for angry but are short blocks about a third of the sh"
-    },
-    "wheelchair_ace:6ede5453a180": {
+    "wheelchair_ace:45a536e9d061": {
       "char": "wheelchair_ace",
       "class": "material-light",
-      "excerpt": "COLOUR: skin is saturated orange (forearm about #713d0a against the sheet's "
-    },
-    "wheelchair_ace:2c67ba37f2f6": {
-      "char": "wheelchair_ace",
-      "class": "other",
-      "excerpt": "CHAIR: hubs green, cross bar pale grey (face-grin x 445-615, y 557-567), two"
-    },
-    "wheelchair_ace:1fd95cde626e": {
-      "char": "wheelchair_ace",
-      "class": "other",
-      "excerpt": "HAIR: thin slate-blue edge lines along several tuft tops in 3/4 (dev-runtime"
-    },
-    "wheelchair_ace:e04177c02a67": {
-      "char": "wheelchair_ace",
-      "class": "other",
-      "excerpt": "BODY: no neck from the front; the chin sits on the collar in all four face c"
+      "excerpt": "COLOUR: skin is saturated orange (about #713d0a forearm against the sheet's "
     }
   }
 }

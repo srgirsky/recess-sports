@@ -153,14 +153,14 @@ const SWING_REACH = .92;
  * PITCH, where the lean had carried them out past it. `audit:batting` holds
  * his lean against the standing roster's.
  */
-// ★ RETUNED 2026-11-14 FOR A STOCKIER SEATED KID. At .95 reach and a .2 step
-// toward the plate the hands passed 0.008ft off Dev's trunk and lap, which
-// capped how solid he could be sculpted. Sitting at the standing kids'
-// distance with the arms a little shorter clears him by 0.06 on the slim
-// body and holds every arm-step and wrist gate (audit:batting: worst arm
-// step 18.9 against 21.6 before).
-const SEATED_SWING_REACH = .90;
-const SEATED_PLATE_STEP_FT = 0;
+// ⚠️ TRIED AND REVERTED 2026-11-14: seating him at the standing distance
+// (step 0, reach .90) to clear a stockier trunk. It cleared the palms by 0.06
+// and leaned him 29 and 34 degrees at the 2.4 and 1.6ft pitches, 7-10 past
+// the standing roster, which `audit:batting --check` rejects as tipping out of
+// the chair. A per-kid audit run skips that comparison. These two numbers and
+// his slim trunk and lap are one decision.
+const SEATED_SWING_REACH = .95;
+const SEATED_PLATE_STEP_FT = .2;
 /**
  * How strongly the grip search prefers the elbow hint. The swing needs the
  * pull: at the bunt's 0.2 the lead grip roll wanders across a flat basin while

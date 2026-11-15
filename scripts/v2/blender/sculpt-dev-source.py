@@ -346,13 +346,13 @@ def build_hair(builder: MeshBuilder, detail: int) -> None:
 # torso in every view; halves bounded off the shoulder run above the chair
 # (front z≈2.15 measures 0.67 arm-to-arm) minus the drawn sleeve girth.
 TORSO_LEVELS = [
-    (1.590, 0.419, 0.309, "Hips"),
-    (1.640, 0.425, 0.312, "Hips"),
-    (1.750, 0.414, 0.307, "Spine"),
-    (1.950, 0.401, 0.298, "Spine"),
-    (2.150, 0.386, 0.284, "Spine1"),
-    (2.300, 0.356, 0.254, "Spine1"),
-    (2.430, 0.329, 0.230, "Spine2"),
+    (1.590, 0.361, 0.276, "Hips"),
+    (1.640, 0.366, 0.279, "Hips"),
+    (1.750, 0.357, 0.274, "Spine"),
+    (1.950, 0.346, 0.266, "Spine"),
+    (2.150, 0.333, 0.254, "Spine1"),
+    (2.300, 0.330, 0.240, "Spine1"),
+    (2.430, 0.305, 0.217, "Spine2"),
     (2.490, 0.226, 0.177, "Spine2"),
     (2.545, 0.178, 0.143, "Spine2"),
     (2.595, 0.158, 0.128, "Spine2"),
@@ -452,7 +452,7 @@ def build_seated_legs(builder: MeshBuilder, detail: int) -> None:
         # Thigh: hip forward and slightly up to the raised knee (sport tuck).
         builder.tube(
             [(x, -0.020, 1.480), (x + side * 0.008, -0.200, 1.495), (x + side * 0.012, -0.360, 1.490)],
-            [0.168, 0.160, 0.150], 1, SHORTS, "Root", sides)
+            [0.146, 0.138, 0.130], 1, SHORTS, "Root", sides)
         # The sheet's shorts stop mid-thigh: a bare thigh and a round knee
         # carry the lap forward to the shin.
         builder.tube(
@@ -460,7 +460,7 @@ def build_seated_legs(builder: MeshBuilder, detail: int) -> None:
             # palm ray reads the knees as body, and thighs 0.17 thick put the
             # palms 0.15ft inside them at contact.
             [(x + side * 0.012, -0.380, 1.480), (x + side * 0.015, -0.560, 1.462), (x + side * 0.016, -0.670, 1.410)],
-            [0.142, 0.142, 0.124], 0, SKIN, "Root", sides)
+            [0.122, 0.122, 0.108], 0, SKIN, "Root", sides)
         # ★ SHORT SHINS, BIG SHOES, A HIGH FOOTPLATE. Read off the sheet's front
         # view: knees at z 1.45, sock tops 1.18, shoe tops 0.85, soles 0.56.
         # The slot's first legs ran the shin to 0.64 over a shoe a tenth of a
