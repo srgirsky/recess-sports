@@ -2505,51 +2505,6 @@
       "class": "other",
       "excerpt": "SLIVER OF DAYLIGHT ENCLOSED BETWEEN CAP, SCRUNCHIE, BRIM AND TAIL: lefty-run"
     },
-    "gizmo:c1a3243f48fb": {
-      "char": "gizmo",
-      "class": "other",
-      "excerpt": "(hair, high) - sweep-crops/gizmo-fused-r3/grin-head-5x.png x 180-890, y 440-"
-    },
-    "gizmo:e990e7db8d33": {
-      "char": "gizmo",
-      "class": "face-atlas",
-      "excerpt": "(hair, high) - sweep-crops/gizmo-fused-r3/profile-board-3x.png x 540-700, y "
-    },
-    "gizmo:f5bfaefdb1fd": {
-      "char": "gizmo",
-      "class": "other",
-      "excerpt": "(hair, medium) - sweep-crops/gizmo-fused-r3/grin-crown-10x.png x 320-720, y "
-    },
-    "gizmo:cdeb21039965": {
-      "char": "gizmo",
-      "class": "hems-cuffs",
-      "excerpt": "(hair, medium) - sweep-crops/gizmo-fused-r3/hero-backside-9x.png x 100-880, "
-    },
-    "gizmo:fc29f57e2d1b": {
-      "char": "gizmo",
-      "class": "hems-cuffs",
-      "excerpt": "(hair, medium) - sweep-crops/gizmo-fused-r3/grin-head-5x.png x 360-760, y 80"
-    },
-    "gizmo:560d02cf9bf9": {
-      "char": "gizmo",
-      "class": "material-light",
-      "excerpt": "(hair, low) - sweep-crops/gizmo-fused-r3/hero-forelock-10x.png x 300-380, y "
-    },
-    "gizmo:4ea185baab89": {
-      "char": "gizmo",
-      "class": "other",
-      "excerpt": "(hair, low) - sweep-crops/gizmo-fused-r3/hero-backside-9x.png x 380-660, y 5"
-    },
-    "gizmo:4a4609ade1c4": {
-      "char": "gizmo",
-      "class": "other",
-      "excerpt": "(face, low) - sweep-crops/gizmo-fused-r3/grin-head-5x.png x 215-260 and 830-"
-    },
-    "gizmo:ea862ed1151b": {
-      "char": "gizmo",
-      "class": "face-atlas",
-      "excerpt": "UPDATED - measure:fidelity visible face at brow: left 34.7 vs 9.59 OFF (+25."
-    },
     "bubbles:b59cb2250da9": {
       "char": "bubbles",
       "class": "hems-cuffs",
@@ -2579,6 +2534,51 @@
       "char": "bubbles",
       "class": "other",
       "excerpt": "SCRUNCHIE is a thin smooth band half buried between the bun and the forehead"
+    },
+    "gizmo:e6b3368ebe90": {
+      "char": "gizmo",
+      "class": "hems-cuffs",
+      "excerpt": "(hair, high) - sweep-crops/gizmo-directional-r2/grin-head-5x.png x 150-830, "
+    },
+    "gizmo:2efbd4146175": {
+      "char": "gizmo",
+      "class": "face-atlas",
+      "excerpt": "(hair, high) - sweep-crops/gizmo-directional-r2/profile-board-5x.png x 70-30"
+    },
+    "gizmo:6e7a1436db33": {
+      "char": "gizmo",
+      "class": "other",
+      "excerpt": "(hair, medium) - sweep-crops/gizmo-directional-r2/grin-crown-10x.png x 350-7"
+    },
+    "gizmo:46071bd8a096": {
+      "char": "gizmo",
+      "class": "face-atlas",
+      "excerpt": "(hair, medium) - sweep-crops/gizmo-directional-r2/hero-forelock-10x.png x 32"
+    },
+    "gizmo:e6b788f32a51": {
+      "char": "gizmo",
+      "class": "other",
+      "excerpt": "(hair, medium) - sweep-crops/gizmo-directional-r2/grin-head-5x.png x 320-730"
+    },
+    "gizmo:aa30b64d19c7": {
+      "char": "gizmo",
+      "class": "other",
+      "excerpt": "(hair, medium) - sweep-crops/gizmo-directional-r2/hero-side-9x.png x 100-640"
+    },
+    "gizmo:1849df9bbc2e": {
+      "char": "gizmo",
+      "class": "other",
+      "excerpt": "(hair, low) - sweep-crops/gizmo-directional-r2/hero-side-9x.png x 350-700, y"
+    },
+    "gizmo:69d4d53ece48": {
+      "char": "gizmo",
+      "class": "other",
+      "excerpt": "(face, low) - sweep-crops/gizmo-directional-r2/grin-head-5x.png x 160-230 an"
+    },
+    "gizmo:81961b7cc36a": {
+      "char": "gizmo",
+      "class": "face-atlas",
+      "excerpt": "UPDATED - measure:fidelity visible face at brow: left 32.6 vs 9.59 OFF (+23."
     }
   }
 }
