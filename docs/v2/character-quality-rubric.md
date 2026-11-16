@@ -7,6 +7,10 @@ One page that defines what "this character is done" means. The
 means. A character that cannot tick every box is not done, whatever it looks
 like in one flattering screenshot.
 
+How an independent critic applies the six scored categories (viewing sizes, the
+1-5 scale, calibration anchors, the output shape) is in the
+[critic brief](critic-brief.md); this page says what each category means.
+
 Three kinds of item, marked in the **Check** column:
 
 - **AUTO** — a command or test goes red on violation. Run it; do not eyeball it.
