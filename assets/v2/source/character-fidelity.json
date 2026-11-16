@@ -1986,38 +1986,38 @@
    "scoredBoardSha256": "2bbb6c2eb8a21779d5b75c9749d32dbbe20db85e3c66b469a9c4eafb2249dc9e"
   },
   "lefty": {
-   "status": "needs-polish",
+   "status": "candidate",
    "evidence": "lefty-fidelity-review.png",
    "categories": {
     "frontProfileSilhouette": {
      "label": "front/profile silhouette",
      "score": 4,
-     "note": "4. 3.1 'matches the turnaround's large read; recognisable with no colour' holds at native size in lefty-runtime-hero.png, -run.png and -swing.png: cap dome worn backwards, a large ponytail arcing off the back of the head and hanging to the shoulder blade, cropped jacket over tapered joggers with cinched cuffs. The outline alone says this kid. Not 5: the 5 clause (organic transitions) fails in the hero and run at native size, where the tail leaves the cap through a visible dark stalk, the brim is a flat dark plate behind the ear and the hood is a separate dark ball on the upper back."
+     "note": "4, recorded score kept: the change was colour and one contour line, no geometry, and lefty-runtime-hero.png, -run.png and -swing.png at native size do not contradict it. 3.1 'matches the turnaround's large read; recognisable with no colour' holds: backwards cap dome, large ponytail arcing off the back of the head, cropped jacket over tapered joggers. Not 5: the 5 clause (organic transitions) still fails in hero and run, where the tail leaves the cap through a dark stalk, the brim is a flat dark plate behind the ear and the hood is a separate dark ball."
     },
     "headBodyProportions": {
      "label": "head/body proportions",
      "score": 4,
-     "note": "4. 3.2 holds: child proportion per the sheet (measured head height 29.3% of figure vs 28.4, head w:h 0.98 vs 0.98, both ok) and in hero, run and swing the shoulders, elbows, knees and ankles read as connected forms with no gaps or hinges. The row has no 5 clause; held at 4 because at native size the forearms and hands read thin and twig-like against the sheet's chunkier arms (face-grin, hero), which a player could call slightly off."
+     "note": "4, recorded score kept: untouched by the change and not contradicted. 3.2 holds in hero, run and swing (measured head height 29.3% vs 28.4, head w:h 0.98 vs 0.98, both ok; joints read as connected forms). Forearms and hands still read thin in face-grin and hero."
     },
     "hairMass": {
      "label": "hair mass",
-     "score": 3,
-     "note": "3. 3.3 'no bare-skull read from any gameplay angle' holds in all seven captures, and the ponytail is one designed mass that reads at native size and at 40px. The clause that fails is 'hairline reads from the front as well as the side': in lefty-runtime-face-grin.png (and cheer, tongue, angry) at native size, the fringe on her right half is a flat band of nearly the forehead's own orange with no edge, so it reads as the cap's shadow on skin rather than hair; only the swept lock on her left says hair. Hair, skin and jacket are three neighbouring oranges, so front-on the head under the cap is one orange mass and she does not read as blonde. From the side (hero, run) the hairline does read. Mostly true, one clause failing noticeably at native size: 3."
+     "score": 4,
+     "note": "4, up from 3. The clause that failed, 3.3 'hairline reads from the front as well as the side', now holds at native size in lefty-runtime-face-grin.png, -cheer, -tongue and -angry: the fringe is a straw yellow against orange skin on BOTH halves of the forehead, with a contour line along its lower edge, so the band on her right half reads as hair and no longer as cap shadow on skin. Compared directly with the before capture (lu-grin-before.png) the difference is visible without magnification. She reads as blonde in all seven captures; hair, skin and jacket are no longer three neighbouring oranges. 'One designed mass' holds (fringe, swept lock and ponytail are one colour and read as one head of hair); 'no bare-skull read from any gameplay angle' holds in hero, run, swing and the four faces. The restored contour did NOT bring back the dark temple wedge: at native size there is no solid dark patch from ear to eye in any face capture; only the small grey sliver at her right temple recorded before remains, and it is a 2x-and-up finding. Not 5: the tail is still a smooth banana with a few stubby teeth at the tip, no strand grouping (the 5 clause). Colour verdict: paler and cooler than the sheet's honey gold (lit areas straw/lemon, shaded areas drift olive-khaki, closest to the cap's tan on the shaded side of the tail in hero and run). It is the same kid at the size a player sees, a blonde with a cap and ponytail, so it does not fail a clause, but it is at the yellow/green edge of acceptable and is recorded as the first finding."
     },
     "clothingConstruction": {
      "label": "clothing construction",
      "score": 4,
-     "note": "4. 3.4 holds at native size: the jacket has piping down the sleeves and across the chest, an open zip front over a tee, ribbed cuffs and a hem band; the joggers have a waistband and cinched ankle cuffs with socks showing; the shoes have a separate pale sole and stripe/lace marks; the cap has a strap. No limb passes through a garment in hero, run or swing. The hood reading as a dark ball on the upper back (hero, run at native size) and the flat dark brim are the primitive-volume exceptions; they are recorded as findings and do not make the row untrue."
+     "note": "4, recorded score kept: untouched and not contradicted. 3.4 holds at native size in hero, run and swing: sleeve and chest piping, open zip over a tee, ribbed cuffs and hem, jogger waistband and cinched ankle cuffs with socks, shoes with separate sole and stripes, cap strap. No limb through a garment in hero, run or swing. The hood as a dark ball and the flat dark brim remain findings."
     },
     "faceExpressionRead": {
      "label": "face/expression read",
      "score": 4,
-     "note": "4. 3.5 holds: eyes, brows and mouth are legible at native size in every capture; grin, cheer (open mouth with teeth), tongue and angry are four distinct readable mouths at native size (3.14); the effort face survives the swing and the face is fully visible in the front board. Not 5: the eyes, brows and mouth are flat decals on a smooth ball, not features integrated with planes, though the nose does break the profile in the hero. Finding: in hero and run the neutral face reads as a scowl because the near brow merges with the shaded temple hair."
+     "note": "4, recorded score kept: face geometry and decals untouched and not contradicted. 3.5 holds: eyes, brows and mouth legible at native size in every capture; grin, cheer, tongue and angry are four distinct mouths (3.14); effort face survives the swing. The paler fringe slightly helps: the brows now sit against orange skin under a yellow edge instead of under a same-orange band. Not 5: features are flat decals on a smooth ball. The neutral face in hero and run still reads as a scowl."
     },
     "heroAndFieldScale": {
      "label": "hero and field scale",
      "score": 4,
-     "note": "4. 3.6 holds: reduced to 40px (crops-lefty/40px.png) the hero, run and swing still show tan cap, a ponytail blob behind the head, orange top and dark legs, which is her one memorable read (3.9). Front-on at 40px the tail is hidden and the head is one orange blob under a cap, but cap + orange jacket + navy joggers still identify her. Not 5: hair and skin do not separate at 40px, which a player would notice as 'not blonde'."
+     "note": "4, recorded score kept; the colour change moved the 40px read in the right direction but the row has no clause it newly satisfies beyond 4. 3.6 holds: reduced to 40px (crops-lefty-r2/40px.png) hero, run and swing show tan cap, a yellow ponytail behind the head, orange top and dark legs (3.9's one memorable read). The earlier note's reason for not being 5 ('hair and skin do not separate at 40px; not blonde') is cleared: at 40px the hair is now a yellow distinct from the orange face in all five reduced figures, front-on included. Held at 4 because at 40px in the shaded side-on views the tail's olive shade sits close to the cap's tan, so cap and tail partly merge into one khaki shape, and the hood ball still reads as a dark lump on the back."
     }
    },
    "heroEvidence": "lefty-runtime-hero.png",
@@ -2029,24 +2029,24 @@
     "command": "npm run measure:fidelity -- lefty",
     "ranAt": "2026-11-16",
     "board": "lefty-fidelity-review.png",
-    "result": "npm run measure:fidelity -- lefty (exit non-zero): concept front view 211x662px, delivered 466x549px. Head height as % of figure 29.3 vs 28.4 (+0.93, ok); head w:h 0.98 vs 0.98 (ok); shoe band dominant tone 81.0 vs 72.8 (+8.13, OFF tol 8); second tone 19.0 vs 26.4 (-7.39, ok); shoe mean saturation 17.8 vs 21.9 (-4.11, OFF tol 4); daylight between ankles 46.0 vs 0.00 (OFF tol 12, bind stance vs posed drawing); visible face left of centre 41.1 vs 27.6 (+13.6, OFF tol 6); right of centre 40.5 vs 28.6 (+11.9, OFF tol 6); face asymmetry 0.63 vs 0.00 (ok). 5 metrics outside tolerance.",
+    "result": "npm run measure:fidelity -- lefty (exit non-zero), run 2026-11-16 after the colour change; numbers identical to the recorded run: concept front view 211x662px, delivered 466x549px. Head height as % of figure 29.3 vs 28.4 (+0.93, ok); head w:h 0.98 vs 0.98 (ok); shoe band dominant tone 81.0 vs 72.8 (+8.13, OFF tol 8); second tone 19.0 vs 26.4 (-7.39, ok); shoe mean saturation 17.8 vs 21.9 (-4.11, OFF tol 4); daylight between ankles 46.0 vs 0.00 (OFF tol 12, bind stance vs posed drawing); visible face left of centre 41.1 vs 27.6 (+13.6, OFF tol 6); right of centre 40.5 vs 28.6 (+11.9, OFF tol 6); face asymmetry 0.63 vs 0.00 (ok). 5 metrics outside tolerance. The visible-face metric did not move with the hair colour.",
     "note": "Her ear line gates at 67.0 (real, under the cap edge); featurelatitude gates brow 54.4 vs traced 54.3, eye 59.9 vs 59.9, mouth 79.1 vs bounded 79.0 through her 3.99-2.80 span. The backwards cap reverses BRIM_REACH (+0.78 rearward); the analyser refuses her brow and eye bands (cap shadow merges them) and the recipe records the tee living in the backdrop's cream cluster. The tail is TWO tubes after a first critic rejected the all-deep compromise as a 'dark strap': a thin deep-tone gather crosses the faceSkin sample band, and the full lit-blonde volume hangs entirely below the measured row - blonde and voluminous without falsifying the face metric. Its depth hugs the nape (Rocket's daylight lesson) and the backwards brim is held at 0.56 reach (a fuller sweep seals an enclosed window against the pony's crown in profile)."
    },
    "polishFindings": [
-    "NATIVE SIZE, all four face captures: the fringe on her right half is the forehead's own orange with no edge and reads as cap shadow, not hair. Lighten and yellow the hair (paler, less saturated blonde) so it separates from skin by hue, and give that half of the fringe a lit top edge. This is what holds hair at 3; it also explains measure:fidelity's visible-face 41.1/40.5 vs 27.6/28.6.",
-    "NATIVE SIZE, hero and run: hair, skin and jacket are three neighbouring oranges; at 40px hair and face are one tone. Same fix as above.",
-    "NATIVE SIZE, hero and run: the hood is a dark ball on the upper back that reads as a small backpack; the sheet has a draped hood and a navy collar V at the neck.",
+    "NATIVE SIZE, hero, run, swing: the new blonde is cooler and paler than the sheet's honey gold. Lit areas read straw/lemon and shaded areas drift olive-khaki (the shaded side of the tail in hero and run is nearly the cap's tan-green). Warm the hue a few degrees toward gold and keep the current lightness, so the shadow side goes amber instead of olive; do not go back toward the skin's orange.",
+    "40px and NATIVE SIZE, hero and run: because the shaded tail is close to the cap's tan, cap and tail partly merge into one khaki shape side-on; the warmer hue above would separate them, and the dark scrunchie between them could be a touch larger.",
+    "NATIVE SIZE, face captures: the gold team-tint cap strap is now even closer to the hair colour than before and reads as a strip of fringe poking through the cap; a plain bar with no adjuster opening above it.",
+    "NATIVE SIZE, hero and run: the hood is a dark ball on the upper back that reads as a small backpack; the sheet has a draped hood and a navy collar V.",
     "NATIVE SIZE, hero and run: the backwards brim is a flat near-black plate with a grey bevel behind the ear; the sheet's bill is a tapered navy-under, tan-top wedge.",
-    "NATIVE SIZE, hero and run: the near brow merges with the dark temple hair notch, so the neutral face reads as a scowl; round the temple edge into a tapering sideburn clear of the brow.",
-    "NATIVE SIZE, hero: the ponytail is a smooth banana with a few stubby teeth at the tip and a visible dark stalk at the root; no S-wave, scalloped edge or strand grouping (this is the 3.3 5-clause, not a 4 blocker).",
-    "NATIVE SIZE, face captures: the gold team-tint cap strap sits close to the hair colour and is a plain bar with no adjuster opening above it.",
+    "NATIVE SIZE, hero and run: the neutral face reads as a scowl (heavy near brow under the fringe edge).",
+    "NATIVE SIZE, hero: the ponytail is a smooth banana with a few stubby teeth at the tip and a visible dark stalk at the root; no S-wave or strand grouping (the 3.3 5-clause, not a 4 blocker).",
     "NATIVE SIZE, hero and face-grin: forearms and hands are thin against the sheet's chunkier arms.",
-    "2x, swing and face-grin: the swept fringe lock shows hard facet lines and a braided/sawtooth look where locks overlap.",
+    "2x, face-grin and swing: the swept fringe lock shows hard facet lines and a sawtooth where locks overlap; the paler colour makes the facets slightly more visible than before.",
+    "2x, face-grin: small grey sliver at her right temple between fringe edge, ear and cap (about x448-462,y255-280). Present before the change too; it is not the old ear-to-eye dark wedge.",
     "2x, hero: shoes read tan/khaki rather than the sheet's mid-grey uppers with cream soles (measure:fidelity shoe tone and saturation OFF).",
-    "4x only, carried from the earlier record and not re-seen at native size: grey sliver at her right temple front-on (face-grin about x455-466,y260-278; swing x468-474,y266-280); enclosed sliver of field between cap, scrunchie, brim and tail in the hero (about x483-488,y238-262).",
-    "Carried, not re-observed in these captures: bunt receiving-elbow pose debt (shared); A-pose shoulder piping kink and armpit crease (boards only)."
+    "Carried, not re-observed in these captures: enclosed sliver of field between cap, scrunchie, brim and tail in the hero (4x only); bunt receiving-elbow pose debt (shared); A-pose shoulder piping kink and armpit crease (boards only)."
    ],
-   "scoredBoardSha256": "f5828c1e7de9463c6dc540d5496b11554f55981f2b0264eb8e475e17fa9fbf93"
+   "scoredBoardSha256": "62e019825d9553e4bc989529bd2891ae0aa76d1bea1fd754fad501963bad7ca6"
   }
  }
 }

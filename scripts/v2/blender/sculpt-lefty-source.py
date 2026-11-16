@@ -55,12 +55,16 @@ SLOTS = ("M_Body", "M_Uniform", "M_Hair", "M_Accessory")
 # delivered·1.2 with the highlight band clear of the isSkin floor.
 SKIN = rgba("FFAC5E")
 SKIN_SHADOW = rgba("CE7C30")
-HAIR_ROOT = rgba("A87424")   # under the cap and at the nape: the sheet's deeper honey
-HAIR = rgba("DE9C44")        # honey blonde. Any golden tone passes `isSkin`
-                             # (r > g + 12), on the sheet as much as here, so
-                             # the visible-face metric counts her hair; the
-                             # old D8B440 dodged a little of that by going
-                             # green-yellow, which is not the drawn colour.
+HAIR_ROOT = rgba("BC9438")   # under the cap and at the nape: the sheet's deeper honey
+HAIR = rgba("F2D272")        # ★ PALE YELLOW BLONDE, on purpose (2026-11-16).
+                             # Matched to the sheet's red-to-green ratio the
+                             # hair was an orange 0.07 from her skin's, and
+                             # front-on "hair, skin and jacket are three
+                             # neighbouring oranges: she does not read as
+                             # blonde and the fringe reads as the cap's
+                             # shadow". A player has to see blonde hair on an
+                             # orange-skinned kid, so the hair is lighter and
+                             # yellower than a literal match.
 HAIR_DARK = rgba("6E4210")   # shaded underside (fails isSkin, like the sheet)
 CAP = rgba("C8B08A")         # the grey-tan cap
 SHIRT = rgba("FF7526")       # the orange track jacket
@@ -488,7 +492,7 @@ BANGS = [
 # surface, and the swept lock's hull showed at the temple as a solid dark
 # wedge from ear to eye (sampled at the outline colour, where her brow should
 # be). The hull's width follows vertex-colour alpha (`materials/outline.ts`).
-FRINGE_OUTLINE_ALPHA = 0.15
+FRINGE_OUTLINE_ALPHA = 0.55   # enough contour to draw the hairline; 0.15 erased it
 FRINGE_HAIR = (HAIR[0], HAIR[1], HAIR[2], FRINGE_OUTLINE_ALPHA)
 
 
