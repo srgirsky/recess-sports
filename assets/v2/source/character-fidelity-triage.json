@@ -2075,45 +2075,10 @@
       "class": "face-atlas",
       "excerpt": "HEAD: nose is a smooth bump with a highlight, no nostrils or breadth; no che"
     },
-    "gizmo:29aa81aac283": {
-      "char": "gizmo",
-      "class": "other",
-      "excerpt": "(hair, decides the score) native size, face-grin / face-cheer / face-tongue "
-    },
-    "gizmo:c13aec37c613": {
-      "char": "gizmo",
-      "class": "other",
-      "excerpt": "(hair) native size, face-grin and swing: from the front the fringe is one sm"
-    },
     "gizmo:63e682fab0b4": {
       "char": "gizmo",
       "class": "other",
       "excerpt": "(hair) native size, hero, run, face-grin, both boards: the tuft is six or se"
-    },
-    "gizmo:a5e2bb95d8a6": {
-      "char": "gizmo",
-      "class": "other",
-      "excerpt": "(clothing) native size in the front captures, confirmed at 2x on hero shoes:"
-    },
-    "gizmo:51765681baf3": {
-      "char": "gizmo",
-      "class": "proportions",
-      "excerpt": "(face) native size: face-cheer and face-tongue are nearly the same open smil"
-    },
-    "gizmo:07cb6ca980d2": {
-      "char": "gizmo",
-      "class": "face-atlas",
-      "excerpt": "(hair) native size, hero and run around x 625-640, y 235-285, and gizmo-prof"
-    },
-    "gizmo:c30f519c9410": {
-      "char": "gizmo",
-      "class": "other",
-      "excerpt": "(face) 2x, face-grin: front ears are small slivers mostly behind the lens ri"
-    },
-    "gizmo:1cabc83666e2": {
-      "char": "gizmo",
-      "class": "other",
-      "excerpt": "(clothing) native size, hero around x 560-580, y 355-380: a dark grey tab at"
     },
     "gizmo:2229bf2c67fc": {
       "char": "gizmo",
@@ -2124,11 +2089,6 @@
       "char": "gizmo",
       "class": "face-atlas",
       "excerpt": "(hair) 2x, face-grin: brown speckle on the skin beside the viewer-left templ"
-    },
-    "gizmo:1c1b2b8f1ae4": {
-      "char": "gizmo",
-      "class": "other",
-      "excerpt": "(hair) boards only, gizmo-profile-review.png: the lower side and nape are a "
     },
     "gizmo:579156cbca2c": {
       "char": "gizmo",
@@ -2469,6 +2429,46 @@
       "char": "lefty",
       "class": "other",
       "excerpt": "Carried, not re-observed in these captures: bunt receiving-elbow pose debt ("
+    },
+    "gizmo:11f1c29e9fc2": {
+      "char": "gizmo",
+      "class": "other",
+      "excerpt": "(hair) native size, face-grin / face-cheer / face-tongue / face-angry around"
+    },
+    "gizmo:da74b1f4d1d2": {
+      "char": "gizmo",
+      "class": "other",
+      "excerpt": "(hair) native size, face-grin and swing: from the front the fringe is one sm"
+    },
+    "gizmo:0154438da241": {
+      "char": "gizmo",
+      "class": "other",
+      "excerpt": "(hair) board only, gizmo-front-review.png: a dark shadowed band sits under t"
+    },
+    "gizmo:c8195c0e748a": {
+      "char": "gizmo",
+      "class": "other",
+      "excerpt": "(clothing) native size in the front captures: toe caps are glossy gold-tan w"
+    },
+    "gizmo:940b4614aa77": {
+      "char": "gizmo",
+      "class": "proportions",
+      "excerpt": "(face) native size: face-cheer and face-tongue are nearly the same open smil"
+    },
+    "gizmo:256bbd7e588d": {
+      "char": "gizmo",
+      "class": "other",
+      "excerpt": "(hair) native size, hero and run around x 625-640, y 235-285, and gizmo-prof"
+    },
+    "gizmo:8f3c5fb63900": {
+      "char": "gizmo",
+      "class": "other",
+      "excerpt": "(face) 2x, face-grin: front ears are small slivers mostly behind the lens ri"
+    },
+    "gizmo:7c1a4988cc44": {
+      "char": "gizmo",
+      "class": "other",
+      "excerpt": "(clothing) native size, hero around x 560-580, y 355-380: a dark grey tab at"
     }
   }
 }

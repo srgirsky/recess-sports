@@ -1429,45 +1429,45 @@
    ]
   },
   "gizmo": {
-   "status": "needs-polish",
+   "status": "candidate",
    "evidence": "gizmo-fidelity-review.png",
    "categories": {
     "frontProfileSilhouette": {
      "label": "front/profile silhouette",
      "score": 4,
-     "note": "4. 3.1 'matches the turnaround's large read; recognisable with no colour' holds at native size in hero, run, swing and the four faces: a mop wider than the face with a leaning spiky tuft, round glasses, bib overalls with rolled cuffs. The outline alone says this kid. No 5: the 5 clause 'transitions organic, not butt-joined primitives' fails at native size - the tuft is six or seven straight cones standing on the mass (hero, run, face-grin), and the sleeve ends as a tube with the arm leaving it (swing)."
+     "note": "4, recorded score kept. The change did not move the head's outline: face-grin now and the saved before-capture have the same hair contour and the same tuft at native size, and hero, run and swing still show the mop wider than the face with the leaning spiky tuft, round glasses and bib overalls, so 3.1 'matches the turnaround's large read; recognisable with no colour' holds. No 5: the 5 clause 'transitions organic, not butt-joined primitives' still fails at native size - the tuft is straight cones standing on the mass (hero, run, face-grin) and the sleeve ends as a tube (swing)."
     },
     "headBodyProportions": {
      "label": "head/body proportions",
      "score": 4,
-     "note": "4. 3.2 'child proportion per the turnaround' holds: big head on a short body in every capture; measure:fidelity head height 35.8 vs 36.9 and head width:height 0.82 vs 0.86, both in tolerance. 'Joints read as connected forms' holds in hero, run and swing - no gap or detached part at shoulder, elbow, hip or knee. Not a 5: at native size the arms are thin sticks with small hands against the sheet's chunky forearms (face-grin, hero), which a player could call slightly off."
+     "note": "4, recorded score kept; untouched by the change and nothing in the current captures contradicts it. 3.2 'child proportion per the turnaround' holds (measure:fidelity head height 35.8 vs 36.9, head width:height 0.82 vs 0.86, both in tolerance) and 'joints read as connected forms' holds in hero, run and swing. Not a 5: thin stick arms with small hands at native size in face-grin and hero."
     },
     "hairMass": {
      "label": "hair mass",
-     "score": 3,
-     "note": "3. Two of 3.3's three clauses hold at native size: 'hairline reads from the front as well as the side' (a wavy fringe edge sits clear above the brows in face-grin, and steps down past the temple in hero and run) and 'no bare-skull read from any gameplay angle' (none in any of the seven captures or either board). The clause that fails is 'one designed mass': in face-grin, face-cheer, face-tongue, face-angry and swing - every front-facing capture - a dark-floored crater with a ragged rim sits in the middle of the front of the hair directly under the tuft. It is visible at native size without magnification as a dark hole about a sixth of the head's width (2x on face-grin only confirmed it is a recessed pocket, not a shadow or see-through). A player looking at the front of this kid sees a hole in his hair. It is hidden in hero and run, where the three-quarter view is a clean 4: layered overlapping locks with lifted tips, real grouping, not a blob. The tuft spikes are part of the design and rise out of the mass, so I do not apply the 'cones on a cap' anchor. Close the crater and this row is true."
+     "score": 4,
+     "note": "4, up from 3. The clause that failed, 3.3 'one designed mass', now holds at native size in every front-facing capture: in face-grin, face-cheer, face-tongue and face-angry the dark-floored crater under the tuft is gone and the area between fringe and tuft is a continuous low rise of the same brown with a couple of short lock tips catching light; in swing the same spot is a ridged mound running up into the tuft, where the capture committed before this change shows the open pocket. Compared directly with the saved before-capture of face-grin, the only difference is that the hole is closed. The fill did not create a new wrong read: it is not a lump (it does not break the outline or stand proud of the fringe), not a bald patch (same colour and gloss as the rest, broken by lock tips and the tuft roots) and not a helmet top (the tuft, the temple lobes and the wavy fringe edge keep it hair). 'Hairline reads from the front as well as the side' still holds: wavy fringe edge clear above the brows in the four faces, stepping down past the temple in hero and run. 'No bare-skull read from any gameplay angle' still holds in all seven captures and both boards. Not a smooth featureless blob: hero and run show layered overlapping locks with lifted tips. No 5: 'sculpted strand grouping' is true in three-quarter view but from the front the fringe is one smooth rolled band and the new fill is a fairly plain glossy rise, and the tuft is thin straight cones."
     },
     "clothingConstruction": {
      "label": "clothing construction",
      "score": 4,
-     "note": "4. 3.4 'garments read as constructed (cuffs, hems, soles, laces)' holds at native size: bib with two straps over a tee with sleeve hems, grey rolled cuffs, shoes with a separate pale sole, stripes standing in for laces, and a toe cap (hero, run, swing, face-grin). No limb passes through a garment in hero, run or swing. Not a 5: at native size the toe caps read as glossy gold wedges with a dark V in the front captures, and the straps are plain strips with no buckle."
+     "note": "4, recorded score kept; untouched and not contradicted. 3.4 'garments read as constructed (cuffs, hems, soles, laces)' holds at native size in hero, run, swing and face-grin: bib and two straps over a tee with sleeve hems, grey rolled cuffs, separate pale sole, stripes, toe cap; no limb through a garment. Not a 5: gold wedge toe caps and plain straps."
     },
     "faceExpressionRead": {
      "label": "face/expression read",
      "score": 4,
-     "note": "4. 3.5 'features legible at hero scale' holds: brows, eyes inside the round frames and mouth are all clear at native size in hero and the four faces. 'Expression survives motion' holds: the worried effort face is plain in swing and the face is open in run. 'Face visible in the front board view' holds (gizmo-front-review.png). Grin (closed smile), cheer (open mouth) and angry (down-turned mouth, lowered brows) are distinct at native size; cheer and tongue are nearly the same open smile at native size, a finding rather than a failed clause since both read as happy with an open mouth. No 5: the nose does not read from the front and the ears are slivers behind the rims, so the face is not yet 'a form' with integrated features."
+     "note": "4, recorded score kept; untouched and not contradicted. 3.5 'features legible at hero scale' holds in hero and the four faces, 'expression survives motion' holds in swing and run, 'face visible in the front board view' holds on gizmo-front-review.png. No 5: no nose read from the front, ears are slivers behind the rims, cheer and tongue are near-identical open smiles."
     },
     "heroAndFieldScale": {
      "label": "hero and field scale",
      "score": 4,
-     "note": "4. 3.6 holds at both sizes. Hero: glasses, mop with tuft, pale blue tee and navy overalls all read. Reduced to 40px tall (hero and face-grin downsampled): a big brown mop over a pale blue top and dark blue legs survives as the one memorable read; the glasses reduce to a dark band across the face but the mop-and-overalls identity carries. Not a 5: the hair crater is visible in the front captures at native size."
+     "note": "4, recorded score kept. 3.6 holds at both sizes: hero reads glasses, mop with tuft, pale blue tee, navy overalls; face-grin reduced to 40px tall still reads a big brown mop over pale blue and dark blue. The crater that the recorded note gave as the reason for no 5 is gone at native size, but the row has no 5 clause and a player could still call the thorn-like tuft and stick arms slightly off at hero size, so it stays 4."
     }
    },
    "measuredFidelity": {
     "command": "npm run measure:fidelity -- gizmo",
     "ranAt": "2026-11-16",
     "board": "gizmo-fidelity-review.png",
-    "result": "npm run measure:fidelity -- gizmo (non-zero exit, 2 metrics outside tolerance): head height as % of figure 35.8 vs 36.9 concept (-1.09 ok); head width:height 0.82 vs 0.86 (-0.04 ok); shoe band dominant tone 81.8 vs 84.6 (-2.78 ok); second tone 18.2 vs 13.1 (+5.06 ok); mean saturation 24.2 vs 21.7 (+2.52 ok); daylight between ankles 5.17 vs 0.00 (ok); visible face left of centre 34.1 vs 9.59 (+24.5 OFF, tol 6); right of centre 19.4 vs 13.7 (+5.71 ok); left/right asymmetry 14.71 OFF (tol 4.0). The two OFF metrics are the brief's named artefact: the split is taken at the head bounding-box centre and the tuft leans; the face is even either side of the nose in face-grin and on the front board.",
+    "result": "npm run measure:fidelity -- gizmo (non-zero exit, 2 metrics outside tolerance): head height as % of figure 35.8 vs 36.9 concept (-1.09 ok); head width:height 0.82 vs 0.86 (-0.04 ok); shoe band dominant tone 81.8 vs 84.6 (-2.78 ok); second tone 18.2 vs 13.1 (+5.06 ok); mean saturation 24.2 vs 21.7 (+2.52 ok); daylight between ankles 5.17 vs 0.00 (ok); visible face left of centre 33.5 vs 9.59 (+23.9 OFF, tol 6); right of centre 19.4 vs 13.7 (+5.71 ok); left/right asymmetry 14.12 OFF (tol 4.0). The two OFF metrics are the brief's named artefact (split taken at the head bounding-box centre; the tuft leans); the face is even either side of the nose in face-grin and on the front board. Head metrics are unchanged from the recorded run, consistent with the outline not having moved.",
     "note": "Lens interiors are authored as pale glass-shine discs because the sheet fills both rings with paper-cream - an open wire ring measured ~20 points more visible face than the drawing (The Professor's tinted-lens class). The discs are translated copies, not mirrors: one winding both sides, settled by reading triangle normals from the exported GLB. His ear line is refused (mop-poisoned widest row); featurelatitude gates brow 48.0 vs traced 47.9, lens-centre eye 66.9 vs 66.7, mouth 85.9 vs 85.7 through his 3.99-2.59 span."
    },
    "heroEvidence": "gizmo-runtime-hero.png",
@@ -1476,20 +1476,20 @@
     "gizmo-runtime-swing.png"
    ],
    "polishFindings": [
-    "(hair, decides the score) native size, face-grin / face-cheer / face-tongue / face-angry around x 500-545, y 232-255 and swing around x 500-540, y 228-250; also gizmo-front-review.png: a dark-floored crater with a ragged rim in the centre front of the hair under the tuft. Hidden only from the three-quarter camera. Lay a lock over it or raise the base mass there.",
-    "(hair) native size, face-grin and swing: from the front the fringe is one smooth rolled band with a wavy edge and a drooping lobe at each temple, with no separate locks; it still reads as hair because of the tuft and the hairline, so it does not fail a clause. Give the fringe locks their own tips and grooves.",
+    "(hair) native size, face-grin / face-cheer / face-tongue / face-angry around x 490-560, y 225-260: the new fill between fringe and tuft is a fairly plain glossy rise with only two small pale lock tips; it reads as hair but is the least worked part of the front. Longer, overlapping locks running from the tuft roots down into the fringe would tie the two together.",
+    "(hair) native size, face-grin and swing: from the front the fringe is one smooth rolled band with a wavy edge and a drooping lobe at each temple, with no separate locks. Give the fringe locks their own tips and grooves.",
     "(hair) native size, hero, run, face-grin, both boards: the tuft is six or seven narrow straight cones, a thorn crest, where the sheet has a few broad bent leaf tips. Fewer, wider, curved.",
-    "(clothing) native size in the front captures, confirmed at 2x on hero shoes: toe caps are glossy gold-tan wedges with a dark V crease, where the sheet has a cream cap on navy canvas.",
-    "(face) native size: face-cheer and face-tongue are nearly the same open smile; the tongue cell does not read as a tongue-out face at draft-card distance (3.14).",
-    "(hair) native size, hero and run around x 625-640, y 235-285, and gizmo-profile-review.png: the fringe ends in a hooked lobe ahead of the far temple and projects past the lens plane in profile; the sheet's fringe stops at the brow.",
-    "(face) 2x, face-grin: front ears are small slivers mostly behind the lens rims against the sheet's large open ears; in gizmo-profile-review.png the ear is a pointed fin with the temple arm ending in it (3.10 not met from the profile camera).",
-    "(clothing) native size, hero around x 560-580, y 355-380: a dark grey tab at the neck where the far strap comes over the shoulder reads as a stray shape; the straps have no buckles or buttons.",
+    "(hair) board only, gizmo-front-review.png: a dark shadowed band sits under the crown's front edge above the fringe roll in the offline render; in the runtime captures at native size it reads only as the fringe's overlap line, not as a gap.",
+    "(clothing) native size in the front captures: toe caps are glossy gold-tan wedges with a dark V crease, where the sheet has a cream cap on navy canvas.",
+    "(face) native size: face-cheer and face-tongue are nearly the same open smile; the tongue cell does not read as tongue-out at draft-card distance (3.14).",
+    "(hair) native size, hero and run around x 625-640, y 235-285, and gizmo-profile-review.png: the fringe ends in a hooked lobe ahead of the far temple and projects past the lens plane in profile.",
+    "(face) 2x, face-grin: front ears are small slivers mostly behind the lens rims; in gizmo-profile-review.png the ear is a pointed fin with the temple arm ending in it (3.10 not met from the profile camera).",
+    "(clothing) native size, hero around x 560-580, y 355-380: a dark grey tab at the neck where the far strap comes over the shoulder reads as a stray shape; straps have no buckles.",
     "(arms) native size, swing: the sleeve ends as a pale rounded tube and the upper arm leaves it as a thin stick; no round deltoid under cloth (3.11).",
     "(hair) 2x, face-grin: brown speckle on the skin beside the viewer-left temple under the fringe.",
-    "(hair) boards only, gizmo-profile-review.png: the lower side and nape are a plain lumpy panel without the sheet's downward locks; not noticeable in the runtime captures.",
     "Not re-checked here (no capture in this set): the recorded shared pose issues - held bunt elbow beside the face, and the lower forearm as a short skin wedge at high contact."
    ],
-   "scoredBoardSha256": "5ceeb32883254d7ba7046befdd5c9534297d2f491aa07c58206b954ef761b5ad"
+   "scoredBoardSha256": "05f19c91d89543713c2cadbc2ce80cab48d35fbf763ef6718b90e8759170e545"
   },
   "dex": {
    "status": "needs-polish",
