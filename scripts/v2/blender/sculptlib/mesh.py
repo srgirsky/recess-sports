@@ -223,6 +223,7 @@ class MeshBuilder:
         lobes: int = 0,
         groove: float = 0.0,
         flip: bool = False,
+        flatten: float = 1.0,
     ) -> None:
         """`flip` mirrors the ring traversal AND the face winding together.
 
@@ -233,7 +234,15 @@ class MeshBuilder:
         found it: 10 mirrored fingertip pairs tripped the inverted-normals
         gate while both tubes were individually sound. A mirrored limb passes
         `flip=True` and gets the exact mirror, normals included. Default
-        False keeps every existing tube byte-identical."""
+        False keeps every existing tube byte-identical.
+
+        `flatten` scales the section along the BINORMAL only, so a tube becomes
+        a ribbon: with `axis` set to the direction the ribbon should be thin
+        in (for a lock of hair, straight out from the head), 0.45 gives a
+        broad flat leaf lying on the surface. Round tubes fused into a hair
+        mass kept reading as "rope" and "sausages" however they were laid; the
+        sheets draw hair as flat leaves. 1.0 (the default) is a round tube and
+        keeps every existing tube byte-identical."""
         centers = [Vector(point) for point in points]
         if isinstance(bone, list) and len(bone) != len(centers):
             raise ValueError("tube needs one weight map per center")
@@ -281,7 +290,7 @@ class MeshBuilder:
                 if lobes:
                     comb = 0.5 - 0.5 * cos(lobes * angle)
                     radius -= groove * comb**1.2
-                point = center + radius * (normal * cos(angle) + binormal * sin(angle))
+                point = center + radius * (normal * cos(angle) + binormal * (sin(angle) * flatten))
                 row.append(self.vertex(point, color, weight_at(index)))
             rows.append(row)
         pairs = len(rows) if cyclic else len(rows) - 1

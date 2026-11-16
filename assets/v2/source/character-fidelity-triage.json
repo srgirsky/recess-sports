@@ -2535,50 +2535,50 @@
       "class": "other",
       "excerpt": "SCRUNCHIE is a thin smooth band half buried between the bun and the forehead"
     },
-    "gizmo:e6b3368ebe90": {
+    "gizmo:f50b547e9af9": {
       "char": "gizmo",
-      "class": "hems-cuffs",
-      "excerpt": "(hair, high) - sweep-crops/gizmo-directional-r2/grin-head-5x.png x 150-830, "
+      "class": "other",
+      "excerpt": "(hair, high) - sweep-crops/gizmo-leaf/grin-crown-8x.png x 290-600, y 400-580"
     },
-    "gizmo:2efbd4146175": {
+    "gizmo:819bc2be1b93": {
+      "char": "gizmo",
+      "class": "other",
+      "excerpt": "(hair, high) - sweep-crops/gizmo-leaf/grin-head-4x.png x 130-680, y 330-490,"
+    },
+    "gizmo:af231ae26030": {
       "char": "gizmo",
       "class": "face-atlas",
-      "excerpt": "(hair, high) - sweep-crops/gizmo-directional-r2/profile-board-5x.png x 70-30"
+      "excerpt": "(hair, high) - sweep-crops/gizmo-leaf/profile-board-4x.png x 85-240, y 300-5"
     },
-    "gizmo:6e7a1436db33": {
+    "gizmo:bf6db615f2d4": {
       "char": "gizmo",
       "class": "other",
-      "excerpt": "(hair, medium) - sweep-crops/gizmo-directional-r2/grin-crown-10x.png x 350-7"
+      "excerpt": "(hair, medium) - sweep-crops/gizmo-leaf/hero-top-7x.png x 470-990, y 10-330,"
     },
-    "gizmo:46071bd8a096": {
+    "gizmo:f161157c3c22": {
+      "char": "gizmo",
+      "class": "other",
+      "excerpt": "(hair, medium) - sweep-crops/gizmo-leaf/profile-board-4x.png x 430-760, y 56"
+    },
+    "gizmo:bf2dbbda7722": {
+      "char": "gizmo",
+      "class": "other",
+      "excerpt": "(hair, low) - sweep-crops/gizmo-leaf/hero-top-7x.png x 960-1060, y 430-500 ("
+    },
+    "gizmo:37b5d78002dd": {
       "char": "gizmo",
       "class": "face-atlas",
-      "excerpt": "(hair, medium) - sweep-crops/gizmo-directional-r2/hero-forelock-10x.png x 32"
+      "excerpt": "(hair, low) - sweep-crops/gizmo-leaf/hero-head-4x.png x 210-400, y 520-600: "
     },
-    "gizmo:e6b788f32a51": {
+    "gizmo:c2f71da58048": {
       "char": "gizmo",
       "class": "other",
-      "excerpt": "(hair, medium) - sweep-crops/gizmo-directional-r2/grin-head-5x.png x 320-730"
+      "excerpt": "(face, low) - sweep-crops/gizmo-leaf/grin-head-4x.png x 150-200 and 630-680,"
     },
-    "gizmo:aa30b64d19c7": {
-      "char": "gizmo",
-      "class": "other",
-      "excerpt": "(hair, medium) - sweep-crops/gizmo-directional-r2/hero-side-9x.png x 100-640"
-    },
-    "gizmo:1849df9bbc2e": {
-      "char": "gizmo",
-      "class": "other",
-      "excerpt": "(hair, low) - sweep-crops/gizmo-directional-r2/hero-side-9x.png x 350-700, y"
-    },
-    "gizmo:69d4d53ece48": {
-      "char": "gizmo",
-      "class": "other",
-      "excerpt": "(face, low) - sweep-crops/gizmo-directional-r2/grin-head-5x.png x 160-230 an"
-    },
-    "gizmo:81961b7cc36a": {
+    "gizmo:086801341ba2": {
       "char": "gizmo",
       "class": "face-atlas",
-      "excerpt": "UPDATED - measure:fidelity visible face at brow: left 32.6 vs 9.59 OFF (+23."
+      "excerpt": "UPDATED - measure:fidelity visible face at brow: left 34.1 vs 9.59 OFF (+24."
     }
   }
 }

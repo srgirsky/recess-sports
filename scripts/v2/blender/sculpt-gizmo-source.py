@@ -340,6 +340,7 @@ SCALP_SHARE = 0.99   # the base mass carries the width now that the locks are ri
 # the lock sweeps toward the back along its length, rise of its tip above its
 # root; a negative rise falls)
 LOCK_RINGS = [
+    (3.660, (22.0, 68.0, 118.0, 162.0), 42.0, 0.110),   # over the crown: the base showed there as "a flat-topped drum"
     (3.600, (14.0, 42.0), 50.0, 0.190),            # off the hairline, over the top, into the tuft
     (3.560, (74.0, 112.0, 152.0), 40.0, 0.300),
     (3.420, (58.0, 96.0, 134.0, 172.0), 46.0, 0.240),
@@ -351,7 +352,7 @@ LOCK_ALONG = (0.0, 0.2, 0.4, 0.6, 0.8, 1.0)                 # six stations along
 # Half-sunk: riding at 0.84-0.93 the locks stood clear as round tubes that
 # crossed over each other, "knotted rope or sausages" with a see-through
 # loop. Lower, they are ridges on one mass and only the tips come free.
-LOCK_SHARE = (0.90, 0.93, 0.95, 0.96, 0.98, 1.08)           # sunk in the mass, then free at the tip
+LOCK_SHARE = (0.91, 0.95, 0.98, 0.99, 1.01, 1.10)           # sunk in the mass, then free at the tip
 LOCK_GIRTH = (0.032, 0.056, 0.066, 0.058, 0.040, 0.012)     # a leaf: thin root, belly, long taper
 LOCK_TIP_HOOK_FT = 0.045                                    # the tip's last station kicks up by this
 LOCK_SAMPLES = 10                                           # along a smooth curve through the stations
@@ -367,17 +368,19 @@ CROWN_LOCKS = [
     ((0.160, 0.040, 3.680), (0.280, 0.060, 3.860), (0.390, 0.070, 3.950)),
     ((-0.100, 0.140, 3.680), (-0.100, 0.220, 3.870), (-0.050, 0.280, 3.980)),
 ]
-CROWN_GIRTH = (0.078, 0.060, 0.012)
+CROWN_GIRTH = (0.066, 0.058, 0.014)   # broad leaf tips once widened and flattened
 # The fringe: five locks lying ON the forehead, swept to his right, ending
 # above the brow band (top ~3.38). They hug the skull: the last fringe stood
 # 0.56 out and "bunched into a fist ahead of the forehead" in side views.
 FRINGE_LOCKS = [
-    # No point further out than y -0.48: at -0.52 the fringe "juts past the
-    # glasses in profile", and a long one "hangs down the forehead like a
-    # tentacle".
-    ((0.120, -0.400, 3.640), (0.030, -0.470, 3.580), (-0.070, -0.480, 3.520), (-0.150, -0.460, 3.475)),
-    ((-0.100, -0.390, 3.630), (-0.200, -0.450, 3.570), (-0.290, -0.440, 3.510), (-0.360, -0.390, 3.465)),
-    ((0.300, -0.360, 3.630), (0.230, -0.440, 3.570), (0.140, -0.470, 3.520), (0.060, -0.475, 3.480)),
+    # Four PARALLEL leaves, each swept the same way (to his right) from a
+    # root a step further along the hairline, and a temple leaf each side. The
+    # last fringe had locks sweeping against each other: "two cross in a big
+    # X over the forehead". No point further out than y -0.48.
+    ((0.300, -0.350, 3.640), (0.210, -0.440, 3.590), (0.120, -0.470, 3.530), (0.050, -0.470, 3.480)),
+    ((0.150, -0.390, 3.650), (0.060, -0.460, 3.595), (-0.030, -0.480, 3.535), (-0.100, -0.470, 3.480)),
+    ((0.000, -0.400, 3.650), (-0.090, -0.460, 3.590), (-0.180, -0.465, 3.530), (-0.250, -0.440, 3.475)),
+    ((-0.150, -0.380, 3.640), (-0.240, -0.430, 3.585), (-0.320, -0.420, 3.525), (-0.380, -0.380, 3.470)),
     ((-0.380, -0.280, 3.600), (-0.440, -0.330, 3.500), (-0.470, -0.320, 3.410), (-0.480, -0.290, 3.330)),
     ((0.400, -0.270, 3.600), (0.450, -0.330, 3.500), (0.470, -0.320, 3.410), (0.480, -0.290, 3.330)),
 ]
@@ -420,16 +423,30 @@ def cap_ring_point(azimuth_deg: float, z: float, share: float, side: int):
 # pass keep each lock's length and tip.
 FUSE_GIRTH = 1.15
 FUSE_VOXEL_FT = 0.020
-FUSE_RELAX = 2
+FUSE_RELAX = 1
 FUSE_TRIS = {2: 4800, 1: 1000}       # LOD0, LOD1; LOD2 keeps the plain scalp
-FUSE_GROOVE_FT = 0.004
+FUSE_GROOVE_FT = 0.003
+
+
+# ★ LEAVES, NOT TUBES (2026-11-15). Round locks fused into the mass kept
+# reading as "thick round tubes, pretzel or rope" to two critics at once. The
+# sheet draws his hair as broad flat leaves. Each lock is now a ribbon: wide
+# across the head's surface, thin straight out from it.
+# 0.42 / 1.55 with two relax passes melted the leaves into "a smooth cap":
+# broad enough to touch edge to edge, thin enough to vanish when fused.
+LEAF_FLATTEN = 0.58     # thickness : width of a lock's section
+LEAF_WIDEN = 1.22       # a leaf is broader than the round lock it replaces
+LEAF_HEAD_CENTRE = (0.0, 0.020, 3.300)
 
 
 def smooth_lock(source: MeshBuilder, points, radii) -> None:
-    """One lock as a smooth curve through its stations (no kink at a station)."""
+    """One lock as a smooth flat leaf through its stations."""
     curve = catmull_rom(list(zip(points, radii)), LOCK_SAMPLES)
-    source.tube([tuple(point) for point, _ in curve], [max(radius, 0.010) for _, radius in curve],
-                2, HAIR, "Head", 8)
+    middle = curve[len(curve) // 2][0]
+    outward = Vector(tuple(middle)) - Vector(LEAF_HEAD_CENTRE)
+    source.tube([tuple(point) for point, _ in curve],
+                [max(radius * LEAF_WIDEN, 0.012) for _, radius in curve],
+                2, HAIR, "Head", 10, axis=outward.normalized(), flatten=LEAF_FLATTEN)
 
 
 def build_hair(builder: MeshBuilder, detail: int) -> None:
