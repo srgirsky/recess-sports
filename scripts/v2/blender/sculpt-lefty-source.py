@@ -35,7 +35,7 @@ from sculptlib.color import ensure_material_slots, rebuild_palette_material, rgb
 from sculptlib.ear import EarSpec, build_ear
 from sculptlib.head import HeadSpec, head_surface
 from sculptlib.leg import LegSpec, build_leg, leg_x
-from sculptlib.mesh import MeshBuilder, thin_for_lod
+from sculptlib.mesh import MeshBuilder, thin_for_lod, catmull_rom
 from sculptlib.palette import Palette
 from sculptlib.rig import ARM_ELBOW_X, ARM_SHOULDER_X, LEG_ANKLE_Z, limb_bone
 from sculptlib.shoe import ShoeSpec, build_shoe
@@ -56,7 +56,7 @@ SLOTS = ("M_Body", "M_Uniform", "M_Hair", "M_Accessory")
 SKIN = rgba("FFAC5E")
 SKIN_SHADOW = rgba("CE7C30")
 HAIR_ROOT = rgba("A87424")   # under the cap and at the nape: the sheet's deeper honey
-HAIR = rgba("D2A23C")        # honey blonde. Any golden tone passes `isSkin`
+HAIR = rgba("DE9C44")        # honey blonde. Any golden tone passes `isSkin`
                              # (r > g + 12), on the sheet as much as here, so
                              # the visible-face metric counts her hair; the
                              # old D8B440 dodged a little of that by going
@@ -250,7 +250,13 @@ def cap_xf(point):
 
 # The brim, in the cap's upright frame: from the back rim, drooping, so that
 # tipped it hangs down the nape to z ~3.0 as the profile view draws it.
-BRIM_ROWS = ((0.440, 3.480, 0.345), (0.630, 3.445, 0.330), (0.800, 3.400, 0.260))
+# Longer and wider than the first (0.80 reach, 0.345 half): it was "nearly
+# absent in profile" and sat inside the top of the tail.
+# About 45 degrees down the nape and NARROWER than the cap. Held out flat it
+# closed a triangle of daylight against the free tail that the sheet does not
+# draw; hung vertically at 0.39 half-wide it showed from the front as two grey
+# flaps beside her neck and closed the neck pinch the head metrics need.
+BRIM_ROWS = ((0.440, 3.480, 0.300), (0.610, 3.390, 0.280), (0.760, 3.250, 0.200))
 BRIM_UNDER = PANTS   # the sheet draws the underside in the joggers' navy
 
 
@@ -391,6 +397,9 @@ def scalp_half_at(z: float):
     return table[-1][1:]
 
 
+RIM_TUCK = 0.008   # feet the snapped rim sits under the skin
+
+
 def build_scalp(builder: MeshBuilder, detail: int) -> None:
     assert all(a[0] > b[0] for a, b in zip(SCALP_LEVELS, SCALP_LEVELS[1:])), \
         "SCALP_LEVELS must be strictly descending in z"
@@ -418,6 +427,22 @@ def build_scalp(builder: MeshBuilder, detail: int) -> None:
                 sf = skull_front_y(x, zz)
                 if sf > -9.0:
                     y = min(y, sf - 0.030)
+            if inside:
+                # ★ THE RIM IS TUCKED INTO THE SKIN. A snapped rim standing
+                # proud of the head leaves a slot under the shell's edge, and
+                # the runtime outline paints the INSIDE of an open shell in
+                # the contour colour: a solid dark wedge at the temple from
+                # ear to eye, which two critics took for a fringe shadow and
+                # then for the fringe's outline. The rim vertex sits just
+                # under the skull's surface; the shell rises to its proud
+                # offset on the ring above.
+                side_x = skull_surface_x(y, zz)
+                if side_x > 0.05:
+                    x = (1 if x >= 0 else -1) * min(abs(x), side_x - RIM_TUCK)
+                if front:
+                    sf = skull_front_y(x, zz)
+                    if sf > -9.0:
+                        y = sf + RIM_TUCK
             tone = HAIR if zz > 3.20 else HAIR_ROOT
             ring.append(builder.vertex((x, y, zz), tone, "Head"))
             snapped.append(inside)
@@ -440,32 +465,54 @@ def build_scalp(builder: MeshBuilder, detail: int) -> None:
 # not-traceable: depth comes from the authored skull; the sweep (an
 # off-centre part, a long lock across the brow to her left, a short one to
 # her right, both ending in front of the ear) is read off the front view.
-BANG_PROUD = 0.030
+BANG_PROUD = 0.010   # 0.030 stood the fringe off the forehead; its lit-from-below underside read as a dark wedge
+# ★ ONE SOFT SWEPT FRINGE (2026-11-15). The first bangs were two fat locks
+# meeting on the brow, and a critic read "two folded straps in a chevron,
+# like two hands shading the eyes". The sheet has one side-swept fringe of
+# several thin overlapping locks from an off-centre part, a short lock the
+# other way, and a thin tendril in front of each ear.
+# (stations, radii, the side its "s" stations ride)
 BANGS = [
-    ([("f", -0.120, 3.600), ("f", 0.100, 3.545), ("f", 0.280, 3.440),
-      ("s", -0.170, 3.300), ("s", -0.130, 3.150), ("s", -0.130, 3.000)],
-     [0.064, 0.082, 0.084, 0.076, 0.058, 0.020]),
-    ([("f", -0.120, 3.600), ("f", -0.270, 3.520), ("f", -0.380, 3.400),
-      ("s", -0.150, 3.260), ("s", -0.130, 3.120), ("s", -0.130, 3.000)],
-     [0.064, 0.076, 0.078, 0.072, 0.056, 0.020]),
+    ([("f", -0.120, 3.610), ("f", 0.060, 3.570), ("f", 0.220, 3.500), ("s", -0.190, 3.360)],
+     [0.050, 0.066, 0.066, 0.030], 1),
+    ([("f", -0.100, 3.585), ("f", 0.100, 3.525), ("f", 0.270, 3.430), ("s", -0.170, 3.280), ("s", -0.140, 3.140)],
+     [0.050, 0.064, 0.066, 0.055, 0.020], 1),
+    ([("f", -0.140, 3.610), ("f", -0.270, 3.545), ("f", -0.370, 3.440), ("s", -0.160, 3.320)],
+     [0.050, 0.062, 0.060, 0.025], -1),
+    ([("s", -0.130, 3.300), ("s", -0.115, 3.140), ("s", -0.120, 2.980)], [0.026, 0.024, 0.010], 1),
+    ([("s", -0.130, 3.300), ("s", -0.115, 3.140), ("s", -0.120, 2.980)], [0.026, 0.024, 0.010], -1),
 ]
-BANG_FAR_SIDE = (1, -1)   # which side each lock's "s" stations ride
+
+
+# The fringe draws no contour of its own: the runtime outline is a hull per
+# surface, and the swept lock's hull showed at the temple as a solid dark
+# wedge from ear to eye (sampled at the outline colour, where her brow should
+# be). The hull's width follows vertex-colour alpha (`materials/outline.ts`).
+FRINGE_OUTLINE_ALPHA = 0.15
+FRINGE_HAIR = (HAIR[0], HAIR[1], HAIR[2], FRINGE_OUTLINE_ALPHA)
 
 
 def bang_point(station, side: int, radius: float):
     kind, u, z = station
     if kind == "f":
         y = skull_front_y(u, z)
-        return (u, y - BANG_PROUD - radius * 0.35, z)
+        return (u, y - BANG_PROUD - radius * 0.10, z)
     x = skull_surface_x(u, z)
-    return (side * (x + BANG_PROUD + radius * 0.25), u, z)
+    return (side * (x + BANG_PROUD + radius * 0.05), u, z)
 
 
 # The ponytail.
+# ★ IT SWINGS FREE (2026-11-15). The sheet's tail leaves the cap through the
+# scrunchie, arcs up and back, and falls well behind her neck with open air
+# between: narrow at the scrunchie, widest about two thirds of the way down,
+# breaking into curled ends. Until `DRAWN_GAPS` existed the silhouette lint
+# refused that daylight, so the first tail was pressed against the cap and
+# jacket, widest at the scrunchie and narrowing: "an inverted taper, no
+# flare". The gap is now declared in `silhouette.lint.test.js`.
 # not-traceable: its y stations are depth no front view gives. Bounded off
-# the profile view: it leaves the cap at z ~3.43, hard against the cap's back so no daylight is enclosed between cap, brim and tail, crests ~0.25 behind the
-# cap, is ~0.7 across at its widest (z ~2.9) and ends at z ~2.2; the front
-# view puts its outer edge ~0.6 from the centre line on her left.
+# the profile view: it leaves the cap at z ~3.43, crests ~0.3 behind the cap,
+# is ~0.7 across at its widest (z ~2.8) and ends at z ~2.2; the front view
+# puts its outer edge ~0.6 from the centre line on her left.
 PONY_ROOT = [
     (0.060, 0.500, 3.380),
     (0.100, 0.700, 3.430),
@@ -476,40 +523,47 @@ SCRUNCHIE_RADIUS = 0.128
 
 PONY_SPINE = [
     (0.100, 0.700, 3.430),
-    (0.150, 0.770, 3.390),
-    (0.210, 0.770, 3.270),
-    (0.260, 0.760, 3.040),
-    (0.300, 0.750, 2.780),
-    (0.330, 0.700, 2.520),
-    (0.340, 0.690, 2.300),
+    (0.150, 0.860, 3.470),
+    (0.210, 0.980, 3.340),
+    (0.260, 1.020, 3.080),
+    (0.300, 1.000, 2.800),
+    (0.330, 0.940, 2.520),
+    (0.340, 0.900, 2.300),
 ]
-PONY_RADII = [0.105, 0.215, 0.230, 0.255, 0.225, 0.160, 0.060]
+PONY_RADII = [0.105, 0.140, 0.190, 0.250, 0.280, 0.220, 0.080]
 PONY_GROOVE = 0.030
+PONY_SAMPLES = 12   # along a smooth curve through the stations above
 
 # Curled ends: the fall breaks into locks that kick out, which is the flare.
 PONY_LOCKS = [
-    ([(0.320, 0.770, 2.640), (0.360, 0.900, 2.470), (0.380, 0.960, 2.360)], [0.095, 0.070, 0.022]),
-    ([(0.310, 0.650, 2.540), (0.250, 0.570, 2.340), (0.230, 0.550, 2.230)], [0.090, 0.066, 0.022]),
-    ([(0.360, 0.730, 2.480), (0.460, 0.750, 2.300), (0.500, 0.780, 2.210)], [0.090, 0.064, 0.022]),
+    ([(0.320, 0.990, 2.640), (0.370, 1.120, 2.470), (0.400, 1.200, 2.340)], [0.110, 0.080, 0.022]),
+    ([(0.310, 0.870, 2.540), (0.250, 0.780, 2.340), (0.220, 0.740, 2.220)], [0.100, 0.072, 0.022]),
+    ([(0.360, 0.950, 2.480), (0.470, 0.980, 2.300), (0.520, 1.020, 2.200)], [0.100, 0.070, 0.022]),
+    ([(0.260, 0.980, 2.500), (0.200, 1.060, 2.320), (0.170, 1.100, 2.220)], [0.095, 0.068, 0.022]),
 ]
 
 
 def build_side_hair(builder: MeshBuilder, detail: int) -> None:
     sides = 8 if detail >= 2 else (5 if detail == 1 else 4)
     builder.tube(PONY_ROOT, PONY_ROOT_RADII, 2, HAIR_ROOT, "Head", sides)
-    spine = PONY_SPINE if detail >= 1 else PONY_SPINE[::2]
-    radii = PONY_RADII if detail >= 1 else PONY_RADII[::2]
-    builder.tube(spine, radii, 2, HAIR, "Head", 12 if detail >= 2 else sides,
-                 lobes=4 if detail >= 2 else 0, groove=PONY_GROOVE if detail >= 2 else 0.0)
+    if detail >= 2:
+        curve = catmull_rom(list(zip(PONY_SPINE, PONY_RADII)), PONY_SAMPLES)
+        spine = [tuple(point) for point, _ in curve]
+        radii = [radius for _, radius in curve]
+    else:
+        spine = PONY_SPINE if detail >= 1 else PONY_SPINE[::2]
+        radii = PONY_RADII if detail >= 1 else PONY_RADII[::2]
+    builder.tube(spine, radii, 2, HAIR, "Head", 16 if detail >= 2 else sides,
+                 lobes=6 if detail >= 2 else 0, groove=PONY_GROOVE if detail >= 2 else 0.0)
     if detail < 1:
         return
     builder.tube(SCRUNCHIE, [SCRUNCHIE_RADIUS, SCRUNCHIE_RADIUS], 2, BRIM_UNDER, "Head", sides)
-    for (stations, radii), side in zip(BANGS, BANG_FAR_SIDE):
+    for stations, radii, side in BANGS:
         points = [bang_point(st, side, r) for st, r in zip(stations, radii)]
-        builder.tube(points, radii, 2, HAIR, "Head", 6 if detail >= 2 else 4)
+        builder.tube(points, radii, 2, FRINGE_HAIR, "Head", 6 if detail >= 2 else 4, flip=side < 0)
     if detail >= 2:
         for points, radii in PONY_LOCKS:
-            builder.tube(points, radii, 2, HAIR, "Head", 5)
+            builder.tube(points, radii, 2, HAIR, "Head", 6)
 
 
 def build_lapels(builder: MeshBuilder, detail: int) -> None:
