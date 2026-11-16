@@ -95,66 +95,6 @@
       "class": "no-defect-note",
       "excerpt": "Historical finding retained; its exact numerical/crop claim was not remeasur"
     },
-    "mimi_mash:725f16a479c0": {
-      "char": "mimi_mash",
-      "class": "no-defect-note",
-      "excerpt": "SCOPED HAND MIGRATION PASS: no new Mimi-specific blocking frame found. bat_s"
-    },
-    "mimi_mash:9fa0fb64bdaf": {
-      "char": "mimi_mash",
-      "class": "stance",
-      "excerpt": "SHARED POSE POLISH, REOBSERVED: .art-review/theo-reference/roster-mimi_mash/"
-    },
-    "mimi_mash:15e5060d59cc": {
-      "char": "mimi_mash",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CURLS-VS-STRIPES VERDICT "
-    },
-    "mimi_mash:45ca8670f423": {
-      "char": "mimi_mash",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CLEARED (measured): the p"
-    },
-    "mimi_mash:dc55d4f40f41": {
-      "char": "mimi_mash",
-      "class": "hair-nyquist",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED (re-verified, upd"
-    },
-    "mimi_mash:5a4206887eae": {
-      "char": "mimi_mash",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CLEARED (measured): the C"
-    },
-    "mimi_mash:05efbfc3ffe3": {
-      "char": "mimi_mash",
-      "class": "butt-joins",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED (butt-joins class"
-    },
-    "mimi_mash:d9c95e4b449e": {
-      "char": "mimi_mash",
-      "class": "decal-not-form",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED (unchanged eviden"
-    },
-    "mimi_mash:cc68a81bbd09": {
-      "char": "mimi_mash",
-      "class": "face-atlas",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: NEW (minor, blocks 3.5's "
-    },
-    "mimi_mash:e93d2f3bbbd5": {
-      "char": "mimi_mash",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: NON-DEFECT (carried, upda"
-    },
-    "mimi_mash:9ed7399e0d61": {
-      "char": "mimi_mash",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: NON-DEFECT (carried): the"
-    },
-    "mimi_mash:ae04cef5ace1": {
-      "char": "mimi_mash",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: NON-DEFECT (carried, re-v"
-    },
     "sprout:42688dc714ab": {
       "char": "sprout",
       "class": "stance",
@@ -600,111 +540,6 @@
       "class": "no-defect-note",
       "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: REVISED - recorded scores"
     },
-    "diva:2cc928e18d0a": {
-      "char": "diva",
-      "class": "no-defect-note",
-      "excerpt": "SCOPED HAND MIGRATION PASS: fresh runtime hero/run/contact and all four expr"
-    },
-    "diva:407a3ed9aae0": {
-      "char": "diva",
-      "class": "evidence",
-      "excerpt": "ARM/HAIR OCCLUSION — COLLISION NOT ESTABLISHED: at bat_stance-0-1 a small cr"
-    },
-    "diva:290d9b2357dd": {
-      "char": "diva",
-      "class": "stance",
-      "excerpt": "SHARED POSE CAVEAT: high lower-handle elbow at bunt t0.67 remains unnatural."
-    },
-    "diva:7c387cf5e0b6": {
-      "char": "diva",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CLEARED — the 'ear 19.5 p"
-    },
-    "diva:c93f46a61906": {
-      "char": "diva",
-      "class": "ears",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: NEW, measured: centering "
-    },
-    "diva:c4f8f4fd6311": {
-      "char": "diva",
-      "class": "ears",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: 3.10 STILL OPEN, new form"
-    },
-    "diva:5ef20560de19": {
-      "char": "diva",
-      "class": "other",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: Stale comments in the scu"
-    },
-    "diva:1a3ceb3920ab": {
-      "char": "diva",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CLEARED — the mirror-viol"
-    },
-    "diva:f40f52aa45b1": {
-      "char": "diva",
-      "class": "ears",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: Residual mane polish, min"
-    },
-    "diva:9496e953147e": {
-      "char": "diva",
-      "class": "hair-nyquist",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: The profile face is GENUI"
-    },
-    "diva:b796aaa15a45": {
-      "char": "diva",
-      "class": "40px-read",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: TEAM_MASK judged on EXTEN"
-    },
-    "diva:aa8b8872d590": {
-      "char": "diva",
-      "class": "other",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: NOT A DEFECT — carried no"
-    },
-    "diva:b1e7477fb775": {
-      "char": "diva",
-      "class": "other",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: Garment colour boundaries"
-    },
-    "diva:3d001142179d": {
-      "char": "diva",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CLEARED — the smooth-cone"
-    },
-    "diva:7c864833b0ab": {
-      "char": "diva",
-      "class": "material-light",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: Skin tone remains very cl"
-    },
-    "diva:a28a76ddef1f": {
-      "char": "diva",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CLEARED — swing_contact b"
-    },
-    "diva:cf970ca86def": {
-      "char": "diva",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CLEARED — the grin captur"
-    },
-    "diva:b05a3f2ec6fa": {
-      "char": "diva",
-      "class": "hair-nyquist",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: Record correction, carrie"
-    },
-    "diva:cb227ff24179": {
-      "char": "diva",
-      "class": "face-atlas",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED, minor: the deliv"
-    },
-    "noodle:e2bf58fe07eb": {
-      "char": "noodle",
-      "class": "no-defect-note",
-      "excerpt": "SCOPED HAND MIGRATION PASS: fresh runtime hero/run/contact and four expressi"
-    },
-    "noodle:83c3f9a51c20": {
-      "char": "noodle",
-      "class": "stance",
-      "excerpt": "SHARED POSE POLISH REOBSERVED: bunt t0.67 receiving elbow rises beside head "
-    },
     "turbo:c0cf0ad7143d": {
       "char": "turbo",
       "class": "no-defect-note",
@@ -1089,26 +924,6 @@
       "char": "rocket",
       "class": "no-defect-note",
       "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: NOT DEFECTS, recorded so "
-    },
-    "gizmo:44279d4042a2": {
-      "char": "gizmo",
-      "class": "interpenetration",
-      "excerpt": "SHARED POSE ISSUES REMAIN OPEN: held bunt raises the lower-handle elbow besi"
-    },
-    "gizmo:b765721ef8cc": {
-      "char": "gizmo",
-      "class": "decal-not-form",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: NEW (low) — turnaround fr"
-    },
-    "gizmo:3d1e3af929b0": {
-      "char": "gizmo",
-      "class": "ears",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED — gizmo-profile-r"
-    },
-    "gizmo:f183ee07b493": {
-      "char": "gizmo",
-      "class": "butt-joins",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED — gizmo-runtime-s"
     },
     "dex:d0995111cbcd": {
       "char": "dex",
@@ -1560,21 +1375,6 @@
       "class": "no-defect-note",
       "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: PASSES re-verified on the"
     },
-    "lefty:9311ba327288": {
-      "char": "lefty",
-      "class": "stance",
-      "excerpt": "SHARED POSE POLISH REOBSERVED: bunt t0.67 receiving elbow rises beside the h"
-    },
-    "lefty:b55133c42d79": {
-      "char": "lefty",
-      "class": "sheared-edges",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED - PIPING KINKS PR"
-    },
-    "lefty:5ee43195dd27": {
-      "char": "lefty",
-      "class": "butt-joins",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED - SHOULDER JUNCTI"
-    },
     "moose:5db11d62b71f": {
       "char": "moose",
       "class": "no-defect-note",
@@ -1885,11 +1685,6 @@
       "class": "other",
       "excerpt": "A navy jagged patch about 15x20px remains on the top of the raised shoe in m"
     },
-    "mimi_mash:4230bb3b926a": {
-      "char": "mimi_mash",
-      "class": "other",
-      "excerpt": "NEW (minor): mimi-mash-runtime-hero.png and face-grin.png shoe crops - the c"
-    },
     "turbo:2048230f83b1": {
       "char": "turbo",
       "class": "other",
@@ -1975,111 +1770,6 @@
       "class": "other",
       "excerpt": "Shoe colour: delivered sneakers render saturated brown/orange with cream str"
     },
-    "noodle:c6efdcb2551c": {
-      "char": "noodle",
-      "class": "face-atlas",
-      "excerpt": "CLEARED — MOUTH LATITUDE. face-specs.mjs noodle.mouthY 67 -> 78, featurelati"
-    },
-    "noodle:86fb7faa97a6": {
-      "char": "noodle",
-      "class": "other",
-      "excerpt": "CARRIED (unchanged, not re-filed) — SKIN FAILS THE WARMTH BAND ON THE DOMINA"
-    },
-    "noodle:d2bcdb012c30": {
-      "char": "noodle",
-      "class": "other",
-      "excerpt": "REVISED — EYEBROWS AT THE RIM TOPS: still there, now faithful rather than lo"
-    },
-    "noodle:22c68b922572": {
-      "char": "noodle",
-      "class": "material-light",
-      "excerpt": "REVISED — BALD DOME FACETED AT HERO: the facet kinks are measurably gone, th"
-    },
-    "noodle:9520c32c2fe8": {
-      "char": "noodle",
-      "class": "face-atlas",
-      "excerpt": "REVISED — NOSE NOW READS AS A SOFT MOUND, STILL NO NOSTRILS. nose_push is bu"
-    },
-    "noodle:d10eb6319a6d": {
-      "char": "noodle",
-      "class": "hems-cuffs",
-      "excerpt": "CLEARED (held) — SHOULDER SEAM WEDGE. noodle-front-apose-review.png 6x at x1"
-    },
-    "noodle:eb92626f85ff": {
-      "char": "noodle",
-      "class": "other",
-      "excerpt": "CARRIED — SHOE HAS NO LACING READ. Both straps ((-0.170,-0.122),(-0.060,-0.0"
-    },
-    "noodle:972a0c6b63e4": {
-      "char": "noodle",
-      "class": "other",
-      "excerpt": "CARRIED — ANKLE CUFF READS AS A NAPKIN RING. noodle-front-review.png 6x crop"
-    },
-    "noodle:3919ab074757": {
-      "char": "noodle",
-      "class": "other",
-      "excerpt": "CARRIED — GARMENT WARMTH, unchanged: noodle-front-review.png cream stripe x2"
-    },
-    "noodle:2cd5ea293820": {
-      "char": "noodle",
-      "class": "other",
-      "excerpt": "CARRIED — EARS REACH THE FRONT SILHOUETTE, UNDER-PROUD. Rightmost silhouette"
-    },
-    "noodle:310dabdf2fc9": {
-      "char": "noodle",
-      "class": "other",
-      "excerpt": "NON-DEFECT — the round 'plate' with dark marks at the shoulder on noodle-pro"
-    },
-    "noodle:8d8a8fc31753": {
-      "char": "noodle",
-      "class": "other",
-      "excerpt": "NON-DEFECT — the far lens on noodle-runtime-hero.png (4x x490-690 y110-310, "
-    },
-    "noodle:fc788faae216": {
-      "char": "noodle",
-      "class": "face-atlas",
-      "excerpt": "NON-DEFECT — the four spare atlas cells (12-15, assets/v2/source/noodle-face"
-    },
-    "noodle:699abb8a9a48": {
-      "char": "noodle",
-      "class": "hems-cuffs",
-      "excerpt": "CARRIED (stance, read via the instrument) — daylight between the ankles 13.0"
-    },
-    "noodle:fd4846e05d9a": {
-      "char": "noodle",
-      "class": "other",
-      "excerpt": "CARRIED, minor — LONG BARE NECK AT HERO. noodle-runtime-hero.png 6x x500-580"
-    },
-    "noodle:5f7d28207d0b": {
-      "char": "noodle",
-      "class": "material-light",
-      "excerpt": "NEW, minor — FINGERTIPS CLUMP INTO AN INK BLOT AT HERO. noodle-runtime-hero."
-    },
-    "noodle:b4bfe96e7c42": {
-      "char": "noodle",
-      "class": "other",
-      "excerpt": "SHOE TOES NOW CLOSED BUT STILL NO LACING READ: noodle-runtime-hero.png 5x cr"
-    },
-    "bubbles:cacb36dcf441": {
-      "char": "bubbles",
-      "class": "other",
-      "excerpt": "SHOE DETAIL: parallel pink bars instead of the concept's criss-cross cream l"
-    },
-    "bubbles:ef0b8c4fe902": {
-      "char": "bubbles",
-      "class": "other",
-      "excerpt": "SHARED CONTACT CLEARANCE: lower-forearm/torso intersection in shared contact"
-    },
-    "bubbles:d6dc455c2e5b": {
-      "char": "bubbles",
-      "class": "other",
-      "excerpt": "SHARED BUNT POSE: at bunt t0.67 the lower-handle elbow rises beside the head"
-    },
-    "bubbles:fedd7ee22f89": {
-      "char": "bubbles",
-      "class": "other",
-      "excerpt": "THIN ARMS AND LEGS with abrupt shoulder joins against the concept's fuller c"
-    },
     "sniffles:94f3375f2db8": {
       "char": "sniffles",
       "class": "other",
@@ -2125,11 +1815,6 @@
       "class": "hems-cuffs",
       "excerpt": "Profile depth cinch of the jacket hem is far shallower than the sheet; zip t"
     },
-    "diva:232fb7fcd4bd": {
-      "char": "diva",
-      "class": "other",
-      "excerpt": "SHOE TOE/VAMP DARK PATCH: in the current hero (right shoe) and run captures "
-    },
     "grizz:f9b07a40661b": {
       "char": "grizz",
       "class": "other",
@@ -2144,11 +1829,6 @@
       "char": "peaches",
       "class": "other",
       "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED 6b.2 — the sneake"
-    },
-    "gizmo:c47c75b47516": {
-      "char": "gizmo",
-      "class": "other",
-      "excerpt": "NEW (low) - gizmo-runtime-hero.png x 440-620, y 580-690 (4x): the shoe toe c"
     },
     "clover:39085b4ffc7a": {
       "char": "clover",
@@ -2214,16 +1894,6 @@
       "char": "wheelchair_ace",
       "class": "face-atlas",
       "excerpt": "COLOUR: skin is saturated orange (about #713d0a forearm against the sheet's "
-    },
-    "diva:32d63fe94e9f": {
-      "char": "diva",
-      "class": "hems-cuffs",
-      "excerpt": "RUN SKIRT CLEARED, PITCH AND BUNT UNVERIFIED: the previous finding of the th"
-    },
-    "diva:efcb2241173b": {
-      "char": "diva",
-      "class": "hems-cuffs",
-      "excerpt": "RUN HEM IS FACETED, minor: at run frame 6 the hem outline is a run of straig"
     },
     "clover:6762d04ae9c3": {
       "char": "clover",
@@ -2330,46 +2000,6 @@
       "class": "other",
       "excerpt": "Bunt t0.67 receiving elbow lifts beside the head with forearm descending tow"
     },
-    "lefty:7b0e784b9112": {
-      "char": "lefty",
-      "class": "material-light",
-      "excerpt": "NEW - CAP STRAP IS A FLAT RECTANGLE WITH NO OPENING: front-apose-head.png: t"
-    },
-    "lefty:12e24d8deae9": {
-      "char": "lefty",
-      "class": "other",
-      "excerpt": "SHOE COLOUR DRIFT: the rebuilt shoes read tan/khaki with a pale sole (lefty-"
-    },
-    "lefty:2f8d5c70637c": {
-      "char": "lefty",
-      "class": "other",
-      "excerpt": "CARRIED - THE NAVY HOOD IS A BALL ON THE NAPE AND INVISIBLE FROM THE FRONT: "
-    },
-    "lefty:c7c5c459e5c5": {
-      "char": "lefty",
-      "class": "hems-cuffs",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED - RECORDED INSTRU"
-    },
-    "lefty:39ccd808ad8b": {
-      "char": "lefty",
-      "class": "other",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED - LEG_STATIONS PR"
-    },
-    "bubbles:910ff3467c4d": {
-      "char": "bubbles",
-      "class": "hems-cuffs",
-      "excerpt": "SOLID NAVY WEDGES AT THE NECK: filled triangles of the outline colour sit be"
-    },
-    "bubbles:840a6002e221": {
-      "char": "bubbles",
-      "class": "other",
-      "excerpt": "SHOE COLOUR (measured): the shoes read tan/orange-beige with a pale sole. Ba"
-    },
-    "bubbles:b5f25db8bf96": {
-      "char": "bubbles",
-      "class": "other",
-      "excerpt": "POCKET reads as a flat cream bar without the concept's flap and button (the "
-    },
     "ace_kid:e76cd321b70a": {
       "char": "ace_kid",
       "class": "hems-cuffs",
@@ -2389,31 +2019,6 @@
       "char": "ace_kid",
       "class": "hems-cuffs",
       "excerpt": "CLEARED (was: INHERITED GARMENT DEFECT, large angular cream patch over the l"
-    },
-    "bubbles:5336479c7891": {
-      "char": "bubbles",
-      "class": "other",
-      "excerpt": "DARK SQUARE AT THE ANKLE OPENING: the lifted trailing shoe in the run captur"
-    },
-    "bubbles:d448f2095009": {
-      "char": "bubbles",
-      "class": "hems-cuffs",
-      "excerpt": "SKIN THROUGH THE SKIRT IN THE SWING: at swing_contact frame 7 a 22-pixel ski"
-    },
-    "bubbles:ee59ab1ce189": {
-      "char": "bubbles",
-      "class": "hems-cuffs",
-      "excerpt": "RUN SKIRT FACET: in the run capture the swept skirt shows one hard straight "
-    },
-    "diva:80f1ea9c080c": {
-      "char": "diva",
-      "class": "hems-cuffs",
-      "excerpt": "SWING: SMALL SKIN FLECK THROUGH THE SKIRT FRONT (was a full thigh column; he"
-    },
-    "diva:b0071b8f4021": {
-      "char": "diva",
-      "class": "hems-cuffs",
-      "excerpt": "SWING HEM FOLD, minor: in the same frame the lower-left hem carries a heavy "
     },
     "boomer:46532cac00da": {
       "char": "boomer",
@@ -2470,115 +2075,400 @@
       "class": "face-atlas",
       "excerpt": "HEAD: nose is a smooth bump with a highlight, no nostrils or breadth; no che"
     },
-    "lefty:131a909d3326": {
-      "char": "lefty",
+    "gizmo:29aa81aac283": {
+      "char": "gizmo",
       "class": "other",
-      "excerpt": "BRIM IS A THIN, TOO-STEEP, NEAR-BLACK STRIP, NOT A WEDGE: lefty-profile-revi"
+      "excerpt": "(hair, decides the score) native size, face-grin / face-cheer / face-tongue "
     },
-    "lefty:c4562f19173e": {
-      "char": "lefty",
+    "gizmo:c13aec37c613": {
+      "char": "gizmo",
       "class": "other",
-      "excerpt": "FRINGE MERGES WITH THE FOREHEAD FRONT-ON AND STILL READS AS FACETED RIBBONS:"
+      "excerpt": "(hair) native size, face-grin and swing: from the front the fringe is one sm"
     },
-    "lefty:a601b617cb29": {
-      "char": "lefty",
+    "gizmo:63e682fab0b4": {
+      "char": "gizmo",
       "class": "other",
-      "excerpt": "PONYTAIL HAS NO WAVE, CURL OR STRAND BREAKUP: profile-head.png (3x) and hero"
+      "excerpt": "(hair) native size, hero, run, face-grin, both boards: the tuft is six or se"
     },
-    "lefty:c003e6c2aec0": {
-      "char": "lefty",
+    "gizmo:a5e2bb95d8a6": {
+      "char": "gizmo",
+      "class": "other",
+      "excerpt": "(clothing) native size in the front captures, confirmed at 2x on hero shoes:"
+    },
+    "gizmo:51765681baf3": {
+      "char": "gizmo",
+      "class": "proportions",
+      "excerpt": "(face) native size: face-cheer and face-tongue are nearly the same open smil"
+    },
+    "gizmo:07cb6ca980d2": {
+      "char": "gizmo",
+      "class": "face-atlas",
+      "excerpt": "(hair) native size, hero and run around x 625-640, y 235-285, and gizmo-prof"
+    },
+    "gizmo:c30f519c9410": {
+      "char": "gizmo",
+      "class": "other",
+      "excerpt": "(face) 2x, face-grin: front ears are small slivers mostly behind the lens ri"
+    },
+    "gizmo:1cabc83666e2": {
+      "char": "gizmo",
+      "class": "other",
+      "excerpt": "(clothing) native size, hero around x 560-580, y 355-380: a dark grey tab at"
+    },
+    "gizmo:2229bf2c67fc": {
+      "char": "gizmo",
+      "class": "hems-cuffs",
+      "excerpt": "(arms) native size, swing: the sleeve ends as a pale rounded tube and the up"
+    },
+    "gizmo:bdcdd4482dbc": {
+      "char": "gizmo",
+      "class": "face-atlas",
+      "excerpt": "(hair) 2x, face-grin: brown speckle on the skin beside the viewer-left templ"
+    },
+    "gizmo:1c1b2b8f1ae4": {
+      "char": "gizmo",
+      "class": "other",
+      "excerpt": "(hair) boards only, gizmo-profile-review.png: the lower side and nape are a "
+    },
+    "gizmo:579156cbca2c": {
+      "char": "gizmo",
+      "class": "other",
+      "excerpt": "Not re-checked here (no capture in this set): the recorded shared pose issue"
+    },
+    "diva:3a2d1857beda": {
+      "char": "diva",
+      "class": "other",
+      "excerpt": "SHOES, native size (hero, four faces): a dark slate rectangle sits on the ri"
+    },
+    "diva:6aa0400e1a2c": {
+      "char": "diva",
+      "class": "hems-cuffs",
+      "excerpt": "SWING SKIN FLECK, native size as a dot, confirmed at 2x: dazzle-runtime-swin"
+    },
+    "diva:fed1023b40d0": {
+      "char": "diva",
+      "class": "other",
+      "excerpt": "NECK STALK, native size (four faces): a bare skin column shows between the j"
+    },
+    "diva:e73bc30a278d": {
+      "char": "diva",
+      "class": "other",
+      "excerpt": "LANKY BUILD, native size beside the sheet: arms are thin near-uniform tubes "
+    },
+    "diva:f5d1baa5de3c": {
+      "char": "diva",
+      "class": "hems-cuffs",
+      "excerpt": "SKIRT READS AS A BUBBLE, native size: the hem scallops but the skirt face is"
+    },
+    "diva:c8ec49d27d5a": {
+      "char": "diva",
+      "class": "face-atlas",
+      "excerpt": "FRINGE AND BROWS, native size (four faces): the fringe is a blunt straight b"
+    },
+    "diva:f9c95ce619e3": {
+      "char": "diva",
+      "class": "other",
+      "excerpt": "HEADBAND, native size: delivered as a narrow raised arc across the crown tha"
+    },
+    "diva:cb2da5d62067": {
+      "char": "diva",
+      "class": "other",
+      "excerpt": "EARS, native size in the front faces, detail at 2x: the ears show as large s"
+    },
+    "diva:cf309a88af21": {
+      "char": "diva",
+      "class": "other",
+      "excerpt": "FRONT CURTAINS SMOOTH, native size: wave grouping lives on the back and side"
+    },
+    "diva:e148a17f067e": {
+      "char": "diva",
+      "class": "proportions",
+      "excerpt": "ANKLE DAYLIGHT metric OFF (+34 vs concept 0, tol 12): the delivered legs sta"
+    },
+    "diva:6a06068073b0": {
+      "char": "diva",
+      "class": "hems-cuffs",
+      "excerpt": "RUN HEM FACETED, 2x: at run frame 6 the hem outline is straight facets with "
+    },
+    "diva:2e2ebf57326b": {
+      "char": "diva",
       "class": "material-light",
-      "excerpt": "HAIR COLOUR IS CLOSER BUT STILL SHORT OF THE SHEET, AND NOW CROWDS THE SKIN:"
+      "excerpt": "SKIN VS INFIELD, 40px: arms and legs are close to the dirt colour and separa"
     },
-    "lefty:4501dbca315b": {
-      "char": "lefty",
+    "diva:2fd359ac6423": {
+      "char": "diva",
       "class": "face-atlas",
-      "excerpt": "NEW r4 - TEMPLE HAIRLINE IS A SQUARE-STEPPED DARK BLOCK AND HIDES THE NEAR B"
+      "excerpt": "PROFILE MOUTH, board only (not re-checked in a runtime capture): earlier rec"
     },
-    "lefty:25093ff13198": {
-      "char": "lefty",
-      "class": "face-atlas",
-      "excerpt": "REDUCED r4 - GREY SLIVER AT HER RIGHT TEMPLE FRONT-ON: lefty-runtime-face-gr"
+    "diva:0766f40650be": {
+      "char": "diva",
+      "class": "proportions",
+      "excerpt": "NOT VERIFIED: bunt and pitch_windup skirt clearance have no current capture;"
     },
-    "lefty:c507006324fd": {
-      "char": "lefty",
+    "noodle:d2409161deda": {
+      "char": "noodle",
       "class": "other",
-      "excerpt": "SLIVER OF DAYLIGHT ENCLOSED BETWEEN CAP, SCRUNCHIE, BRIM AND TAIL: lefty-run"
+      "excerpt": "SHOES READ AS CLOGS FROM THE FRONT, NO LACING (native size, noodle-runtime-f"
     },
-    "bubbles:b59cb2250da9": {
+    "noodle:3ed8d39b4a9b": {
+      "char": "noodle",
+      "class": "hems-cuffs",
+      "excerpt": "JEANS ARE PLAIN TUBES (native size, all captures): no fly, pocket, side seam"
+    },
+    "noodle:e82fbb725120": {
+      "char": "noodle",
+      "class": "other",
+      "excerpt": "SKIN IS A SATURATED ORANGE-TAN IN GAME (native size, every runtime capture) "
+    },
+    "noodle:7366d2c8539a": {
+      "char": "noodle",
+      "class": "other",
+      "excerpt": "NECK IS A LONG BARE CYLINDER (native size, noodle-runtime-hero.png and face "
+    },
+    "noodle:1c2afbc70427": {
+      "char": "noodle",
+      "class": "other",
+      "excerpt": "CUFF ROLL IS A SMOOTH RING (native size, hero and face captures): wider than"
+    },
+    "noodle:f2253c4f5dc1": {
+      "char": "noodle",
+      "class": "face-atlas",
+      "excerpt": "BROWS TOUCH THE RIM TOPS (native size in the four face captures, clearer at "
+    },
+    "noodle:015e7fbf1172": {
+      "char": "noodle",
+      "class": "other",
+      "excerpt": "GLASSES RIMS ARE VISIBLY POLYGONAL (just visible at native size in the face "
+    },
+    "noodle:17b4c0a7eb53": {
+      "char": "noodle",
+      "class": "material-light",
+      "excerpt": "DOME SHOWS BROAD SHADING BANDS (native size, noodle-runtime-hero.png): two o"
+    },
+    "noodle:3e95000e24b1": {
+      "char": "noodle",
+      "class": "other",
+      "excerpt": "EARS UNDER-PROUD FROM THE FRONT (2x on noodle-runtime-face-grin.png, and the"
+    },
+    "noodle:8bdf8b2c8c1e": {
+      "char": "noodle",
+      "class": "face-atlas",
+      "excerpt": "NO NOSTRILS / NOSE IS A SOFT MOUND (2x on face-grin): reads as a button nose"
+    },
+    "noodle:92b7c4903ff4": {
+      "char": "noodle",
+      "class": "other",
+      "excerpt": "FAR LENS READS AS A DOUBLED RING AT HERO (2x on noodle-runtime-hero.png): th"
+    },
+    "noodle:f0a2d3fa78fe": {
+      "char": "noodle",
+      "class": "other",
+      "excerpt": "FINGERTIP INK CLUMP (4x and beyond only, noodle-runtime-hero.png near hand):"
+    },
+    "noodle:aabb540fe327": {
+      "char": "noodle",
+      "class": "other",
+      "excerpt": "TOP'S CREAM STRIPE READS COOL GREY-WHITE (board only, noodle-front-review.pn"
+    },
+    "noodle:a3a0edc1812d": {
+      "char": "noodle",
+      "class": "hems-cuffs",
+      "excerpt": "ANKLE DAYLIGHT 13.0 vs 0.0 (instrument; bind pose on the board): feet stand "
+    },
+    "noodle:24fce2a98661": {
+      "char": "noodle",
+      "class": "hems-cuffs",
+      "excerpt": "NOT RE-OBSERVED IN THIS PASS: the earlier record's bunt t0.67 high receiving"
+    },
+    "mimi_mash:059bbf982981": {
+      "char": "mimi_mash",
+      "class": "other",
+      "excerpt": "Native size, all four face stills and runtime-hero: the hood reads as two na"
+    },
+    "mimi_mash:1c0898e94c08": {
+      "char": "mimi_mash",
+      "class": "other",
+      "excerpt": "Native size, runtime-hero and every capture: the hair is a smooth dome with "
+    },
+    "mimi_mash:45e5cdfe3a94": {
+      "char": "mimi_mash",
+      "class": "other",
+      "excerpt": "Native size, face-grin/cheer/tongue/angry: front-on, each shoe toe comes to "
+    },
+    "mimi_mash:3451394c1f85": {
+      "char": "mimi_mash",
+      "class": "other",
+      "excerpt": "Native size, face-grin: the hair edge against the cheek on the viewer's righ"
+    },
+    "mimi_mash:616a51350c4e": {
+      "char": "mimi_mash",
+      "class": "other",
+      "excerpt": "Native size, runtime-hero and face stills: idle arms hang straight and splay"
+    },
+    "mimi_mash:1610f9cf52e6": {
+      "char": "mimi_mash",
+      "class": "face-atlas",
+      "excerpt": "Native size, profile-review board only: the hair's side outline is a rounded"
+    },
+    "mimi_mash:5f102c112c88": {
+      "char": "mimi_mash",
+      "class": "other",
+      "excerpt": "Bunt pose, shared animation, not verified in these captures: the earlier rec"
+    },
+    "mimi_mash:65205d41bcac": {
+      "char": "mimi_mash",
+      "class": "face-atlas",
+      "excerpt": "2x, runtime-run: the eye-white edge rides the cheek curve with a faint stick"
+    },
+    "mimi_mash:b40158e6c311": {
+      "char": "mimi_mash",
+      "class": "proportions",
+      "excerpt": "measure:fidelity 'daylight between the ankles' is OFF (26.4 vs 0.00, tol 12)"
+    },
+    "mimi_mash:2df4d52e93ad": {
+      "char": "mimi_mash",
+      "class": "other",
+      "excerpt": "Evidence housekeeping, not a model defect: mimi-mash-in-game-review.png show"
+    },
+    "bubbles:606c19a199bd": {
       "char": "bubbles",
       "class": "hems-cuffs",
-      "excerpt": "HAIR SURFACE READS AS BATTER, NOT RINGLETS: the fused skin is a crust of irr"
+      "excerpt": "THIN ARMS AND LEGS (native size, face-grin and hero; this is what holds 3.2 "
     },
-    "bubbles:3d8225cf5f15": {
+    "bubbles:590b44d1203c": {
+      "char": "bubbles",
+      "class": "hems-cuffs",
+      "excerpt": "SLATE-BLUE WEDGES AT THE NECK (native size, face-grin; also the faces and he"
+    },
+    "bubbles:65d51917819e": {
       "char": "bubbles",
       "class": "face-atlas",
-      "excerpt": "FOREHEAD IS A HEAVY ROLL, NOT CURLS: two swollen lobes meet in a notch under"
+      "excerpt": "FACE IS A NARROW TALL OVAL (native size, face-grin): the sheet's face is rou"
     },
-    "bubbles:14a8f7138166": {
+    "bubbles:e90d5a8fe5a3": {
       "char": "bubbles",
-      "class": "other",
-      "excerpt": "HAIR ENVELOPE: in the front view the cloud is a near straight-sided column f"
-    },
-    "bubbles:8f4156173e3e": {
-      "char": "bubbles",
-      "class": "other",
-      "excerpt": "DOUBLED CONTOUR ON THE HAIR: a second outline runs a few pixels inside the s"
-    },
-    "bubbles:d63f54f43a9c": {
-      "char": "bubbles",
-      "class": "other",
-      "excerpt": "PINHOLE SPECKS IN THE HAIR: two or three dark 1-2px specks in the side mass "
-    },
-    "bubbles:a25e65bbaf1c": {
-      "char": "bubbles",
-      "class": "other",
-      "excerpt": "SCRUNCHIE is a thin smooth band half buried between the bun and the forehead"
-    },
-    "gizmo:f50b547e9af9": {
-      "char": "gizmo",
-      "class": "other",
-      "excerpt": "(hair, high) - sweep-crops/gizmo-leaf/grin-crown-8x.png x 290-600, y 400-580"
-    },
-    "gizmo:819bc2be1b93": {
-      "char": "gizmo",
-      "class": "other",
-      "excerpt": "(hair, high) - sweep-crops/gizmo-leaf/grin-head-4x.png x 130-680, y 330-490,"
-    },
-    "gizmo:af231ae26030": {
-      "char": "gizmo",
       "class": "face-atlas",
-      "excerpt": "(hair, high) - sweep-crops/gizmo-leaf/profile-board-4x.png x 85-240, y 300-5"
+      "excerpt": "CHEER AND TONGUE LOOK ALIKE (native size, face-cheer vs face-tongue): both r"
     },
-    "gizmo:bf6db615f2d4": {
-      "char": "gizmo",
+    "bubbles:4d80228843ff": {
+      "char": "bubbles",
       "class": "other",
-      "excerpt": "(hair, medium) - sweep-crops/gizmo-leaf/hero-top-7x.png x 470-990, y 10-330,"
+      "excerpt": "DARK SQUARE ON THE LIFTED SHOE (native size, run): a small navy rectangle on"
     },
-    "gizmo:f161157c3c22": {
-      "char": "gizmo",
+    "bubbles:b36157dd57a3": {
+      "char": "bubbles",
       "class": "other",
-      "excerpt": "(hair, medium) - sweep-crops/gizmo-leaf/profile-board-4x.png x 430-760, y 56"
+      "excerpt": "FOREHEAD ROLL IS TWO BIG LOBES (native size, face-grin, confirmed at 2x): th"
     },
-    "gizmo:bf2dbbda7722": {
-      "char": "gizmo",
+    "bubbles:9aac7011e18e": {
+      "char": "bubbles",
       "class": "other",
-      "excerpt": "(hair, low) - sweep-crops/gizmo-leaf/hero-top-7x.png x 960-1060, y 430-500 ("
+      "excerpt": "HAIR SURFACE HAS NO CURL DIRECTION (2x, face-grin; needed for a 5 on hair): "
     },
-    "gizmo:37b5d78002dd": {
-      "char": "gizmo",
+    "bubbles:53db18d5876d": {
+      "char": "bubbles",
+      "class": "hems-cuffs",
+      "excerpt": "RIGID BELL SKIRT WITH A HARD SHADING EDGE IN THE RUN (native for the bell, 2"
+    },
+    "bubbles:b817ebb8bc23": {
+      "char": "bubbles",
+      "class": "other",
+      "excerpt": "SHOE COLOUR (measured): tan/orange-beige with too little cream; band tones 7"
+    },
+    "bubbles:43b885eb3d01": {
+      "char": "bubbles",
+      "class": "other",
+      "excerpt": "SHOE DETAIL (native size, hero and swing): parallel pink bars where the shee"
+    },
+    "bubbles:d7a951fce382": {
+      "char": "bubbles",
+      "class": "other",
+      "excerpt": "POCKET (native size, face-grin and run): a flat cream bar over a darker squa"
+    },
+    "bubbles:3b6fef8512b5": {
+      "char": "bubbles",
+      "class": "other",
+      "excerpt": "HAIR ENVELOPE (native size, face-grin; a difference from the painting, not a"
+    },
+    "bubbles:ac813fe9d09c": {
+      "char": "bubbles",
+      "class": "hems-cuffs",
+      "excerpt": "SKIN FLECK ABOVE THE HEM IN THE SWING (2x, swing): a few skin-coloured pixel"
+    },
+    "bubbles:fd27a375ce7a": {
+      "char": "bubbles",
+      "class": "other",
+      "excerpt": "SCRUNCHIE (2x, face-grin): a thin smooth band half buried between bun and fo"
+    },
+    "bubbles:2d52ae2558d7": {
+      "char": "bubbles",
+      "class": "other",
+      "excerpt": "DOUBLED CONTOUR AND PINHOLE SPECKS IN THE HAIR (4x only, from the earlier re"
+    },
+    "bubbles:819edd72ef96": {
+      "char": "bubbles",
+      "class": "other",
+      "excerpt": "SHARED POSES (from the earlier record, not evidenced in these captures): low"
+    },
+    "lefty:162ddef70e02": {
+      "char": "lefty",
+      "class": "other",
+      "excerpt": "NATIVE SIZE, all four face captures: the fringe on her right half is the for"
+    },
+    "lefty:baa90f36ce81": {
+      "char": "lefty",
+      "class": "material-light",
+      "excerpt": "NATIVE SIZE, hero and run: hair, skin and jacket are three neighbouring oran"
+    },
+    "lefty:6be1e852818a": {
+      "char": "lefty",
+      "class": "other",
+      "excerpt": "NATIVE SIZE, hero and run: the hood is a dark ball on the upper back that re"
+    },
+    "lefty:9a7d01d77265": {
+      "char": "lefty",
+      "class": "other",
+      "excerpt": "NATIVE SIZE, hero and run: the backwards brim is a flat near-black plate wit"
+    },
+    "lefty:15665a970dd0": {
+      "char": "lefty",
       "class": "face-atlas",
-      "excerpt": "(hair, low) - sweep-crops/gizmo-leaf/hero-head-4x.png x 210-400, y 520-600: "
+      "excerpt": "NATIVE SIZE, hero and run: the near brow merges with the dark temple hair no"
     },
-    "gizmo:c2f71da58048": {
-      "char": "gizmo",
+    "lefty:8af7e3081543": {
+      "char": "lefty",
       "class": "other",
-      "excerpt": "(face, low) - sweep-crops/gizmo-leaf/grin-head-4x.png x 150-200 and 630-680,"
+      "excerpt": "NATIVE SIZE, hero: the ponytail is a smooth banana with a few stubby teeth a"
     },
-    "gizmo:086801341ba2": {
-      "char": "gizmo",
-      "class": "face-atlas",
-      "excerpt": "UPDATED - measure:fidelity visible face at brow: left 34.1 vs 9.59 OFF (+24."
+    "lefty:11f3cff20ef6": {
+      "char": "lefty",
+      "class": "material-light",
+      "excerpt": "NATIVE SIZE, face captures: the gold team-tint cap strap sits close to the h"
+    },
+    "lefty:ae3cc5bd7b7d": {
+      "char": "lefty",
+      "class": "other",
+      "excerpt": "NATIVE SIZE, hero and face-grin: forearms and hands are thin against the she"
+    },
+    "lefty:5690f6fcea2b": {
+      "char": "lefty",
+      "class": "other",
+      "excerpt": "2x, swing and face-grin: the swept fringe lock shows hard facet lines and a "
+    },
+    "lefty:96286e762840": {
+      "char": "lefty",
+      "class": "other",
+      "excerpt": "2x, hero: shoes read tan/khaki rather than the sheet's mid-grey uppers with "
+    },
+    "lefty:52f6f55f47d5": {
+      "char": "lefty",
+      "class": "other",
+      "excerpt": "4x only, carried from the earlier record and not re-seen at native size: gre"
+    },
+    "lefty:febbaef0f177": {
+      "char": "lefty",
+      "class": "other",
+      "excerpt": "Carried, not re-observed in these captures: bunt receiving-elbow pose debt ("
     }
   }
 }
