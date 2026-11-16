@@ -2410,65 +2410,65 @@
       "class": "other",
       "excerpt": "SHARED POSES (from the earlier record, not evidenced in these captures): low"
     },
-    "lefty:162ddef70e02": {
-      "char": "lefty",
-      "class": "other",
-      "excerpt": "NATIVE SIZE, all four face captures: the fringe on her right half is the for"
-    },
-    "lefty:baa90f36ce81": {
-      "char": "lefty",
-      "class": "material-light",
-      "excerpt": "NATIVE SIZE, hero and run: hair, skin and jacket are three neighbouring oran"
-    },
-    "lefty:6be1e852818a": {
-      "char": "lefty",
-      "class": "other",
-      "excerpt": "NATIVE SIZE, hero and run: the hood is a dark ball on the upper back that re"
-    },
     "lefty:9a7d01d77265": {
       "char": "lefty",
       "class": "other",
       "excerpt": "NATIVE SIZE, hero and run: the backwards brim is a flat near-black plate wit"
-    },
-    "lefty:15665a970dd0": {
-      "char": "lefty",
-      "class": "face-atlas",
-      "excerpt": "NATIVE SIZE, hero and run: the near brow merges with the dark temple hair no"
-    },
-    "lefty:8af7e3081543": {
-      "char": "lefty",
-      "class": "other",
-      "excerpt": "NATIVE SIZE, hero: the ponytail is a smooth banana with a few stubby teeth a"
-    },
-    "lefty:11f3cff20ef6": {
-      "char": "lefty",
-      "class": "material-light",
-      "excerpt": "NATIVE SIZE, face captures: the gold team-tint cap strap sits close to the h"
     },
     "lefty:ae3cc5bd7b7d": {
       "char": "lefty",
       "class": "other",
       "excerpt": "NATIVE SIZE, hero and face-grin: forearms and hands are thin against the she"
     },
-    "lefty:5690f6fcea2b": {
-      "char": "lefty",
-      "class": "other",
-      "excerpt": "2x, swing and face-grin: the swept fringe lock shows hard facet lines and a "
-    },
     "lefty:96286e762840": {
       "char": "lefty",
       "class": "other",
       "excerpt": "2x, hero: shoes read tan/khaki rather than the sheet's mid-grey uppers with "
     },
-    "lefty:52f6f55f47d5": {
+    "lefty:a2e1c1455c57": {
       "char": "lefty",
       "class": "other",
-      "excerpt": "4x only, carried from the earlier record and not re-seen at native size: gre"
+      "excerpt": "NATIVE SIZE, hero, run, swing: the new blonde is cooler and paler than the s"
     },
-    "lefty:febbaef0f177": {
+    "lefty:f8b18bbb95a9": {
+      "char": "lefty",
+      "class": "hems-cuffs",
+      "excerpt": "40px and NATIVE SIZE, hero and run: because the shaded tail is close to the "
+    },
+    "lefty:3ca106c5a265": {
+      "char": "lefty",
+      "class": "material-light",
+      "excerpt": "NATIVE SIZE, face captures: the gold team-tint cap strap is now even closer "
+    },
+    "lefty:cbfa83060b49": {
       "char": "lefty",
       "class": "other",
-      "excerpt": "Carried, not re-observed in these captures: bunt receiving-elbow pose debt ("
+      "excerpt": "NATIVE SIZE, hero and run: the hood is a dark ball on the upper back that re"
+    },
+    "lefty:6f73234895c2": {
+      "char": "lefty",
+      "class": "face-atlas",
+      "excerpt": "NATIVE SIZE, hero and run: the neutral face reads as a scowl (heavy near bro"
+    },
+    "lefty:98d934da305e": {
+      "char": "lefty",
+      "class": "other",
+      "excerpt": "NATIVE SIZE, hero: the ponytail is a smooth banana with a few stubby teeth a"
+    },
+    "lefty:44784713ec90": {
+      "char": "lefty",
+      "class": "material-light",
+      "excerpt": "2x, face-grin and swing: the swept fringe lock shows hard facet lines and a "
+    },
+    "lefty:b9b01a1a4e68": {
+      "char": "lefty",
+      "class": "face-atlas",
+      "excerpt": "2x, face-grin: small grey sliver at her right temple between fringe edge, ea"
+    },
+    "lefty:56701e16371c": {
+      "char": "lefty",
+      "class": "other",
+      "excerpt": "Carried, not re-observed in these captures: enclosed sliver of field between"
     }
   }
 }
