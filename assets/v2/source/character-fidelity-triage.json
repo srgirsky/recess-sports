@@ -2495,41 +2495,6 @@
       "class": "face-atlas",
       "excerpt": "HEAD: nose is a smooth bump with a highlight, no nostrils or breadth; no che"
     },
-    "gizmo:babd48886827": {
-      "char": "gizmo",
-      "class": "face-atlas",
-      "excerpt": "UPDATED - measure:fidelity visible face at brow: left 21.1 vs 9.59 OFF (+11."
-    },
-    "gizmo:18dfeca22363": {
-      "char": "gizmo",
-      "class": "hems-cuffs",
-      "excerpt": "(hair, high) - sweep-crops/gizmo-hair-r4/face-grin-head-4x.png x 440-720, y "
-    },
-    "gizmo:9bf3057ba7b7": {
-      "char": "gizmo",
-      "class": "other",
-      "excerpt": "(hair, high) - sweep-crops/gizmo-hair-r4/hero-head-4x.png, run-head-4x.png, "
-    },
-    "gizmo:166617c2a4d8": {
-      "char": "gizmo",
-      "class": "other",
-      "excerpt": "(hair, medium) - sweep-crops/gizmo-hair-r4/hero-head-4x.png x 940-1080, y 70"
-    },
-    "gizmo:bc517ca1d24e": {
-      "char": "gizmo",
-      "class": "face-atlas",
-      "excerpt": "(hair, medium) - sweep-crops/gizmo-hair-r4/face-grin-head-4x.png x 290-880, "
-    },
-    "gizmo:3aca55bfcbd1": {
-      "char": "gizmo",
-      "class": "other",
-      "excerpt": "(hair, low) - sweep-crops/gizmo-hair-r4/hero-head-4x.png x 540-760, y 760-96"
-    },
-    "gizmo:eeadaf620624": {
-      "char": "gizmo",
-      "class": "material-light",
-      "excerpt": "NEW (hair, low) - sweep-crops/gizmo-hair-r4/hero-head-4x.png x 400-560, y 64"
-    },
     "lefty:131a909d3326": {
       "char": "lefty",
       "class": "other",
@@ -2564,6 +2529,51 @@
       "char": "lefty",
       "class": "other",
       "excerpt": "SLIVER OF DAYLIGHT ENCLOSED BETWEEN CAP, SCRUNCHIE, BRIM AND TAIL: lefty-run"
+    },
+    "gizmo:c1a3243f48fb": {
+      "char": "gizmo",
+      "class": "other",
+      "excerpt": "(hair, high) - sweep-crops/gizmo-fused-r3/grin-head-5x.png x 180-890, y 440-"
+    },
+    "gizmo:e990e7db8d33": {
+      "char": "gizmo",
+      "class": "face-atlas",
+      "excerpt": "(hair, high) - sweep-crops/gizmo-fused-r3/profile-board-3x.png x 540-700, y "
+    },
+    "gizmo:f5bfaefdb1fd": {
+      "char": "gizmo",
+      "class": "other",
+      "excerpt": "(hair, medium) - sweep-crops/gizmo-fused-r3/grin-crown-10x.png x 320-720, y "
+    },
+    "gizmo:cdeb21039965": {
+      "char": "gizmo",
+      "class": "hems-cuffs",
+      "excerpt": "(hair, medium) - sweep-crops/gizmo-fused-r3/hero-backside-9x.png x 100-880, "
+    },
+    "gizmo:fc29f57e2d1b": {
+      "char": "gizmo",
+      "class": "hems-cuffs",
+      "excerpt": "(hair, medium) - sweep-crops/gizmo-fused-r3/grin-head-5x.png x 360-760, y 80"
+    },
+    "gizmo:560d02cf9bf9": {
+      "char": "gizmo",
+      "class": "material-light",
+      "excerpt": "(hair, low) - sweep-crops/gizmo-fused-r3/hero-forelock-10x.png x 300-380, y "
+    },
+    "gizmo:4ea185baab89": {
+      "char": "gizmo",
+      "class": "other",
+      "excerpt": "(hair, low) - sweep-crops/gizmo-fused-r3/hero-backside-9x.png x 380-660, y 5"
+    },
+    "gizmo:4a4609ade1c4": {
+      "char": "gizmo",
+      "class": "other",
+      "excerpt": "(face, low) - sweep-crops/gizmo-fused-r3/grin-head-5x.png x 215-260 and 830-"
+    },
+    "gizmo:ea862ed1151b": {
+      "char": "gizmo",
+      "class": "face-atlas",
+      "excerpt": "UPDATED - measure:fidelity visible face at brow: left 34.7 vs 9.59 OFF (+25."
     }
   }
 }

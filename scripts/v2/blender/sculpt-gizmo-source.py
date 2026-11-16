@@ -36,6 +36,7 @@ from sculptlib.arm import ArmSpec, HandSpec, build_arm
 from sculptlib.atlas import install_face_atlas
 from sculptlib.color import ensure_material_slots, rebuild_palette_material, rgba, srgb_to_linear
 from sculptlib.ear import EarSpec, build_ear
+from sculptlib.fused import fuse_into
 from sculptlib.hair import curl_field, curl_seeds
 from sculptlib.head import HeadSpec, head_surface
 from sculptlib.leg import LegSpec, build_leg, leg_x
@@ -332,31 +333,45 @@ LOCK_RINGS = [
     # Longer, thinner and more swirled than the second build ("short fat
     # faceted diamonds that tile"): each lock is now about twice the ring
     # spacing long, so it overlaps half of the next ring's.
-    (3.080, (114.0, 138.0, 162.0, 180.0), -0.260),
-    (3.140, (100.0, 128.0, 156.0), 0.360),
-    (3.280, (78.0, 114.0, 150.0), 0.360),
-    (3.420, (58.0, 96.0, 134.0, 172.0), 0.340),
-    (3.560, (38.0, 80.0, 122.0, 164.0), 0.320),
-    (3.700, (30.0, 90.0, 150.0), 0.400),   # the tuft: with the crown lock gone the head read 3.4% short
+    # Fused, the locks' DESIGN is what reads: these are longer and thinner
+    # than the separate-lock build's and swirl hard, so each is a bent leaf
+    # and not a blunt lump. The top ring is low; the tuft is CROWN_LOCKS.
+    (3.080, (114.0, 138.0, 162.0, 180.0), -0.300),
+    (3.140, (118.0, 146.0, 170.0), 0.460),   # clear of the ear (was 100 / 128 / 156)
+    (3.280, (78.0, 114.0, 150.0), 0.460),
+    (3.420, (58.0, 96.0, 134.0, 172.0), 0.440),
+    (3.560, (38.0, 80.0, 122.0, 164.0), 0.400),
+    (3.700, (30.0, 90.0, 150.0), 0.200),
 ]
 LOCK_ALONG = (0.0, 0.35, 0.70, 1.0)          # how far along its run each station sits
 # Riding at 1.02-1.04 the locks' own girth put head width:height at 0.98
 # against the sheet's 0.86; the envelope is the hair's outside.
-LOCK_SHARE = (0.87, 0.92, 0.93, 0.99)        # envelope share at each station: on it, then off at the tip
-LOCK_GIRTH = (0.055, 0.092, 0.070, 0.012)
-LOCK_SWIRL_DEG = 24.0
-# No standing lock at the crown: one read as "a horn in every capture". The
-# top ring's tips make the tuft.
-CROWN_LOCKS = []
+LOCK_SHARE = (0.84, 0.89, 0.91, 1.02)        # envelope share at each station: on it, then off at the tip
+LOCK_GIRTH = (0.046, 0.078, 0.058, 0.012)
+LOCK_SWIRL_DEG = 42.0
+# The tuft: three curled tips LEANING ONE WAY (to his left), as the sheet's
+# do. One upright lock read as "a horn"; the top ring standing tall read as
+# "five upright cones in an exact mirror, a crown". The hair is not mirrored
+# any more, so these and the fringe can sweep.
+CROWN_LOCKS = [
+    ((-0.100, 0.000, 3.700), (0.000, 0.020, 3.960), (0.150, 0.050, 4.090)),
+    ((0.080, -0.130, 3.690), (0.210, -0.150, 3.910), (0.350, -0.110, 4.000)),
+    ((0.020, 0.170, 3.690), (0.140, 0.220, 3.930), (0.290, 0.250, 4.040)),
+]
 # The fringe: five locks off the hairline, the outer pair down the temples.
 # The sheet's hair covers the forehead's corners; three locks left "one
 # centre dagger between the brows with bare temples".
 FRINGE_LOCKS = [
-    ((0.000, -0.420, 3.640), (0.040, -0.570, 3.530), (0.090, -0.580, 3.410)),
-    ((0.200, -0.380, 3.630), (0.290, -0.520, 3.510), (0.350, -0.510, 3.390)),
-    ((-0.200, -0.380, 3.630), (-0.290, -0.520, 3.510), (-0.350, -0.510, 3.390)),
-    ((0.380, -0.280, 3.600), (0.470, -0.360, 3.440), (0.520, -0.330, 3.280)),
-    ((-0.380, -0.280, 3.600), (-0.470, -0.360, 3.440), (-0.520, -0.330, 3.280)),
+    # Tips at z 3.46-3.44, clear of the brow band (top ~3.38): fused, the
+    # first fringe (tips 3.39-3.41) sat on the brows and hid their outer halves.
+    # Swept toward his RIGHT, each tip further across than its root. Swept the
+    # other way it left his right forehead bare: visible face 35.9% on that
+    # side against the sheet's 9.6% (and 14.7% against 13.7% on the other).
+    ((0.060, -0.420, 3.640), (-0.040, -0.560, 3.560), (-0.150, -0.560, 3.470)),
+    ((-0.160, -0.390, 3.630), (-0.290, -0.510, 3.540), (-0.400, -0.470, 3.450)),
+    ((0.230, -0.380, 3.630), (0.330, -0.510, 3.540), (0.390, -0.490, 3.450)),
+    ((-0.380, -0.280, 3.600), (-0.470, -0.360, 3.450), (-0.520, -0.330, 3.300)),
+    ((0.380, -0.280, 3.600), (0.470, -0.360, 3.450), (0.520, -0.330, 3.300)),
 ]
 
 
@@ -384,32 +399,46 @@ def cap_ring_point(azimuth_deg: float, z: float, share: float, side: int):
     return (side * half_x * share * sin(az), y_centre - half_y * share * cos(az), z)
 
 
+# ★ FUSED (2026-11-15). The locks above are still the design, but what ships
+# is one skin: `sculptlib.fused.fuse_into` remeshes the scalp and every lock
+# into a single closed surface, relaxes it so facets and seams become grooves,
+# mirrors it, and reduces it to a triangle target. Four critics had held the
+# separate-lock build at 3 for "flat faceted plates, each its own piece".
+# Fused locks are authored fatter: the relax pass thins them.
+# First fused build: girth 1.35, voxel 0.030, relax 3. It cleared every
+# facet and seam but melted the locks into "short blunt glossy lumps" and
+# its fat fringe sat on the brows. Sharper now: a finer voxel and one relax
+# pass keep each lock's length and tip.
+FUSE_GIRTH = 1.15
+FUSE_VOXEL_FT = 0.022
+FUSE_RELAX = 1
+FUSE_TRIS = {2: 4400, 1: 1000}       # LOD0, LOD1; LOD2 keeps the plain scalp
+FUSE_GROOVE_FT = 0.004
+
+
 def build_hair(builder: MeshBuilder, detail: int) -> None:
-    ring_loft_cap(builder, CAP_LEVELS, detail)
     if detail < 1:
+        ring_loft_cap(builder, CAP_LEVELS, detail)
         return
-    sides = 6 if detail >= 2 else 4
-    index = 0
+    source = MeshBuilder()
+    ring_loft_cap(source, CAP_LEVELS, 2)
     for z, azimuths, rise in LOCK_RINGS:
         for azimuth in azimuths:
             for side in ((1,) if azimuth in (0.0, 180.0) else (1, -1)):
-                index += 1
-                if detail == 1 and index % 5:
-                    continue   # the mid LOD carries a fifth of the locks (its cap is 3,000)
                 # Mirrored twins share a wobble, so the mop stays symmetric.
                 wobble = 0.90 + 0.20 * ((azimuth * 7.0 + z * 31.0) % 10.0) / 10.0
                 swirl = 0.0 if azimuth in (0.0, 180.0) else LOCK_SWIRL_DEG
                 spine = [cap_ring_point(azimuth + swirl * along, z + rise * along * wobble, share, side)
                          for along, share in zip(LOCK_ALONG, LOCK_SHARE)]
-                girth = [g * wobble for g in LOCK_GIRTH]
-                if detail == 1:
-                    spine, girth = spine[:2] + spine[3:], girth[:2] + girth[3:]
-                builder.tube(spine, girth, 2, LOCK_HAIR, "Head", 5 if detail >= 2 else 4, flip=side < 0)
-    if detail >= 2:
-        for spine in CROWN_LOCKS:
-            builder.tube(list(spine), [0.130, 0.110, 0.018], 2, HAIR, "Head", sides)
-        for spine in FRINGE_LOCKS:
-            builder.tube(list(spine), [0.095, 0.105, 0.020], 2, LOCK_HAIR, "Head", 5, flip=spine[0][0] < 0)
+                girth = [g * wobble * FUSE_GIRTH for g in LOCK_GIRTH]
+                source.tube(spine, girth, 2, HAIR, "Head", 8)
+    for spine in CROWN_LOCKS:
+        source.tube(list(spine), [0.105, 0.085, 0.022], 2, HAIR, "Head", 8)
+    for spine in FRINGE_LOCKS:
+        source.tube(list(spine), [0.085, 0.090, 0.030], 2, HAIR, "Head", 8)
+    fuse_into(builder, source, material=2, color=HAIR, groove_color=HAIR_DARK, bone="Head",
+              voxel_ft=FUSE_VOXEL_FT, relax_iterations=FUSE_RELAX, target_tris=FUSE_TRIS[detail],
+              groove_depth_ft=FUSE_GROOVE_FT, mirror=False)
 
 
 # --- The glasses ---------------------------------------------------------------
